@@ -1,0 +1,1 @@
+// requireAuth cho REST.
