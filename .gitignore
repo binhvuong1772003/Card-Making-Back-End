@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+
+# Cấu hình và hướng dẫn cho AI (Claude Code): giữ cục bộ, không đưa lên git
+.claude/
+CLAUDE.md
