@@ -26,7 +26,7 @@ Users build a card visually: drop text where they want it, pick colors and fonts
 | 🚂 Web framework | Express 5 |
 | 🍃 Database | MongoDB (replica set) |
 | 🔺 ORM | Prisma 6 |
-| 🔌 APIs | REST, GraphQL, WebSocket |
+| 🔌 APIs | REST, GraphQL (Apollo Server), WebSocket |
 | 🧰 Jobs and messaging | Redis + BullMQ |
 | ✅ Validation | Zod |
 | 🔑 Auth | jose (JWT), google-auth-library, cookie-parser |
@@ -35,7 +35,7 @@ Users build a card visually: drop text where they want it, pick colors and fonts
 | 🪵 Logging | pino, pino-http |
 | 🧪 Testing | Vitest, Supertest, mongodb-memory-server |
 
-GraphQL and WebSocket libraries will be chosen when those modules are implemented.
+The WebSocket library will be chosen when that module is implemented.
 
 ## 🏗️ Architecture
 
