@@ -1,0 +1,1 @@
+// Resolver cua thanh vien.
