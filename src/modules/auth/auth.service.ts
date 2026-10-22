@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { Prisma, type User } from '@prisma/client';
 import argon2 from 'argon2';
 import { env } from '../../config/env';
+import { logger } from '../../infra/logger';
 import { prisma } from '../../infra/prisma';
 import { AppError } from '../../shared/errors';
 import { generateOpaqueToken, hashOpaqueToken } from '../../shared/opaque-token';
 import type { LoginBody, RegisterBody } from './auth.schema';
+import { enqueueVerificationEmail } from './email.jobs';
 import { signAccessToken } from './tokens';
 
 export interface PublicUser {
@@ -61,11 +63,19 @@ const isUniqueViolation = (err: unknown): boolean =>
 // không bao giờ sửa một User có sẵn, kể cả tài khoản chỉ có Google. Việc chống trùng dựa vào chỉ mục duy nhất.
 export async function register(input: RegisterBody): Promise<void> {
   const passwordHash = await argon2.hash(input.password);
+  let user;
   try {
-    await prisma.user.create({ data: { email: input.email, name: input.name, passwordHash } });
+    user = await prisma.user.create({ data: { email: input.email, name: input.name, passwordHash } });
   } catch (err) {
-    if (isUniqueViolation(err)) return;
+    if (isUniqueViolation(err)) return; // email đã có: không đổi gì, không gửi mail
     throw err;
+  }
+  // Xếp mail xác thực SAU khi đã ghi user. Cố ý best-effort: nếu Redis lỗi thì vẫn trả cùng phản hồi để không lộ
+  // gì ra ngoài. Hệ quả đã biết: user này chưa có mail và chưa có chức năng gửi lại (chưa làm).
+  try {
+    await enqueueVerificationEmail(user.id);
+  } catch (err) {
+    logger.error({ err, userId: user.id }, 'failed to enqueue verification email');
   }
 }
 

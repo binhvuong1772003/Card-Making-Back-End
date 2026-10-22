@@ -4,6 +4,8 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
 import { prisma } from '../src/infra/prisma';
+import { closeQueueing } from '../src/infra/queue';
+import { closeRedis } from '../src/infra/redis';
 import { accessCookieOptions, cookieNames, refreshCookieOptions } from '../src/modules/auth/cookies';
 
 const app = createApp();
@@ -30,6 +32,8 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
+  await closeQueueing();
+  await closeRedis();
   await prisma.$disconnect();
 });
 
@@ -233,6 +237,8 @@ describe('cookie options', () => {
 describe('health', () => {
   it('reports ok and ready', async () => {
     expect((await request(app).get('/health')).body).toEqual({ status: 'ok', service: 'CMBE' });
-    expect((await request(app).get('/ready')).status).toBe(200);
+    const ready = await request(app).get('/ready');
+    expect(ready.status).toBe(200);
+    expect(ready.body).toEqual({ status: 'ready', checks: { database: 'ok', redis: 'ok' } });
   });
 });

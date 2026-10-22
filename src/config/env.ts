@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-// Biến đã có sẵn trong môi trường (ví dụ do test đặt) luôn thắng file .env.
-dotenv.config({ quiet: true });
+// Biến đã có sẵn trong môi trường luôn thắng file .env. Khi chạy test thì không nạp .env: nó trỏ vào Atlas thật.
+if (process.env.NODE_ENV !== 'test') dotenv.config({ quiet: true });
 
 const duration = z.string().regex(/^\d+[smhd]$/, 'use a number followed by s, m, h or d, for example 15m');
 
@@ -20,6 +20,20 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.string().min(1),
+  REDIS_URL: z
+    .string()
+    .refine((value) => /^rediss?:\/\//.test(value) && URL.canParse(value), 'must be a redis:// or rediss:// URL'),
+  // Tiền tố khóa riêng cho mọi hàng đợi BullMQ: Redis dùng chung với dự án khác không được lẫn job.
+  QUEUE_PREFIX: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes')
+    .default('cmbe'),
+  // Worker mặc định là tiến trình riêng (npm run start:worker). true chỉ để tiện chạy chung với API khi phát triển.
+  // Zod 4: .default() trả giá trị mặc định nguyên văn và bỏ qua transform đứng sau, nên default phải đặt SAU transform.
+  RUN_WORKERS: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .default(false),
   JWT_SECRET: z.string().min(32, 'must be at least 32 characters'),
   JWT_ISSUER: z.string().min(1).default('cmbe'),
   JWT_AUDIENCE: z.string().min(1).default('cmbe-clients'),
@@ -31,6 +45,33 @@ const schema = z.object({
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(20),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+
+  // Gửi email. `log` chỉ ghi ra log (dev); `gmail` gửi thật qua SMTP của Gmail bằng App Password.
+  MAIL_TRANSPORT: z.enum(['log', 'gmail']).default('log'),
+  GMAIL_USER: z.email().optional(),
+  // App Password hiển thị dạng bốn nhóm bốn chữ cái cách nhau bằng dấu cách; bỏ hết khoảng trắng.
+  GMAIL_APP_PASSWORD: z
+    .string()
+    .transform((value) => value.replace(/\s+/g, ''))
+    .pipe(z.string().min(1))
+    .optional(),
+  MAIL_FROM: z.string().min(1).optional(),
+  // Địa chỉ trang frontend, dùng để dựng link trong email.
+  FRONTEND_URL: z
+    .string()
+    .refine((value) => /^https?:\/\//.test(value) && URL.canParse(value), 'must be an http(s) URL')
+    .default('http://localhost:3001'),
+  EMAIL_VERIFY_TTL: duration.default('24h'),
+}).superRefine((value, ctx) => {
+  if (value.MAIL_TRANSPORT === 'gmail') {
+    for (const key of ['GMAIL_USER', 'GMAIL_APP_PASSWORD'] as const) {
+      if (!value[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'is required when MAIL_TRANSPORT=gmail' });
+    }
+  }
+  // Ở production mà dùng log thì email xác thực bị bỏ rơi trong im lặng; thà không khởi động.
+  if (value.NODE_ENV === 'production' && value.MAIL_TRANSPORT === 'log') {
+    ctx.addIssue({ code: 'custom', path: ['MAIL_TRANSPORT'], message: 'the log transport drops emails; use gmail in production' });
+  }
 });
 
 const parsed = schema.safeParse(process.env);
@@ -49,4 +90,8 @@ export const env = {
   accessTtlMs: toMs(raw.ACCESS_TOKEN_TTL),
   refreshTtlMs: toMs(raw.REFRESH_TOKEN_TTL),
   sessionMaxAgeMs: toMs(raw.SESSION_MAX_AGE),
+  emailVerifyTtlMs: toMs(raw.EMAIL_VERIFY_TTL),
+  FRONTEND_URL: raw.FRONTEND_URL.replace(/\/+$/, ''),
+  // Gmail luôn ghi đè From bằng chính tài khoản đã đăng nhập, nên mặc định dùng đúng địa chỉ đó.
+  mailFrom: raw.MAIL_FROM ?? (raw.GMAIL_USER ? `CardMaking <${raw.GMAIL_USER}>` : 'CardMaking <no-reply@localhost>'),
 };
