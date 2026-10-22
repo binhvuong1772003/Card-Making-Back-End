@@ -84,7 +84,8 @@ CMBE/
 
 - Node.js 22 or newer
 - MongoDB running as a replica set (Atlas works out of the box)
-- Redis (only once background jobs land; not needed for sign-up and sign-in)
+- Redis for BullMQ and the event bus (a shared local Redis is fine as long as `QUEUE_PREFIX` is unique to this project)
+- `redis-server` on your PATH to run the tests (they start a temporary instance on a random port)
 
 ### 📦 Install and run
 
@@ -94,7 +95,11 @@ cp .env.example .env
 npm run dev
 ```
 
-At minimum set `DATABASE_URL` (MongoDB replica set) and `JWT_SECRET` (32 or more characters) in `.env`; every other variable has a default. Open `http://localhost:3000/health` to check the server is running.
+At minimum set `DATABASE_URL` (MongoDB replica set), `REDIS_URL` and `JWT_SECRET` (32 or more characters) in `.env`; every other variable has a default. Open `http://localhost:3000/health` to check the server is running.
+
+The API and the background worker are two separate processes, so run them in two terminals (`npm run dev` and `npm run dev:worker`). In production run `npm start` and `npm run start:worker` as two services that share the same `REDIS_URL` and `QUEUE_PREFIX`.
+
+**Sending email.** Registration queues a verification email, and the **worker** sends it, so `npm run dev:worker` must be running. By default `MAIL_TRANSPORT=log` only writes the email to the worker log. To send through Gmail, turn on 2-Step Verification for the account, create an App Password at <https://myaccount.google.com/apppasswords>, and set `MAIL_TRANSPORT=gmail`, `GMAIL_USER` and `GMAIL_APP_PASSWORD` in `.env` (never commit or share them). Personal Gmail is limited to roughly 500 recipients per day and is meant for early development only. The confirmation link points to `FRONTEND_URL/verify-email?token=...`; the page and endpoint that accept it are not built yet.
 
 Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /login`, `GET /me`, `POST /logout`.
 
@@ -105,6 +110,7 @@ Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /login`, 
 | `npm run dev` | Start the server with live reload (tsx) |
 | `npm run build` | Compile TypeScript and copy `.graphql` files to `dist/` |
 | `npm start` | Run the compiled server from `dist/` |
+| `npm run dev:worker` / `npm run start:worker` | Run the background job worker as its own process (the API does not run workers unless `RUN_WORKERS=true`) |
 | `npm test` | Run the tests against an in-memory MongoDB replica set (the first run downloads a `mongod` binary) |
 
 ## ⚙️ Environment Variables
@@ -115,7 +121,7 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 | --- | --- |
 | `NODE_ENV`, `PORT` | Runtime mode and port |
 | `DATABASE_URL` | MongoDB connection string (replica set required) |
-| `REDIS_URL` | Redis connection for BullMQ and the event bus |
+| `REDIS_URL`, `QUEUE_PREFIX`, `RUN_WORKERS` | Redis connection for BullMQ and the event bus, key prefix for every queue, and whether the API also runs workers in its own process (default `false`; the worker is a separate process) |
 | `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE` | Access token signing and validation |
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL`, `SESSION_MAX_AGE`, `REFRESH_GRACE_SECONDS` | Session lifetimes |
 | `CORS_ORIGINS`, `TRUST_PROXY` | Allowed origins and reverse proxy setting |
@@ -123,7 +129,8 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 | `GOOGLE_CLIENT_ID` | Google sign-in |
 | `UPLOAD_DIR`, `API_URL` | Local file storage and public API URL |
 | `LOG_LEVEL` | Logging verbosity |
-| `FRONTEND_URL`, `RESEND_API_KEY`, `MAIL_FROM` | Email flows (when password login is enabled) |
+| `MAIL_TRANSPORT`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `MAIL_FROM` | Email delivery: `log` (default, nothing is sent) or `gmail` (SMTP with an App Password; required in production) |
+| `FRONTEND_URL`, `EMAIL_VERIFY_TTL` | Base URL used to build links in emails, and how long a verification link stays valid (default `24h`) |
 
 ## 🗺️ Roadmap
 
@@ -136,7 +143,8 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 - [ ] Publishing and public card endpoints
 - [ ] Image uploads
 - [ ] Real-time collaboration over WebSocket
-- [ ] Background jobs
-- [ ] Email verification and password reset
+- [x] Background job infrastructure (Redis and BullMQ)
+- [x] Verification email sending (Gmail SMTP through the background worker)
+- [ ] Email confirmation endpoint, resend, and password reset
 - [ ] Templates
 - [ ] MCP server
