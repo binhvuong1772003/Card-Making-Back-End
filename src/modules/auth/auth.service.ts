@@ -4,6 +4,7 @@ import argon2 from 'argon2';
 import { env } from '../../config/env';
 import { logger } from '../../infra/logger';
 import { prisma } from '../../infra/prisma';
+import { getRedis } from '../../infra/redis';
 import { AppError } from '../../shared/errors';
 import { generateOpaqueToken, hashOpaqueToken } from '../../shared/opaque-token';
 import type { LoginBody, RegisterBody } from './auth.schema';
@@ -113,8 +114,74 @@ export async function login(input: LoginBody, meta: SessionMeta): Promise<{ user
   if (!user || !user.passwordHash || !verified) {
     throw new AppError('UNAUTHENTICATED', 'Invalid email or password');
   }
+  // Chỉ kiểm tra SAU khi mật khẩu đúng, nên chỉ người biết mật khẩu mới biết tài khoản chưa xác minh. Chưa tạo phiên.
+  if (!user.emailVerifiedAt) {
+    throw new AppError('EMAIL_NOT_VERIFIED', 'Email address is not verified');
+  }
   const session = await createSession(user.id, meta);
   return { user: toPublicUser(user), session };
+}
+
+// Prisma trên MongoDB không ghi null cho trường chưa đặt, nên "chưa dùng" phải khớp cả vắng mặt lẫn null.
+const UNUSED = [{ usedAt: { isSet: false } }, { usedAt: null }];
+
+const isWriteConflict = (err: unknown): boolean =>
+  err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034';
+
+// Dùng token xác nhận đúng một lần. Gọi lại với token đã dùng (bấm đôi, bộ quét thư) vẫn thành công nếu email đã
+// được xác minh, nên chức năng này idempotent. Không tạo phiên: link có thể mở trên thiết bị khác.
+export async function verifyEmail(token: string): Promise<void> {
+  const tokenHash = hashOpaqueToken(token);
+  const record = await prisma.verificationToken.findUnique({ where: { tokenHash } });
+  if (!record || record.purpose !== 'EMAIL_VERIFY') throw new AppError('TOKEN_INVALID', 'Verification link is not valid');
+
+  // Đổi email sau khi nhận link thì link cũ hết tác dụng.
+  const user = await prisma.user.findUnique({ where: { id: record.userId } });
+  if (!user || user.email !== record.email) throw new AppError('TOKEN_INVALID', 'Verification link is not valid');
+  if (user.emailVerifiedAt) return;
+
+  const now = new Date();
+  if (record.expiresAt <= now) throw new AppError('TOKEN_EXPIRED', 'Verification link has expired');
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Điều kiện nằm ngay trong lệnh ghi: hai request cùng token thì chỉ một bên dùng được (count === 1).
+      const consumed = await tx.verificationToken.updateMany({
+        where: { tokenHash, purpose: 'EMAIL_VERIFY', expiresAt: { gt: now }, OR: UNUSED },
+        data: { usedAt: now },
+      });
+      if (consumed.count !== 1) return;
+      await tx.user.update({ where: { id: user.id }, data: { emailVerifiedAt: now } });
+      // Các link gửi lại trước đó không còn cần nữa.
+      await tx.verificationToken.updateMany({
+        where: { userId: user.id, purpose: 'EMAIL_VERIFY', OR: UNUSED },
+        data: { usedAt: now },
+      });
+    });
+  } catch (err) {
+    // Hai request chạm nhau thì bên thua nhận lỗi xung đột ghi; kết quả đúng hay không được quyết định bên dưới.
+    if (!isWriteConflict(err)) throw err;
+  }
+
+  const after = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!after?.emailVerifiedAt) throw new AppError('TOKEN_INVALID', 'Verification link is not valid');
+}
+
+const RESEND_COOLDOWN_SECONDS = 60;
+
+// Luôn cho cùng một kết quả dù email có tồn tại, đã xác minh hay chưa. Chỉ tài khoản có thật và chưa xác minh mới
+// xếp job, và mỗi tài khoản chỉ được gửi lại một lần mỗi 60 giây để không ai dùng chức năng này làm ngập hộp thư.
+export async function resendVerification(email: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || user.emailVerifiedAt) return;
+  try {
+    const redis = await getRedis();
+    const free = await redis.set(`${env.QUEUE_PREFIX}:cooldown:verify-email:${user.id}`, '1', 'EX', RESEND_COOLDOWN_SECONDS, 'NX');
+    if (!free) return;
+    await enqueueVerificationEmail(user.id, { resend: true });
+  } catch (err) {
+    logger.error({ err, userId: user.id }, 'failed to resend verification email');
+  }
 }
 
 export async function getMe(userId: string): Promise<PublicUser> {

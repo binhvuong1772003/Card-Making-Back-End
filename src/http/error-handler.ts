@@ -5,6 +5,9 @@ import { AppError, type ErrorCode } from '../shared/errors';
 const STATUS: Record<ErrorCode, number> = {
   VALIDATION: 400,
   UNAUTHENTICATED: 401,
+  EMAIL_NOT_VERIFIED: 403,
+  TOKEN_INVALID: 400,
+  TOKEN_EXPIRED: 400,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,

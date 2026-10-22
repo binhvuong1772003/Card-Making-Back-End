@@ -19,6 +19,8 @@ const login = (body: unknown) => request(app).post(`${base}/login`).send(body as
 const setCookies = (res: request.Response): string[] => ([] as string[]).concat(res.headers['set-cookie'] ?? []);
 const cookieValue = (res: request.Response, name: string): string | undefined =>
   setCookies(res).find((c) => c.startsWith(`${name}=`))?.split(';')[0].slice(name.length + 1);
+// Đăng nhập chỉ cho tài khoản đã xác minh email; các test không bàn về xác minh dùng hàm này.
+const verify = (email: string) => prisma.user.updateMany({ where: { email }, data: { emailVerifiedAt: new Date() } });
 const noSecrets = (res: request.Response) => {
   const text = JSON.stringify(res.body) + setCookies(res).join(';');
   expect(text).not.toMatch(/passwordHash|tokenHash|\$argon2/);
@@ -55,6 +57,7 @@ describe('register', () => {
 
   it('gives the same response for an email that already exists and changes nothing', async () => {
     const first = await register(creds);
+    await verify(creds.email);
     const before = await prisma.user.findUnique({ where: { email: creds.email }, omit: { passwordHash: false } });
     const second = await register({ ...creds, password: 'another password 123' });
     expect(second.status).toBe(first.status);
@@ -98,13 +101,14 @@ describe('register', () => {
 describe('login', () => {
   beforeEach(async () => {
     await register(creds);
+    await verify(creds.email);
   });
 
   it('signs in, sets httpOnly cookies and returns the public user without secrets', async () => {
     const res = await login({ email: 'ANN@example.com', password: creds.password });
     expect(res.status).toBe(200);
     noSecrets(res);
-    expect(res.body.user).toMatchObject({ email: creds.email, emailVerified: false });
+    expect(res.body.user).toMatchObject({ email: creds.email, emailVerified: true });
     const cookies = setCookies(res);
     const access = cookies.find((c) => c.startsWith(`${names.access}=`))!;
     const refresh = cookies.find((c) => c.startsWith(`${names.refresh}=`))!;
@@ -142,14 +146,29 @@ describe('login', () => {
     expect(await prisma.session.count()).toBe(0);
   });
 
-  it('allows an unverified account to sign in (temporary, until email verification exists)', async () => {
-    expect((await login(creds)).status).toBe(200);
+  it('refuses an unverified account with 403 only when the password is right, and creates no session', async () => {
+    const unverified = { email: 'unverified@example.com', password: 'another correct horse' };
+    await register(unverified);
+
+    const right = await login(unverified);
+    expect(right.status).toBe(403);
+    expect(right.body.error.code).toBe('EMAIL_NOT_VERIFIED');
+    expect(setCookies(right)).toEqual([]);
+    expect(await prisma.session.count()).toBe(0);
+
+    // Sai mật khẩu hoặc email lạ vẫn chỉ là 401 chung, nên không ai dò được tài khoản nào chưa xác minh.
+    const wrong = await login({ ...unverified, password: 'wrong password' });
+    const unknown = await login({ email: 'nobody@example.com', password: 'whatever123' });
+    expect(wrong.status).toBe(401);
+    expect(unknown.status).toBe(401);
+    expect(wrong.body).toEqual(unknown.body);
   });
 });
 
 describe('me', () => {
   it('returns the current user for the cookie, a Bearer token, and rejects bad credentials', async () => {
     await register(creds);
+    await verify(creds.email);
     const agent = request.agent(app);
     const loginRes = await agent.post(`${base}/login`).send(creds);
     const meRes = await agent.get(`${base}/me`);
@@ -180,6 +199,7 @@ describe('me', () => {
 describe('logout', () => {
   it('revokes the session, clears both cookies and returns 204', async () => {
     await register(creds);
+    await verify(creds.email);
     const agent = request.agent(app);
     await agent.post(`${base}/login`).send(creds);
     const res = await agent.post(`${base}/logout`);

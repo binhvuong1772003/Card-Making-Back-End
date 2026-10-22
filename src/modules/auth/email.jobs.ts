@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { UnrecoverableError, type Worker } from 'bullmq';
 import { env } from '../../config/env';
 import type { Mailer } from '../../infra/mailer';
@@ -18,13 +19,13 @@ export interface EmailJob {
 export const buildVerificationLink = (token: string): string =>
   `${env.FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
 
-// Id job cố định để một user không bị xếp hai mail đăng ký; BullMQ không cho dấu ':' trong id.
-// Chức năng gửi lại về sau phải dùng id khác (job cũ còn lưu trong thời gian removeOnComplete).
-export async function enqueueVerificationEmail(userId: string): Promise<void> {
+// Id job lúc đăng ký cố định để một user không bị xếp hai mail đăng ký; BullMQ không cho dấu ':' trong id.
+// Gửi lại phải dùng id khác: job cũ còn lưu trong thời gian removeOnComplete và BullMQ lặng lẽ bỏ qua id trùng.
+export async function enqueueVerificationEmail(userId: string, options: { resend?: boolean } = {}): Promise<void> {
   await getQueue<EmailJob>(EMAIL_QUEUE).add(
     'verification',
     { userId, purpose: 'EMAIL_VERIFY' },
-    { jobId: `verify-email-${userId}` },
+    { jobId: options.resend ? `verify-email-resend-${userId}-${randomUUID()}` : `verify-email-${userId}` },
   );
 }
 

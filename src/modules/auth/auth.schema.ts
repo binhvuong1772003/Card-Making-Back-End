@@ -16,5 +16,12 @@ export const loginBody = z.object({
   password: z.string().min(1).max(128),
 });
 
+// Token đến từ link trong email, gửi bằng POST (không phải GET) để bộ quét thư và trình duyệt tải trước không "ăn" mất token.
+export const verifyEmailBody = z.object({ token: z.string().min(1).max(200) });
+
+export const resendVerificationBody = z.object({ email });
+
 export type RegisterBody = z.infer<typeof registerBody>;
+export type VerifyEmailBody = z.infer<typeof verifyEmailBody>;
+export type ResendVerificationBody = z.infer<typeof resendVerificationBody>;
 export type LoginBody = z.infer<typeof loginBody>;
