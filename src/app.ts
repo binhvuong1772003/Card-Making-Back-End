@@ -1,23 +1,50 @@
-import express, { NextFunction, Request, Response } from 'express';
+import { randomUUID } from 'node:crypto';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import morgan from 'morgan';
+import express, { Router } from 'express';
+import helmet from 'helmet';
+import pinoHttp from 'pino-http';
+import { env } from './config/env';
+import { errorHandler, notFoundHandler } from './http/error-handler';
+import { originCheck } from './http/origin';
 import systemRoutes from './http/system.routes';
+import { logger } from './infra/logger';
+import { createAuthRouter } from './modules/auth/auth.routes';
 
-const app = express();
+export interface AppOptions {
+  authRateLimit?: number;
+}
 
-app.use(cors());
-app.use(morgan('dev'));
-app.use(express.json());
+const REQUEST_ID = /^[\w.-]{1,100}$/;
 
-app.use(systemRoutes);
+export function createApp(options: AppOptions = {}): express.Express {
+  const app = express();
+  app.set('trust proxy', env.TRUST_PROXY);
 
-app.use((req: Request, res: Response) => {
-  res.status(404).json({ message: 'Not found' });
-});
+  app.use(helmet());
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId: (req, res) => {
+        const incoming = req.headers['x-request-id'];
+        const id = typeof incoming === 'string' && REQUEST_ID.test(incoming) ? incoming : randomUUID();
+        res.setHeader('x-request-id', id);
+        return id;
+      },
+    }),
+  );
+  app.use(cors({ origin: env.CORS_ORIGINS, credentials: true }));
+  app.use(express.json({ limit: '1mb' }));
+  app.use(cookieParser());
+  app.use(originCheck);
 
-app.use((err: Error & { status?: number }, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
-  res.status(err.status || 500).json({ message: err.message || 'Internal server error' });
-});
+  app.use(systemRoutes);
 
-export default app;
+  const api = Router();
+  api.use('/auth', createAuthRouter({ rateLimit: options.authRateLimit ?? env.AUTH_RATE_LIMIT }));
+  app.use('/api/v1', api);
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+  return app;
+}
