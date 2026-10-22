@@ -2,7 +2,7 @@
 
 Backend for **CardMaking**, a web app where people design greeting cards and invitations online, publish them as shareable web pages, and edit them together in real time.
 
-> 🚧 **Status:** early scaffolding. The project structure, tooling and dependencies are in place and a health endpoint runs; the feature modules are placeholders and are being implemented one by one.
+> 🚧 **Status:** early development. Email and password sign-up, sign-in, sign-out and `/me` work (email verification and refresh tokens come next); the remaining feature modules are placeholders and are being implemented one by one.
 
 ## ✨ What is CardMaking?
 
@@ -84,7 +84,7 @@ CMBE/
 
 - Node.js 22 or newer
 - MongoDB running as a replica set (Atlas works out of the box)
-- Redis
+- Redis (only once background jobs land; not needed for sign-up and sign-in)
 
 ### 📦 Install and run
 
@@ -94,7 +94,9 @@ cp .env.example .env
 npm run dev
 ```
 
-The current scaffold only needs `PORT`; open `http://localhost:3000/health` to check it is running.
+At minimum set `DATABASE_URL` (MongoDB replica set) and `JWT_SECRET` (32 or more characters) in `.env`; every other variable has a default. Open `http://localhost:3000/health` to check the server is running.
+
+Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /login`, `GET /me`, `POST /logout`.
 
 ### 📜 Scripts
 
@@ -103,6 +105,7 @@ The current scaffold only needs `PORT`; open `http://localhost:3000/health` to c
 | `npm run dev` | Start the server with live reload (tsx) |
 | `npm run build` | Compile TypeScript and copy `.graphql` files to `dist/` |
 | `npm start` | Run the compiled server from `dist/` |
+| `npm test` | Run the tests against an in-memory MongoDB replica set (the first run downloads a `mongod` binary) |
 
 ## ⚙️ Environment Variables
 
@@ -116,6 +119,7 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 | `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE` | Access token signing and validation |
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL`, `SESSION_MAX_AGE`, `REFRESH_GRACE_SECONDS` | Session lifetimes |
 | `CORS_ORIGINS`, `TRUST_PROXY` | Allowed origins and reverse proxy setting |
+| `COOKIE_SAMESITE`, `AUTH_RATE_LIMIT` | Auth cookie SameSite mode and sign-in/sign-up attempts per IP per 15 minutes |
 | `GOOGLE_CLIENT_ID` | Google sign-in |
 | `UPLOAD_DIR`, `API_URL` | Local file storage and public API URL |
 | `LOG_LEVEL` | Logging verbosity |
@@ -124,13 +128,15 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 ## 🗺️ Roadmap
 
 - [x] Project structure, tooling and dependencies
-- [ ] Environment validation, logging, error handling
-- [ ] Google sign-in, sessions and refresh token rotation
+- [x] Environment validation, logging, error handling
+- [x] Email and password sign-up, sign-in, sign-out (email verification pending)
+- [ ] Refresh token rotation and sign-out everywhere
+- [ ] Google sign-in
 - [ ] Cards, operation API and permissions
 - [ ] Publishing and public card endpoints
 - [ ] Image uploads
 - [ ] Real-time collaboration over WebSocket
 - [ ] Background jobs
-- [ ] Email and password login
+- [ ] Email verification and password reset
 - [ ] Templates
 - [ ] MCP server
