@@ -2,7 +2,7 @@
 
 Backend for **CardMaking**, a web app where people design greeting cards and invitations online, publish them as shareable web pages, and edit them together in real time.
 
-> 🚧 **Status:** early development. Email and password sign-up, sign-in, sign-out and `/me` work (email verification and refresh tokens come next); the remaining feature modules are placeholders and are being implemented one by one.
+> 🚧 **Status:** early development. Email and password sign-up, sign-in, sign-out and `/me` work, including email verification (refresh tokens come next); the remaining feature modules are placeholders and are being implemented one by one.
 
 ## ✨ What is CardMaking?
 
@@ -99,9 +99,9 @@ At minimum set `DATABASE_URL` (MongoDB replica set), `REDIS_URL` and `JWT_SECRET
 
 The API and the background worker are two separate processes, so run them in two terminals (`npm run dev` and `npm run dev:worker`). In production run `npm start` and `npm run start:worker` as two services that share the same `REDIS_URL` and `QUEUE_PREFIX`.
 
-**Sending email.** Registration queues a verification email, and the **worker** sends it, so `npm run dev:worker` must be running. By default `MAIL_TRANSPORT=log` only writes the email to the worker log. To send through Gmail, turn on 2-Step Verification for the account, create an App Password at <https://myaccount.google.com/apppasswords>, and set `MAIL_TRANSPORT=gmail`, `GMAIL_USER` and `GMAIL_APP_PASSWORD` in `.env` (never commit or share them). Personal Gmail is limited to roughly 500 recipients per day and is meant for early development only. The confirmation link points to `FRONTEND_URL/verify-email?token=...`; the page and endpoint that accept it are not built yet.
+**Sending email.** Registration queues a verification email, and the **worker** sends it, so `npm run dev:worker` must be running. By default `MAIL_TRANSPORT=log` only writes the email to the worker log. To send through Gmail, turn on 2-Step Verification for the account, create an App Password at <https://myaccount.google.com/apppasswords>, and set `MAIL_TRANSPORT=gmail`, `GMAIL_USER` and `GMAIL_APP_PASSWORD` in `.env` (never commit or share them). Personal Gmail is limited to roughly 500 recipients per day and is meant for early development only. The confirmation link points to `FRONTEND_URL/verify-email?token=...`. That page must read the token, send it with `POST /api/v1/auth/verify-email` (a POST, so mail scanners cannot consume the token), and remove it from the URL; the frontend page is not built yet.
 
-Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /login`, `GET /me`, `POST /logout`.
+Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /verify-email`, `POST /resend-verification`, `POST /login` (returns `403 EMAIL_NOT_VERIFIED` until the email is confirmed), `GET /me`, `POST /logout`.
 
 ### 📜 Scripts
 
@@ -145,6 +145,7 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 - [ ] Real-time collaboration over WebSocket
 - [x] Background job infrastructure (Redis and BullMQ)
 - [x] Verification email sending (Gmail SMTP through the background worker)
-- [ ] Email confirmation endpoint, resend, and password reset
+- [x] Email confirmation, resend verification and the unverified-login gate
+- [ ] Password reset
 - [ ] Templates
 - [ ] MCP server
