@@ -1,5 +1,6 @@
 import type { Request, RequestHandler } from 'express';
 import type { LoginBody, RegisterBody, ResendVerificationBody, VerifyEmailBody } from './auth.schema';
+import { AppError } from '../../shared/errors';
 import * as authService from './auth.service';
 import { clearAuthCookies, names, setAuthCookies } from './cookies';
 
@@ -37,6 +38,24 @@ export const me: RequestHandler = async (_req, res) => {
 
 export const logout: RequestHandler = async (req, res) => {
   await authService.logout(req.cookies?.[names.refresh]);
+  clearAuthCookies(res);
+  res.status(204).end();
+};
+
+export const refresh: RequestHandler = async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    setAuthCookies(res, await authService.refreshSession(req.cookies?.[names.refresh], clientMeta(req)));
+    res.json({ refreshed: true });
+  } catch (err) {
+    // Token không dùng được nữa thì xóa cookie; xung đột nhẹ (REFRESH_CONFLICT) giữ nguyên cookie mà tab kia vừa đặt.
+    if (err instanceof AppError && err.code === 'UNAUTHENTICATED') clearAuthCookies(res);
+    throw err;
+  }
+};
+
+export const logoutAll: RequestHandler = async (_req, res) => {
+  await authService.logoutAll(res.locals.auth!.userId);
   clearAuthCookies(res);
   res.status(204).end();
 };

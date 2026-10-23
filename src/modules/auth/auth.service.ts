@@ -26,6 +26,7 @@ export interface SessionMeta {
 }
 
 export interface IssuedSession {
+  sessionId: string;
   accessToken: string;
   refreshToken: string;
   refreshMaxAgeMs: number;
@@ -80,11 +81,13 @@ export async function register(input: RegisterBody): Promise<void> {
   }
 }
 
-// Một lần đăng nhập = một họ phiên (familyId). Refresh và Google sau này dùng lại hàm này.
+// Một lần đăng nhập = một họ phiên (familyId). Đăng nhập mật khẩu, Google và refresh đều dùng hàm này;
+// `db` để refresh tạo phiên mới trong cùng transaction với việc đánh dấu phiên cũ.
 export async function createSession(
   userId: string,
   meta: SessionMeta,
   family?: { familyId: string; familyStartedAt: Date },
+  db: Prisma.TransactionClient | typeof prisma = prisma,
 ): Promise<IssuedSession> {
   const now = Date.now();
   const familyId = family?.familyId ?? randomUUID();
@@ -92,7 +95,7 @@ export async function createSession(
   const expiresAt = Math.min(now + env.refreshTtlMs, familyStartedAt.getTime() + env.sessionMaxAgeMs);
 
   const refreshToken = generateOpaqueToken();
-  const session = await prisma.session.create({
+  const session = await db.session.create({
     data: {
       userId,
       familyId,
@@ -104,7 +107,7 @@ export async function createSession(
     },
   });
   const accessToken = await signAccessToken({ userId, sessionId: session.id });
-  return { accessToken, refreshToken, refreshMaxAgeMs: expiresAt - now };
+  return { sessionId: session.id, accessToken, refreshToken, refreshMaxAgeMs: expiresAt - now };
 }
 
 export async function login(input: LoginBody, meta: SessionMeta): Promise<{ user: PublicUser; session: IssuedSession }> {
@@ -190,14 +193,76 @@ export async function getMe(userId: string): Promise<PublicUser> {
   return toPublicUser(user);
 }
 
+// Prisma trên MongoDB không ghi null cho trường tùy chọn chưa đặt, nên "chưa thu hồi/chưa xoay" phải khớp cả vắng mặt lẫn null.
+const NOT_REVOKED = [{ revokedAt: { isSet: false } }, { revokedAt: null }];
+const NOT_ROTATED = [{ rotatedAt: { isSet: false } }, { rotatedAt: null }];
+
+const revokeFamily = (familyId: string) =>
+  prisma.session.updateMany({ where: { familyId, OR: NOT_REVOKED }, data: { revokedAt: new Date() } });
+
 // Thu hồi cả họ phiên của lần đăng nhập này. Không có cookie hay token lạ thì không làm gì.
 export async function logout(refreshToken: string | undefined): Promise<void> {
   if (!refreshToken) return;
   const session = await prisma.session.findUnique({ where: { tokenHash: hashOpaqueToken(refreshToken) } });
   if (!session) return;
-  // Prisma trên MongoDB không ghi null cho trường tùy chọn chưa đặt, nên "chưa thu hồi" phải khớp cả vắng mặt lẫn null.
-  await prisma.session.updateMany({
-    where: { familyId: session.familyId, OR: [{ revokedAt: { isSet: false } }, { revokedAt: null }] },
-    data: { revokedAt: new Date() },
-  });
+  await revokeFamily(session.familyId);
+}
+
+// Đăng xuất mọi thiết bị: thu hồi mọi họ phiên của user. (Sự kiện đóng socket sẽ thêm khi có event bus.)
+export async function logoutAll(userId: string): Promise<void> {
+  await prisma.session.updateMany({ where: { userId, OR: NOT_REVOKED }, data: { revokedAt: new Date() } });
+}
+
+const unauthenticated = () => new AppError('UNAUTHENTICATED', 'Authentication required');
+
+// Phiên đã xoay mà bị đem ra dùng lại. Trong cửa sổ ân hạn đó là hai tab refresh cùng lúc (lỗi nhẹ, không thu hồi,
+// client thử lại bằng cookie mới); muộn hơn thì token đã lọt ra ngoài: thu hồi cả họ phiên.
+async function rejectRotated(sessionId: string): Promise<never> {
+  const current = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!current || current.revokedAt) throw unauthenticated();
+  // Chưa xoay mà lệnh ghi vẫn thua: một request khác đang xoay dở. Cũng là xung đột nhẹ, không được xóa cookie
+  // (phản hồi 401 đến muộn sẽ xóa mất cookie mới mà request thắng vừa đặt).
+  if (!current.rotatedAt || Date.now() - current.rotatedAt.getTime() <= env.refreshGraceMs) {
+    throw new AppError('REFRESH_CONFLICT', 'Token was just refreshed, retry with the new cookie');
+  }
+  await revokeFamily(current.familyId);
+  logger.warn({ userId: current.userId, familyId: current.familyId }, 'refresh token reuse detected, session family revoked');
+  throw unauthenticated();
+}
+
+// Đổi refresh token lấy cặp token mới. Mỗi refresh token dùng được đúng một lần (xoay vòng).
+export async function refreshSession(refreshToken: string | undefined, meta: SessionMeta): Promise<IssuedSession> {
+  if (!refreshToken) throw unauthenticated();
+  const session = await prisma.session.findUnique({ where: { tokenHash: hashOpaqueToken(refreshToken) } });
+  const now = Date.now();
+  if (
+    !session ||
+    session.revokedAt ||
+    session.expiresAt.getTime() <= now ||
+    session.familyStartedAt.getTime() + env.sessionMaxAgeMs <= now
+  ) {
+    throw unauthenticated();
+  }
+  if (session.rotatedAt) return rejectRotated(session.id);
+
+  const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { id: true } });
+  if (!user) throw unauthenticated();
+
+  try {
+    const issued = await prisma.$transaction(async (tx) => {
+      // Lệnh ghi có điều kiện là cái khóa: hai request cùng token thì đúng một bên đánh dấu được (rotatedAt chưa đặt).
+      const claimed = await tx.session.updateMany({
+        where: { id: session.id, AND: [{ OR: NOT_ROTATED }, { OR: NOT_REVOKED }] },
+        data: { rotatedAt: new Date(now) },
+      });
+      if (claimed.count === 0) return null;
+      const next = await createSession(session.userId, meta, { familyId: session.familyId, familyStartedAt: session.familyStartedAt }, tx);
+      await tx.session.update({ where: { id: session.id }, data: { replacedById: next.sessionId } });
+      return next;
+    });
+    if (issued) return issued;
+  } catch (err) {
+    if (!isWriteConflict(err)) throw err; // bên thua trong cuộc đua có thể nhận P2034 thay vì count = 0
+  }
+  return rejectRotated(session.id);
 }

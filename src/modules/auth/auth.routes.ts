@@ -29,7 +29,10 @@ export function createAuthRouter(options: { rateLimit: number; google: GoogleOAu
   router.post('/login', limiter(options.rateLimit), validateBody(loginBody), controller.login);
   router.post('/verify-email', limiter(options.rateLimit), validateBody(verifyEmailBody), controller.verifyEmail);
   router.post('/resend-verification', limiter(options.rateLimit), validateBody(resendVerificationBody), controller.resendVerification);
+  // Refresh được gọi đều đặn (mỗi ~15 phút mỗi thiết bị), nhiều người sau một NAT, nên giới hạn nới hơn đăng nhập.
+  router.post('/refresh', limiter(options.rateLimit * 10), controller.refresh);
   router.get('/me', requireAuth, controller.me);
   router.post('/logout', controller.logout);
+  router.post('/logout-all', requireAuth, controller.logoutAll);
   return router;
 }

@@ -43,6 +43,8 @@ const schema = z.object({
   ACCESS_TOKEN_TTL: duration.default('15m'),
   REFRESH_TOKEN_TTL: duration.default('30d'),
   SESSION_MAX_AGE: duration.default('90d'),
+  // Sau khi xoay, token cũ bị dùng lại trong khoảng này chỉ báo xung đột nhẹ (hai tab refresh cùng lúc), không thu hồi.
+  REFRESH_GRACE_SECONDS: z.coerce.number().int().min(0).max(300).default(10),
   CORS_ORIGINS: z.string().default('http://localhost:3001'),
   TRUST_PROXY: z.string().default('false'),
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
@@ -105,6 +107,7 @@ export const env = {
   accessTtlMs: toMs(raw.ACCESS_TOKEN_TTL),
   refreshTtlMs: toMs(raw.REFRESH_TOKEN_TTL),
   sessionMaxAgeMs: toMs(raw.SESSION_MAX_AGE),
+  refreshGraceMs: raw.REFRESH_GRACE_SECONDS * 1000,
   emailVerifyTtlMs: toMs(raw.EMAIL_VERIFY_TTL),
   googleEnabled: Boolean(raw.GOOGLE_CLIENT_ID && raw.GOOGLE_CLIENT_SECRET),
   GOOGLE_REDIRECT_URI: raw.GOOGLE_REDIRECT_URI ?? `http://localhost:${raw.PORT}/api/v1/auth/google/callback`,

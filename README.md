@@ -2,7 +2,7 @@
 
 Backend for **CardMaking**, a web app where people design greeting cards and invitations online, publish them as shareable web pages, and edit them together in real time.
 
-> 🚧 **Status:** early development. Email and password sign-up, sign-in, sign-out and `/me` work, including email verification (refresh tokens come next); the remaining feature modules are placeholders and are being implemented one by one.
+> 🚧 **Status:** early development. Email and password sign-up, sign-in, sign-out and `/me` work, including email verification, Google sign-in and rotating refresh tokens; the remaining feature modules are placeholders and are being implemented one by one.
 
 ## ✨ What is CardMaking?
 
@@ -13,7 +13,7 @@ Users build a card visually: drop text where they want it, pick colors and fonts
 - 🎨 **Card editor model**: a card is a JSON document with a canvas and an ordered list of elements (text, image, shape), each with position, size, rotation, opacity and animation.
 - 🌐 **Publishing**: separate draft and published snapshot, public URL by slug, unpublish without losing the link, SEO controls (`indexable` flag, sitemap).
 - 🤝 **Real-time collaboration**: operation-based editing over WebSocket with the server as the single source of truth, roles (owner, editor, viewer) and invite links.
-- 🔐 **Authentication**: email and password sign-in with email verification, Google sign-in, short-lived access tokens (refresh token rotation is not built yet).
+- 🔐 **Authentication**: email and password sign-in with email verification, Google sign-in, short-lived access tokens with rotating refresh tokens.
 - 🖼️ **Image uploads** with content-based type checks.
 - 🧠 **MCP integration** (phase 2): lets an AI assistant create and edit cards through the same operation API the editor uses.
 
@@ -101,8 +101,9 @@ The API and the background worker are two separate processes, so run them in two
 
 **Sending email.** Registration queues a verification email, and the **worker** sends it, so `npm run dev:worker` must be running. By default `MAIL_TRANSPORT=log` only writes the email to the worker log. To send through Gmail, turn on 2-Step Verification for the account, create an App Password at <https://myaccount.google.com/apppasswords>, and set `MAIL_TRANSPORT=gmail`, `GMAIL_USER` and `GMAIL_APP_PASSWORD` in `.env` (never commit or share them). Personal Gmail is limited to roughly 500 recipients per day and is meant for early development only. The confirmation link points to `FRONTEND_URL/verify-email?token=...`. That page must read the token, send it with `POST /api/v1/auth/verify-email` (a POST, so mail scanners cannot consume the token), and remove it from the URL; the frontend page is not built yet.
 
-Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /verify-email`, `POST /resend-verification`, `POST /login` (returns `403 EMAIL_NOT_VERIFIED` until the email is confirmed), `GET /me`, `POST /logout`.
+Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /verify-email`, `POST /resend-verification`, `POST /login` (returns `403 EMAIL_NOT_VERIFIED` until the email is confirmed), `POST /refresh`, `GET /me`, `POST /logout`, `POST /logout-all`.
 
+**Refresh tokens.** Sign-in (password or Google) sets an `access` cookie (15 minutes) and a `refresh` cookie (30 days sliding, 90 days absolute). When an API call returns `401`, call `POST /api/v1/auth/refresh` once (one refresh at a time across tabs), then retry the original request once. A refresh token works exactly once: every refresh returns a new pair. `409 REFRESH_CONFLICT` means another tab just refreshed, so retry with the cookies the browser now holds. `401` from `/refresh` means the session is over; send the user to the login page. Reusing an already-rotated token after `REFRESH_GRACE_SECONDS` revokes the whole session as a theft signal.
 
 **Google sign-in.** `GET /api/v1/auth/google/start[?returnTo=/path]` redirects the browser to Google (authorization-code flow with PKCE); Google returns to `GET /api/v1/auth/google/callback`, which sets the session cookies and always answers with a `302` to the frontend: success goes to `FRONTEND_URL` + `returnTo` (default `/`), failure goes to `FRONTEND_URL/login?error=<code>` with `cancelled`, `invalid_state`, `google_failed`, `email_unverified`, `account_conflict` or `server_error`. Start the flow from a normal link or `window.location` (not `fetch`). If Google is not configured, `start` returns `503`. Setup: create a Web OAuth client in Google Cloud Console, register `http://localhost:3000/api/v1/auth/google/callback` as an authorized redirect URI, add yourself as a test user while the consent screen is in Testing, and put the client ID and secret only in `.env`.
 
@@ -142,7 +143,7 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 - [x] Project structure, tooling and dependencies
 - [x] Environment validation, logging, error handling
 - [x] Email and password sign-up, sign-in, sign-out (email verification pending)
-- [ ] Refresh token rotation and sign-out everywhere
+- [x] Refresh token rotation and sign-out everywhere
 - [x] Google sign-in (backend redirect flow)
 - [ ] Cards, operation API and permissions
 - [ ] Publishing and public card endpoints

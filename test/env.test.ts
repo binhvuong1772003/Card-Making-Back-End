@@ -65,6 +65,13 @@ describe('environment parsing', () => {
     expect(on.GOOGLE_REDIRECT_URI).toBe('http://localhost:3000/cb');
   });
 
+  it('reads the refresh grace window in seconds and rejects nonsense', async () => {
+    expect((await loadEnv({ REFRESH_GRACE_SECONDS: undefined })).refreshGraceMs).toBe(10_000);
+    expect((await loadEnv({ REFRESH_GRACE_SECONDS: '0' })).refreshGraceMs).toBe(0);
+    await expect(loadEnv({ REFRESH_GRACE_SECONDS: '-1' })).rejects.toThrow(/REFRESH_GRACE_SECONDS/);
+    await expect(loadEnv({ REFRESH_GRACE_SECONDS: '9999' })).rejects.toThrow(/REFRESH_GRACE_SECONDS/);
+  });
+
   it('refuses the log transport in production', async () => {
     await expect(loadEnv({ NODE_ENV: 'production', MAIL_TRANSPORT: 'log' })).rejects.toThrow(/MAIL_TRANSPORT/);
   });
