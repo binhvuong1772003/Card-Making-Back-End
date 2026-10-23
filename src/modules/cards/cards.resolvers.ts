@@ -2,11 +2,24 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { GraphqlContext } from '../../graphql/context';
 import { requireUser } from '../../graphql/guards';
-import { createCardInput, parseCardId, updateCardTitleInput } from './cards.schema';
+import { createCardInput, listCardsArgs, parseCardId, updateCardTitleInput } from './cards.schema';
 import * as cardsService from './cards.service';
 
 // Resolver chỉ làm thủ tục: đăng nhập, kiểm đầu vào, gọi service. Các trường của Card tự lấy từ object service trả về.
 const resolvers = {
+  Query: {
+    cards: (_parent: unknown, args: { first?: number | null; after?: string | null }, ctx: GraphqlContext) => {
+      const actor = requireUser(ctx);
+      // Giá trị null tường minh từ client được coi như không truyền.
+      return cardsService.listCards(actor, listCardsArgs.parse({ first: args.first ?? undefined, after: args.after ?? undefined }));
+    },
+
+    card: (_parent: unknown, args: { id: unknown }, ctx: GraphqlContext) => {
+      const actor = requireUser(ctx);
+      return cardsService.getCard(actor, parseCardId(args.id));
+    },
+  },
+
   Mutation: {
     createCard: (_parent: unknown, args: { input: unknown }, ctx: GraphqlContext) => {
       const actor = requireUser(ctx);

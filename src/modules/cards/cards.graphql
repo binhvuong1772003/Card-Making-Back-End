@@ -19,6 +19,38 @@ type Card {
   updatedAt: DateTime!
 }
 
+type PageInfo {
+  hasNextPage: Boolean!
+  """Con trỏ của phần tử cuối trang; truyền vào `after` để lấy trang kế. Null khi trang rỗng."""
+  endCursor: String
+}
+
+type CardConnection {
+  nodes: [Card!]!
+  pageInfo: PageInfo!
+}
+
+"""Chi tiết một thiệp: các trường của Card cộng bản nháp."""
+type CardDetail {
+  id: ID!
+  title: String!
+  revision: Int!
+  role: CardRole!
+  ownerId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  """Bản nháp. Cấu trúc chưa chốt nên hiện chỉ là JSON nguyên xi."""
+  document: JSON!
+}
+
+extend type Query {
+  """Thiệp của người đang gọi (sở hữu và được chia sẻ), mới sửa nhất lên đầu. first từ 1 đến 50, mặc định 20."""
+  cards(first: Int = 20, after: String): CardConnection!
+
+  """Chi tiết một thiệp; NOT_FOUND nếu không tồn tại hoặc người gọi không liên quan."""
+  card(id: ID!): CardDetail
+}
+
 # Module đầu tiên khai báo Mutation; các module sau dùng `extend type Mutation`.
 type Mutation {
   """Tạo thiệp mới; người gọi là chủ sở hữu."""

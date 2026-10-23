@@ -2,7 +2,7 @@ import { Prisma, type Card } from '@prisma/client';
 import { prisma } from '../../infra/prisma';
 import { AppError } from '../../shared/errors';
 import { can, roleOf, type CardAccessRole, type CardAction } from './cards.access';
-import type { CreateCardInput, UpdateCardTitleInput } from './cards.schema';
+import { decodeCursor, encodeCursor, type CreateCardInput, type ListCardsArgs, type UpdateCardTitleInput } from './cards.schema';
 
 // Hình dạng trả cho tầng giao tiếp: không có document (cấu trúc nội dung chưa chốt nên chưa đưa ra API).
 export interface CardView {
@@ -13,6 +13,16 @@ export interface CardView {
   ownerId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Chi tiết một thiệp: thêm bản nháp. Hình dạng của document chưa chốt nên chỉ chuyển nguyên xi.
+export interface CardDetailView extends CardView {
+  document: unknown;
+}
+
+export interface CardPage {
+  nodes: CardView[];
+  pageInfo: { hasNextPage: boolean; endCursor: string | null };
 }
 
 type CardRow = Pick<Card, 'id' | 'title' | 'revision' | 'ownerId' | 'members' | 'createdAt' | 'updatedAt'>;
@@ -99,4 +109,37 @@ export async function deleteCard(actor: string, id: string): Promise<void> {
       if (attempt >= 1 || !isWriteConflict(err)) throw err;
     }
   }
+}
+
+// Thiệp của người gọi: thiệp họ sở hữu và thiệp được chia sẻ. userId luôn là actor, không nhận từ client (không thể xem
+// danh sách của người khác). Mới nhất lên đầu; không tải document.
+export async function listCards(actor: string, args: ListCardsArgs): Promise<CardPage> {
+  const cursor = args.after ? decodeCursor(args.after) : undefined;
+  const rows = await prisma.card.findMany({
+    where: {
+      AND: [
+        { OR: [{ ownerId: actor }, { members: { some: { userId: actor } } }] },
+        ...(cursor
+          ? [{ OR: [{ updatedAt: { lt: cursor.updatedAt } }, { updatedAt: cursor.updatedAt, id: { lt: cursor.id } }] }]
+          : []),
+      ],
+    },
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    take: args.first + 1, // lấy dư một dòng để biết còn trang sau
+    omit: { document: true },
+  });
+  const page = rows.slice(0, args.first);
+  const last = page[page.length - 1];
+  return {
+    nodes: page.map((card) => toCardView(card, actor)),
+    pageInfo: { hasNextPage: rows.length > args.first, endCursor: last ? encodeCursor(last) : null },
+  };
+}
+
+// Chi tiết một thiệp kèm bản nháp. Người không liên quan và id không tồn tại cùng nhận NOT_FOUND.
+export async function getCard(actor: string, id: string): Promise<CardDetailView> {
+  const card = await prisma.card.findUnique({ where: { id } });
+  const role = card && roleOf(card, actor);
+  if (!card || !role || !can(role, 'view')) throw new AppError('NOT_FOUND', 'Card not found');
+  return { ...toCardView(card, actor), document: card.document };
 }
