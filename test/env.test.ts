@@ -72,6 +72,11 @@ describe('environment parsing', () => {
     await expect(loadEnv({ REFRESH_GRACE_SECONDS: '9999' })).rejects.toThrow(/REFRESH_GRACE_SECONDS/);
   });
 
+  it('defaults the /graphql rate limit and rejects nonsense', async () => {
+    expect((await loadEnv({ GRAPHQL_RATE_LIMIT: undefined })).GRAPHQL_RATE_LIMIT).toBe(1000);
+    await expect(loadEnv({ GRAPHQL_RATE_LIMIT: '0' })).rejects.toThrow(/GRAPHQL_RATE_LIMIT/);
+  });
+
   it('refuses the log transport in production', async () => {
     await expect(loadEnv({ NODE_ENV: 'production', MAIL_TRANSPORT: 'log' })).rejects.toThrow(/MAIL_TRANSPORT/);
   });

@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { createApp } from './app';
+import { createApp, defaultGraphql } from './app';
 import { env } from './config/env';
 import { logger } from './infra/logger';
 import { prisma } from './infra/prisma';
@@ -14,13 +14,17 @@ async function main(): Promise<void> {
   await warmUpAuth();
   if (env.RUN_WORKERS) startWorkers();
 
-  const server = http.createServer(createApp());
+  const graphql = defaultGraphql();
+  await graphql.start(); // lỗi cấu hình GraphQL làm server dừng ngay lúc khởi động
+
+  const server = http.createServer(createApp({ graphql }));
   server.listen(env.PORT, () => logger.info({ port: env.PORT }, 'CMBE listening'));
 
   // Thứ tự tắt: ngừng nhận kết nối, worker và queue, Redis, rồi Prisma.
   const shutdown = (signal: string): void => {
     logger.info({ signal }, 'shutting down');
     server.close(async () => {
+      await graphql.stop();
       await closeQueueing();
       await closeRedis();
       await prisma.$disconnect();

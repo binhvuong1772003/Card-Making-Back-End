@@ -8,7 +8,10 @@ import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './http/error-handler';
 import { originCheck } from './http/origin';
 import systemRoutes from './http/system.routes';
+import { createGraphql, type Graphql } from './graphql/create-graphql';
+import { rateLimiter } from './http/rate-limit';
 import { logger, requestSerializer } from './infra/logger';
+import { authenticate } from './modules/auth/authenticate';
 import { createAuthRouter } from './modules/auth/auth.routes';
 import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
 
@@ -16,7 +19,13 @@ export interface AppOptions {
   authRateLimit?: number;
   // Không truyền: dùng bộ chuyển đổi thật nếu env có cấu hình Google. `null`: tắt Google (test).
   google?: GoogleOAuth | null;
+  // Không truyền: dùng bản mặc định (defaultGraphql). Test truyền bản có module giả.
+  graphql?: Graphql;
+  graphqlRateLimit?: number;
 }
+
+// Nơi ghép các module GraphQL; thêm module mới vào mảng này.
+export const defaultGraphql = (): Graphql => createGraphql({ modules: [], authenticate });
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
 
@@ -51,6 +60,8 @@ export function createApp(options: AppOptions = {}): express.Express {
     }),
   );
   app.use('/api/v1', api);
+
+  app.use('/graphql', rateLimiter(options.graphqlRateLimit ?? env.GRAPHQL_RATE_LIMIT), (options.graphql ??= defaultGraphql()).handler);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

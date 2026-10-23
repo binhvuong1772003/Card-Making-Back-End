@@ -49,6 +49,7 @@ const schema = z.object({
   TRUST_PROXY: z.string().default('false'),
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(20),
+  GRAPHQL_RATE_LIMIT: z.coerce.number().int().positive().default(1000), // yêu cầu /graphql mỗi IP mỗi 15 phút
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
   // Gửi email. `log` chỉ ghi ra log (dev); `gmail` gửi thật qua SMTP của Gmail bằng App Password.

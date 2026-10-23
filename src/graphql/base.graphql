@@ -1,0 +1,15 @@
+"""Chuỗi ngày giờ ISO 8601, ví dụ 2026-10-23T02:09:28.705Z."""
+scalar DateTime
+
+"""Một giá trị JSON bất kỳ. GraphQL không kiểm tra bên trong; việc đó do schema Zod của module làm."""
+scalar JSON
+
+type Query {
+  """Kiểm tra kết nối; không cần đăng nhập."""
+  ping: String!
+}
+
+type Mutation {
+  """Giữ chỗ vì Mutation cần ít nhất một trường. Xóa khi module đầu tiên thêm mutation thật."""
+  _empty: Boolean
+}
