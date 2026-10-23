@@ -28,7 +28,7 @@ const typeDefs = `
     one: Int
     two: Int
   }
-  extend type Mutation { rename(title: String!): String! }
+  type Mutation { rename(title: String!): String! }
 `;
 const makeDeep = (n: number): { value: number; next: () => unknown } => ({ value: n, next: () => makeDeep(n + 1) });
 const resolvers = {

@@ -13,6 +13,7 @@ import { rateLimiter } from './http/rate-limit';
 import { logger, requestSerializer } from './infra/logger';
 import { authenticate } from './modules/auth/authenticate';
 import { createAuthRouter } from './modules/auth/auth.routes';
+import { cardsModule } from './modules/cards/cards.resolvers';
 import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
 
 export interface AppOptions {
@@ -25,7 +26,7 @@ export interface AppOptions {
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
-export const defaultGraphql = (): Graphql => createGraphql({ modules: [], authenticate });
+export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule], authenticate });
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
 

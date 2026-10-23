@@ -1,1 +1,26 @@
-# SDL: cards, card, createCard, updateCardTitle, deleteCard.
+enum CardRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+input CreateCardInput {
+  title: String!
+}
+
+type Card {
+  id: ID!
+  title: String!
+  revision: Int!
+  """Vai trò của người đang gọi trên thiệp này."""
+  role: CardRole!
+  ownerId: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Module đầu tiên khai báo Mutation; các module sau dùng `extend type Mutation`.
+type Mutation {
+  """Tạo thiệp mới; người gọi là chủ sở hữu."""
+  createCard(input: CreateCardInput!): Card!
+}

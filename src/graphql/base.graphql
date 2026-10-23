@@ -9,7 +9,4 @@ type Query {
   ping: String!
 }
 
-type Mutation {
-  """Giữ chỗ vì Mutation cần ít nhất một trường. Xóa khi module đầu tiên thêm mutation thật."""
-  _empty: Boolean
-}
+# Mutation do module đầu tiên cần nó khai báo (hiện là cards); các module sau dùng `extend type Mutation`.
