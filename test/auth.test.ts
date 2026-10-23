@@ -243,7 +243,7 @@ describe('rate limit', () => {
 describe('cookie options', () => {
   it('uses prefixed, Secure cookies in production and scopes the refresh cookie to /api/v1/auth', () => {
     const config = { isProduction: true, sameSite: 'lax' as const };
-    expect(cookieNames(true)).toEqual({ access: '__Host-access', refresh: '__Secure-refresh' });
+    expect(cookieNames(true)).toEqual({ access: '__Host-access', refresh: '__Secure-refresh', googleState: '__Secure-google_oauth' });
     expect(accessCookieOptions(config)).toMatchObject({ httpOnly: true, secure: true, path: '/', sameSite: 'lax' });
     expect(accessCookieOptions(config)).not.toHaveProperty('domain'); // __Host- không cho phép Domain
     expect(refreshCookieOptions(config)).toMatchObject({ httpOnly: true, secure: true, path: '/api/v1/auth' });

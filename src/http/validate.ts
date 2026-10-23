@@ -8,3 +8,11 @@ export const validateBody =
     res.locals.body = schema.parse(req.body);
     next();
   };
+
+// Tương tự cho query string, đặt vào res.locals.query.
+export const validateQuery =
+  (schema: ZodType): RequestHandler =>
+  (req, res, next) => {
+    res.locals.query = schema.parse(req.query);
+    next();
+  };

@@ -9,7 +9,10 @@ const duration = z.string().regex(/^\d+[smhd]$/, 'use a number followed by s, m,
 const UNIT_MS = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 } as const;
 const toMs = (value: string): number => Number(value.slice(0, -1)) * UNIT_MS[value.at(-1) as keyof typeof UNIT_MS];
 
-const parseTrustProxy = (value: string): boolean | number | string => {
+// .env.example có dòng KEY= để trống; dotenv trả chuỗi rỗng, phải coi như chưa đặt.
+const emptyAsUnset = <T extends z.ZodType>(schema: T) => z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
+
+const parseTrustProxy =(value: string): boolean | number | string => {
   if (value === 'true') return true;
   if (value === 'false') return false;
   if (/^\d+$/.test(value)) return Number(value);
@@ -62,7 +65,19 @@ const schema = z.object({
     .refine((value) => /^https?:\/\//.test(value) && URL.canParse(value), 'must be an http(s) URL')
     .default('http://localhost:3001'),
   EMAIL_VERIFY_TTL: duration.default('24h'),
+
+  // Đăng nhập Google (luồng chuyển hướng). Để trống cả ID lẫn secret thì tính năng tắt (start trả 503).
+  GOOGLE_CLIENT_ID: emptyAsUnset(z.string().regex(/\.apps\.googleusercontent\.com$/, 'must end with .apps.googleusercontent.com')),
+  GOOGLE_CLIENT_SECRET: emptyAsUnset(z.string().min(1)),
+  // Địa chỉ callback đăng ký trong Google Cloud Console; cố định trong cấu hình, không bao giờ dựng từ header Host.
+  GOOGLE_REDIRECT_URI: emptyAsUnset(
+    z.string().refine((value) => /^https?:\/\//.test(value) && URL.canParse(value), 'must be an http(s) URL'),
+  ),
 }).superRefine((value, ctx) => {
+  if (Boolean(value.GOOGLE_CLIENT_ID) !== Boolean(value.GOOGLE_CLIENT_SECRET)) {
+    const missing = value.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_SECRET' : 'GOOGLE_CLIENT_ID';
+    ctx.addIssue({ code: 'custom', path: [missing], message: 'is required when the other Google variable is set' });
+  }
   if (value.MAIL_TRANSPORT === 'gmail') {
     for (const key of ['GMAIL_USER', 'GMAIL_APP_PASSWORD'] as const) {
       if (!value[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'is required when MAIL_TRANSPORT=gmail' });
@@ -91,6 +106,8 @@ export const env = {
   refreshTtlMs: toMs(raw.REFRESH_TOKEN_TTL),
   sessionMaxAgeMs: toMs(raw.SESSION_MAX_AGE),
   emailVerifyTtlMs: toMs(raw.EMAIL_VERIFY_TTL),
+  googleEnabled: Boolean(raw.GOOGLE_CLIENT_ID && raw.GOOGLE_CLIENT_SECRET),
+  GOOGLE_REDIRECT_URI: raw.GOOGLE_REDIRECT_URI ?? `http://localhost:${raw.PORT}/api/v1/auth/google/callback`,
   FRONTEND_URL: raw.FRONTEND_URL.replace(/\/+$/, ''),
   // Gmail luôn ghi đè From bằng chính tài khoản đã đăng nhập, nên mặc định dùng đúng địa chỉ đó.
   mailFrom: raw.MAIL_FROM ?? (raw.GMAIL_USER ? `CardMaking <${raw.GMAIL_USER}>` : 'CardMaking <no-reply@localhost>'),

@@ -8,11 +8,14 @@ import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './http/error-handler';
 import { originCheck } from './http/origin';
 import systemRoutes from './http/system.routes';
-import { logger } from './infra/logger';
+import { logger, requestSerializer } from './infra/logger';
 import { createAuthRouter } from './modules/auth/auth.routes';
+import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
 
 export interface AppOptions {
   authRateLimit?: number;
+  // Không truyền: dùng bộ chuyển đổi thật nếu env có cấu hình Google. `null`: tắt Google (test).
+  google?: GoogleOAuth | null;
 }
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
@@ -25,6 +28,7 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use(
     pinoHttp({
       logger,
+      serializers: { req: requestSerializer },
       genReqId: (req, res) => {
         const incoming = req.headers['x-request-id'];
         const id = typeof incoming === 'string' && REQUEST_ID.test(incoming) ? incoming : randomUUID();
@@ -41,7 +45,11 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use(systemRoutes);
 
   const api = Router();
-  api.use('/auth', createAuthRouter({ rateLimit: options.authRateLimit ?? env.AUTH_RATE_LIMIT }));
+  api.use('/auth', createAuthRouter({
+      rateLimit: options.authRateLimit ?? env.AUTH_RATE_LIMIT,
+      google: options.google === undefined ? defaultGoogleOAuth() : options.google,
+    }),
+  );
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

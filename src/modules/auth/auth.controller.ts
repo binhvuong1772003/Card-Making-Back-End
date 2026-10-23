@@ -3,7 +3,7 @@ import type { LoginBody, RegisterBody, ResendVerificationBody, VerifyEmailBody }
 import * as authService from './auth.service';
 import { clearAuthCookies, names, setAuthCookies } from './cookies';
 
-const clientMeta = (req: Request): authService.SessionMeta => ({
+export const clientMeta = (req: Request): authService.SessionMeta => ({
   userAgent: req.get('user-agent')?.slice(0, 256),
   ip: req.ip,
 });

@@ -13,7 +13,7 @@ Users build a card visually: drop text where they want it, pick colors and fonts
 - 🎨 **Card editor model**: a card is a JSON document with a canvas and an ordered list of elements (text, image, shape), each with position, size, rotation, opacity and animation.
 - 🌐 **Publishing**: separate draft and published snapshot, public URL by slug, unpublish without losing the link, SEO controls (`indexable` flag, sitemap).
 - 🤝 **Real-time collaboration**: operation-based editing over WebSocket with the server as the single source of truth, roles (owner, editor, viewer) and invite links.
-- 🔐 **Authentication**: Google sign-in, short-lived access tokens with rotating refresh tokens; email and password login comes later.
+- 🔐 **Authentication**: email and password sign-in with email verification, Google sign-in, short-lived access tokens (refresh token rotation is not built yet).
 - 🖼️ **Image uploads** with content-based type checks.
 - 🧠 **MCP integration** (phase 2): lets an AI assistant create and edit cards through the same operation API the editor uses.
 
@@ -103,6 +103,11 @@ The API and the background worker are two separate processes, so run them in two
 
 Current auth endpoints (under `/api/v1/auth`): `POST /register`, `POST /verify-email`, `POST /resend-verification`, `POST /login` (returns `403 EMAIL_NOT_VERIFIED` until the email is confirmed), `GET /me`, `POST /logout`.
 
+
+**Google sign-in.** `GET /api/v1/auth/google/start[?returnTo=/path]` redirects the browser to Google (authorization-code flow with PKCE); Google returns to `GET /api/v1/auth/google/callback`, which sets the session cookies and always answers with a `302` to the frontend: success goes to `FRONTEND_URL` + `returnTo` (default `/`), failure goes to `FRONTEND_URL/login?error=<code>` with `cancelled`, `invalid_state`, `google_failed`, `email_unverified`, `account_conflict` or `server_error`. Start the flow from a normal link or `window.location` (not `fetch`). If Google is not configured, `start` returns `503`. Setup: create a Web OAuth client in Google Cloud Console, register `http://localhost:3000/api/v1/auth/google/callback` as an authorized redirect URI, add yourself as a test user while the consent screen is in Testing, and put the client ID and secret only in `.env`.
+
+Account rules: a Google account is identified by its `sub`, never by email alone. An existing account is linked only if its email is already verified. An unverified password account with the same email loses its password and sessions when Google proves the email, then signs in via Google. An account already linked to a different Google `sub` is refused.
+
 ### 📜 Scripts
 
 | Command | Description |
@@ -126,7 +131,7 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL`, `SESSION_MAX_AGE`, `REFRESH_GRACE_SECONDS` | Session lifetimes |
 | `CORS_ORIGINS`, `TRUST_PROXY` | Allowed origins and reverse proxy setting |
 | `COOKIE_SAMESITE`, `AUTH_RATE_LIMIT` | Auth cookie SameSite mode and sign-in/sign-up attempts per IP per 15 minutes |
-| `GOOGLE_CLIENT_ID` | Google sign-in |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Google sign-in (redirect flow with PKCE). Optional: leave unset to disable it. ID and secret must be set together; the redirect URI defaults to `http://localhost:$PORT/api/v1/auth/google/callback` and must be registered exactly in Google Cloud Console |
 | `UPLOAD_DIR`, `API_URL` | Local file storage and public API URL |
 | `LOG_LEVEL` | Logging verbosity |
 | `MAIL_TRANSPORT`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `MAIL_FROM` | Email delivery: `log` (default, nothing is sent) or `gmail` (SMTP with an App Password; required in production) |
@@ -138,7 +143,7 @@ Copy `.env.example` to `.env`. The server will refuse to start when a required v
 - [x] Environment validation, logging, error handling
 - [x] Email and password sign-up, sign-in, sign-out (email verification pending)
 - [ ] Refresh token rotation and sign-out everywhere
-- [ ] Google sign-in
+- [x] Google sign-in (backend redirect flow)
 - [ ] Cards, operation API and permissions
 - [ ] Publishing and public card endpoints
 - [ ] Image uploads

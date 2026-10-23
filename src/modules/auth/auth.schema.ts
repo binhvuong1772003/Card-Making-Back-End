@@ -21,6 +21,20 @@ export const verifyEmailBody = z.object({ token: z.string().min(1).max(200) });
 
 export const resendVerificationBody = z.object({ email });
 
+// Query của hai endpoint Google. Là các điều hướng của trình duyệt (không có body) và callback phải luôn trả 302,
+// nên schema KHÔNG bao giờ từ chối: trường sai dạng (mảng, quá dài) thành undefined, handler coi như vắng mặt.
+const lenient = <T extends z.ZodType>(schema: T) => schema.optional().catch(undefined);
+
+export const googleStartQuery = z.object({ returnTo: lenient(z.string().max(200)) });
+export const googleCallbackQuery = z.object({
+  code: lenient(z.string().min(1).max(2048)),
+  state: lenient(z.string().min(1).max(512)),
+  error: lenient(z.string().max(100)),
+});
+
+export type GoogleStartQuery = z.infer<typeof googleStartQuery>;
+export type GoogleCallbackQuery = z.infer<typeof googleCallbackQuery>;
+
 export type RegisterBody = z.infer<typeof registerBody>;
 export type VerifyEmailBody = z.infer<typeof verifyEmailBody>;
 export type ResendVerificationBody = z.infer<typeof resendVerificationBody>;

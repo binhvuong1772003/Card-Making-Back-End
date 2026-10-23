@@ -31,7 +31,7 @@ export interface IssuedSession {
   refreshMaxAgeMs: number;
 }
 
-const toPublicUser = (user: Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'emailVerifiedAt' | 'createdAt'>): PublicUser => ({
+export const toPublicUser = (user: Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'emailVerifiedAt' | 'createdAt'>): PublicUser => ({
   id: user.id,
   email: user.email,
   name: user.name,

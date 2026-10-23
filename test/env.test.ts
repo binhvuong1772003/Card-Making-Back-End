@@ -51,6 +51,20 @@ describe('environment parsing', () => {
     expect(env.mailFrom).toBe('CardMaking <me@gmail.com>');
   });
 
+  it('keeps Google sign-in off unless both client ID and secret are set, treating empty strings as unset', async () => {
+    const off = await loadEnv({ GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '', GOOGLE_REDIRECT_URI: '', PORT: '3000' });
+    expect(off.googleEnabled).toBe(false);
+    expect(off.GOOGLE_REDIRECT_URI).toBe('http://localhost:3000/api/v1/auth/google/callback');
+
+    await expect(loadEnv({ GOOGLE_CLIENT_ID: 'abc.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: '' })).rejects.toThrow(/GOOGLE_CLIENT_SECRET/);
+    await expect(loadEnv({ GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: 'secret' })).rejects.toThrow(/GOOGLE_CLIENT_ID/);
+    await expect(loadEnv({ GOOGLE_CLIENT_ID: 'not-a-google-id', GOOGLE_CLIENT_SECRET: 'secret' })).rejects.toThrow(/GOOGLE_CLIENT_ID/);
+
+    const on = await loadEnv({ GOOGLE_CLIENT_ID: 'abc.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: 'secret', GOOGLE_REDIRECT_URI: 'http://localhost:3000/cb' });
+    expect(on.googleEnabled).toBe(true);
+    expect(on.GOOGLE_REDIRECT_URI).toBe('http://localhost:3000/cb');
+  });
+
   it('refuses the log transport in production', async () => {
     await expect(loadEnv({ NODE_ENV: 'production', MAIL_TRANSPORT: 'log' })).rejects.toThrow(/MAIL_TRANSPORT/);
   });
