@@ -131,19 +131,23 @@ describe('updateCardTitle', () => {
 });
 
 describe('rename racing delete', () => {
-  it('never turns the clash into an internal error', async () => {
+  // Một vòng đua từng thất bại khoảng một nửa số lần khi chỉ thử lại một lần, nên lặp nhiều vòng để test có sức bắt lỗi.
+  it('always lets the delete win and never turns the clash into an internal error', async () => {
     const owner = await createUserWithToken('owner@example.com');
-    const card = await seedCard(owner.id);
-    const [del, ...renames] = await Promise.all([
-      remove(owner.token, card.id),
-      ...['Một', 'Hai', 'Ba', 'Bốn'].map((title) => rename(owner.token, card.id, title)),
-    ]);
-    expect(del.body.data.deleteCard).toBe(true);
-    for (const res of renames) {
-      const outcome = res.body.errors ? code(res) : 'OK';
-      expect(['OK', 'NOT_FOUND']).toContain(outcome); // thành công trước khi xóa, hoặc thiệp đã mất; không bao giờ INTERNAL
+    for (let round = 0; round < 10; round++) {
+      const card = await seedCard(owner.id);
+      const [del, ...renames] = await Promise.all([
+        remove(owner.token, card.id),
+        ...['Một', 'Hai', 'Ba', 'Bốn'].map((title) => rename(owner.token, card.id, title)),
+      ]);
+      expect(del.body.errors).toBeUndefined();
+      expect(del.body.data.deleteCard).toBe(true);
+      for (const res of renames) {
+        const outcome = res.body.errors ? code(res) : 'OK';
+        expect(['OK', 'NOT_FOUND']).toContain(outcome); // thành công trước khi xóa, hoặc thiệp đã mất; không bao giờ INTERNAL
+      }
+      expect(await prisma.card.findUnique({ where: { id: card.id } })).toBeNull();
     }
-    expect(await prisma.card.count()).toBe(0);
   });
 });
 

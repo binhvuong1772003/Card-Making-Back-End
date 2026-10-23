@@ -68,10 +68,25 @@ export async function createCard(actor: string, input: CreateCardInput): Promise
   return toCardView(card, actor);
 }
 
+// Xung đột ghi (P2034) xảy ra khi hai lệnh ghi đụng cùng một thiệp (đổi tên đồng thời với xóa hoặc với một lần đổi tên khác).
+// Là lỗi tạm: thử lại vài lần, nghỉ ngắn và ngẫu nhiên giữa các lần. Chỉ thử một lần thì xóa thiệp đang bị đổi tên liên tục
+// vẫn có thể thất bại (đo được: khoảng một nửa số lần xóa trong cuộc đua với bốn lần đổi tên), nên người dùng thấy lỗi nội bộ.
+const MAX_ATTEMPTS = 6;
+async function withConflictRetry<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      if (attempt >= MAX_ATTEMPTS || !isWriteConflict(err)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 5 * attempt + Math.random() * 10));
+    }
+  }
+}
+
 // Chỉ đổi tiêu đề: không đụng document hay revision (bản nháp chỉ đổi qua applyOps). updatedAt tự tăng.
-export async function updateCardTitle(actor: string, id: string, input: UpdateCardTitleInput): Promise<CardView> {
-  for (let attempt = 0; ; attempt++) {
-    await requireAccess(actor, id, 'rename');
+export function updateCardTitle(actor: string, id: string, input: UpdateCardTitleInput): Promise<CardView> {
+  return withConflictRetry(async () => {
+    await requireAccess(actor, id, 'rename'); // thử lại thì kiểm lại: thiệp có thể đã bị xóa (NOT_FOUND)
     try {
       // Lặp lại điều kiện quyền ngay trong lệnh ghi: vai trò bị hạ hoặc thiệp bị xóa giữa lúc kiểm và lúc ghi thì không ghi.
       const card = await prisma.card.update({
@@ -84,31 +99,23 @@ export async function updateCardTitle(actor: string, id: string, input: UpdateCa
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         throw new AppError('NOT_FOUND', 'Card not found');
       }
-      // Đổi tên đụng độ với xóa hoặc một lần đổi tên khác: thử lại một lần (lúc đó requireAccess thấy thiệp đã mất thì NOT_FOUND).
-      if (attempt >= 1 || !isWriteConflict(err)) throw err;
+      throw err;
     }
-  }
+  });
 }
 
 // Xóa thiệp cùng publication và link mời trong một transaction (Prisma trên Mongo không xóa dây chuyền, và Restrict còn
 // chặn xóa thiệp khi con còn tồn tại). Mẫu đã đăng từ thiệp này không bị ảnh hưởng.
 export async function deleteCard(actor: string, id: string): Promise<void> {
-  for (let attempt = 0; ; attempt++) {
-    await requireAccess(actor, id, 'delete');
-    try {
-      await prisma.$transaction(async (tx) => {
-        await tx.publication.deleteMany({ where: { cardId: id } });
-        await tx.cardInvite.deleteMany({ where: { cardId: id } });
-        const deleted = await tx.card.deleteMany({ where: { id, ownerId: actor } });
-        if (deleted.count === 0) throw new AppError('NOT_FOUND', 'Card not found'); // hoàn tác cả transaction
-      });
-      return;
-    } catch (err) {
-      // Hai lần xóa đồng thời: bên thua có thể nhận xung đột ghi. Thử lại một lần; lúc đó thiệp đã mất nên requireAccess
-      // trả NOT_FOUND.
-      if (attempt >= 1 || !isWriteConflict(err)) throw err;
-    }
-  }
+  await withConflictRetry(async () => {
+    await requireAccess(actor, id, 'delete'); // thử lại thì kiểm lại: hai lần xóa đồng thời thì lần sau thấy NOT_FOUND
+    await prisma.$transaction(async (tx) => {
+      await tx.publication.deleteMany({ where: { cardId: id } });
+      await tx.cardInvite.deleteMany({ where: { cardId: id } });
+      const deleted = await tx.card.deleteMany({ where: { id, ownerId: actor } });
+      if (deleted.count === 0) throw new AppError('NOT_FOUND', 'Card not found'); // hoàn tác cả transaction
+    });
+  });
 }
 
 // Thiệp của người gọi: thiệp họ sở hữu và thiệp được chia sẻ. userId luôn là actor, không nhận từ client (không thể xem
