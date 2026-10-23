@@ -15,7 +15,7 @@ export interface EmailJob {
   purpose: 'EMAIL_VERIFY';
 }
 
-// Trang nhận link chưa tồn tại (đang làm: gửi mail, chưa làm: xác nhận), nên đây là địa chỉ giữ chỗ.
+// Trang frontend nhận link chưa tồn tại; nó phải đọc token, gọi POST /auth/verify-email rồi xóa token khỏi URL.
 export const buildVerificationLink = (token: string): string =>
   `${env.FRONTEND_URL}/verify-email?token=${encodeURIComponent(token)}`;
 

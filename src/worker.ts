@@ -21,7 +21,7 @@ export function startWorkers(): Worker[] {
 }
 
 // Chạy riêng một tiến trình worker: `npm run dev:worker` hoặc `npm run start:worker`.
-// Mặc định worker chạy chung tiến trình API (RUN_WORKERS=true trong server.ts).
+// Mặc định API không chạy worker (RUN_WORKERS=false); chỉ đặt true trong server.ts khi muốn chạy chung lúc phát triển.
 async function main(): Promise<void> {
   await prisma.$connect();
   await getRedis();

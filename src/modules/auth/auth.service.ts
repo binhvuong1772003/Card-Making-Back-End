@@ -73,7 +73,7 @@ export async function register(input: RegisterBody): Promise<void> {
     throw err;
   }
   // Xếp mail xác thực SAU khi đã ghi user. Cố ý best-effort: nếu Redis lỗi thì vẫn trả cùng phản hồi để không lộ
-  // gì ra ngoài. Hệ quả đã biết: user này chưa có mail và chưa có chức năng gửi lại (chưa làm).
+  // gì ra ngoài. Hệ quả đã biết: user này không có mail, phải dùng resend-verification để nhận lại.
   try {
     await enqueueVerificationEmail(user.id);
   } catch (err) {
