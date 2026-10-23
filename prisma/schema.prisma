@@ -1,4 +1,4 @@
-// Schema Prisma 6 cho MongoDB. Hiện mới có phần xác thực; Card, CardMember, CardInvite, Publication thêm sau.
+// Schema Prisma 6 cho MongoDB: xác thực (User, Identity, Session, VerificationToken) và thiệp (Card, CardInvite, Publication, Template).
 // Mongo không có TTL index qua Prisma và ta không dựa vào xóa dây chuyền: dọn phiên hết hạn do job lặp (session-cleanup.jobs.ts).
 
 generator client {
@@ -19,6 +19,17 @@ enum VerificationPurpose {
   PASSWORD_RESET
 }
 
+enum CardRole {
+  EDITOR
+  VIEWER
+}
+
+enum TemplateStatus {
+  PUBLISHED
+  UNLISTED
+  REMOVED
+}
+
 model User {
   id              String    @id @default(auto()) @map("_id") @db.ObjectId
   email           String    @unique // luôn lưu chữ thường (chuẩn hóa ở service)
@@ -32,6 +43,8 @@ model User {
   identities         Identity[]
   sessions           Session[]
   verificationTokens VerificationToken[]
+  ownedCards         Card[]              @relation("CardOwner")
+  templates          Template[]          @relation("TemplateAuthor")
 }
 
 // Liên kết một User với tài khoản bên ngoài. Định danh theo `sub` của Google, không theo email.
@@ -86,4 +99,91 @@ model VerificationToken {
 
   @@index([userId, purpose])
   @@index([expiresAt]) // để job dọn dẹp quét token hết hạn
+}
+
+// Thành viên nhúng thẳng trong Card (composite type, không phải collection riêng). Chủ sở hữu KHÔNG nằm ở đây mà ở
+// Card.ownerId. Mongo không ép "mỗi user một lần" trong mảng: service phải kiểm bằng lệnh ghi có điều kiện.
+// Luôn tạo Card với members: [] — bỏ trống thì trường vắng hẳn và các bộ lọc none/isEmpty/NOT some không khớp.
+type CardMember {
+  userId  String   @db.ObjectId
+  role    CardRole
+  addedAt DateTime
+}
+
+// Bản nháp đang sửa. Không có slug: slug chỉ sinh ra khi publish (nằm ở Publication).
+model Card {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId          String       @db.ObjectId
+  title            String
+  document         Json // bản nháp, chỉ đổi qua applyOps; cấu trúc chưa chốt
+  revision         Int          @default(0) // tăng mỗi lần ghi, dùng làm điều kiện ghi
+  sourceTemplateId String?      @db.ObjectId // thiệp tạo từ mẫu nào; cố ý KHÔNG là relation để gỡ mẫu không bị chặn
+  members          CardMember[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  owner       User         @relation("CardOwner", fields: [ownerId], references: [id])
+  invites     CardInvite[]
+  publication Publication?
+
+  @@index([ownerId, updatedAt(sort: Desc)]) // "thiệp của tôi"
+  @@index([members.userId]) // "thiệp được chia sẻ với tôi"
+}
+
+// Link mời cùng sửa/xem. Chỉ lưu hash token.
+model CardInvite {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  cardId      String    @db.ObjectId
+  role        CardRole
+  tokenHash   String    @unique
+  createdById String    @db.ObjectId
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@index([cardId])
+}
+
+// Bản chụp đóng băng để XEM công khai. Chỉ tạo khi publish lần đầu; unpublish giữ nguyên dòng và slug.
+// Xóa thiệp phải xóa dòng này trong cùng một transaction ở service (không dựa vào xóa dây chuyền của Prisma).
+model Publication {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  cardId        String    @unique @db.ObjectId
+  slug          String    @unique
+  document      Json // bản chụp tại lúc publish
+  publishedAt   DateTime
+  unpublishedAt DateTime? // trống khi đang công khai
+  indexable     Boolean   @default(false)
+  ogImageUrl    String?
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@index([indexable, unpublishedAt]) // sitemap
+}
+
+// Bản chụp đóng băng để DÙNG LÀM MẪU. Dùng mẫu = tạo Card mới từ snapshot; từ đó mẫu và thiệp độc lập.
+model Template {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  authorId         String?        @db.ObjectId // null = mẫu của hệ thống
+  sourceCardId     String?        @db.ObjectId // chỉ để biết gốc; cố ý KHÔNG là relation để xóa thiệp không bị chặn
+  title            String
+  description      String?
+  category         String
+  tags             String[]
+  thumbnailAssetId String?        @db.ObjectId
+  snapshot         Json
+  version          Int            @default(1) // tăng khi tác giả đăng lại
+  status           TemplateStatus @default(PUBLISHED)
+  useCount         Int            @default(0)
+  publishedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  author User? @relation("TemplateAuthor", fields: [authorId], references: [id])
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([category, status])
+  @@index([authorId])
 }
