@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ApolloServer } from '@apollo/server';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import type { ApolloServerPlugin } from '@apollo/server';
 import { expressMiddleware } from '@as-integrations/express5';
 import { makeExecutableSchema } from '@graphql-tools/schema';
@@ -28,11 +29,13 @@ export interface CreateGraphqlOptions {
   modules: GraphqlModule[];
   authenticate: Authenticate;
   introspection?: boolean; // mặc định: bật ngoài production
+  sandbox?: boolean; // Apollo Sandbox nhúng ở GET /graphql; mặc định theo env.graphqlSandbox (chỉ dev)
   limits?: Partial<Limits>;
 }
 
 export interface Graphql {
   handler: RequestHandler;
+  sandbox: boolean;
   start(): Promise<void>;
   stop(): Promise<void>;
 }
@@ -82,6 +85,7 @@ export function createGraphql(options: CreateGraphqlOptions): Graphql {
     resolvers: [baseResolvers, ...options.modules.map((m) => m.resolvers)],
   });
   const limits = { ...defaultLimits, ...options.limits };
+  const sandbox = options.sandbox ?? env.graphqlSandbox;
 
   // Apollo bắt buộc start() (bất đồng bộ) trước khi gắn middleware, còn createApp là hàm đồng bộ. Nên khởi động lười ở
   // request đầu và nhớ kết quả; nếu thất bại thì quên đi, request sau dựng lại một ApolloServer mới (server đã hỏng
@@ -100,7 +104,14 @@ export function createGraphql(options: CreateGraphqlOptions): Graphql {
         stopOnTerminationSignals: false, // server.ts tự lo thứ tự tắt
         validationRules: [limitsRule(limits)],
         formatError,
-        plugins: [ApolloServerPluginLandingPageDisabled(), loggingPlugin], // CSP của helmet chặn trang Sandbox
+        plugins: [
+          // Sandbox chỉ ở dev: tải giao diện từ CDN của Apollo, request đi từ trình duyệt tới chính server này (kèm cookie đăng
+          // nhập), không gửi dữ liệu thao tác về Apollo (runTelemetry: false). Ngoài dev thì tắt hẳn trang landing.
+          sandbox
+            ? ApolloServerPluginLandingPageLocalDefault({ embed: { runTelemetry: false, endpointIsEditable: false }, includeCookies: true, footer: false })
+            : ApolloServerPluginLandingPageDisabled(),
+          loggingPlugin,
+        ],
       });
       await server.start();
       const middleware = expressMiddleware(server, { context: async ({ req }) => buildContext(req, options.authenticate) });
@@ -111,6 +122,7 @@ export function createGraphql(options: CreateGraphqlOptions): Graphql {
     }));
 
   return {
+    sandbox,
     // async: Express 5 chuyển lỗi bị từ chối của handler sang errorHandler thay vì để thành unhandled rejection.
     handler: async (req, res, next) => {
       const { middleware } = await boot();

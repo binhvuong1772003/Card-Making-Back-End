@@ -62,7 +62,16 @@ export function createApp(options: AppOptions = {}): express.Express {
   );
   app.use('/api/v1', api);
 
-  app.use('/graphql', rateLimiter(options.graphqlRateLimit ?? env.GRAPHQL_RATE_LIMIT), (options.graphql ??= defaultGraphql()).handler);
+  const graphql = (options.graphql ??= defaultGraphql());
+  if (graphql.sandbox) {
+    // Trang Sandbox cần script nội tuyến và tải giao diện từ CDN của Apollo nên không chạy dưới CSP mặc định của helmet. Chỉ gỡ CSP
+    // của đúng GET /graphql (trang landing), và chỉ khi Sandbox đang bật (dev). Mọi route khác và mọi POST vẫn giữ nguyên CSP.
+    app.use('/graphql', (req, res, next) => {
+      if (req.method === 'GET') res.removeHeader('Content-Security-Policy');
+      next();
+    });
+  }
+  app.use('/graphql', rateLimiter(options.graphqlRateLimit ?? env.GRAPHQL_RATE_LIMIT), graphql.handler);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

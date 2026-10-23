@@ -50,6 +50,11 @@ const schema = z.object({
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(20),
   GRAPHQL_RATE_LIMIT: z.coerce.number().int().positive().default(1000), // yêu cầu /graphql mỗi IP mỗi 15 phút
+  // Apollo Sandbox nhúng ngay tại GET /graphql. Không đặt: bật khi NODE_ENV=development, tắt ở nơi khác. Cấm ở production.
+  GRAPHQL_SANDBOX: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
   // Gửi email. `log` chỉ ghi ra log (dev); `gmail` gửi thật qua SMTP của Gmail bằng App Password.
@@ -86,6 +91,9 @@ const schema = z.object({
       if (!value[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'is required when MAIL_TRANSPORT=gmail' });
     }
   }
+  if (value.NODE_ENV === 'production' && value.GRAPHQL_SANDBOX === true) {
+    ctx.addIssue({ code: 'custom', path: ['GRAPHQL_SANDBOX'], message: 'the Apollo Sandbox must not be enabled in production' });
+  }
   // Ở production mà dùng log thì email xác thực bị bỏ rơi trong im lặng; thà không khởi động.
   if (value.NODE_ENV === 'production' && value.MAIL_TRANSPORT === 'log') {
     ctx.addIssue({ code: 'custom', path: ['MAIL_TRANSPORT'], message: 'the log transport drops emails; use gmail in production' });
@@ -100,9 +108,16 @@ if (!parsed.success) {
 
 const raw = parsed.data;
 
+const graphqlSandbox = raw.GRAPHQL_SANDBOX ?? raw.NODE_ENV === 'development';
+const corsOrigins = raw.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean);
+// Sandbox nhúng chạy ngay trên trang của server nên request của nó mang Origin là chính server; nới origin này (chỉ khi Sandbox
+// đang bật, tức chỉ ở dev) để originCheck không chặn POST từ chính trang đó.
+if (graphqlSandbox) corsOrigins.push(`http://localhost:${raw.PORT}`, `http://127.0.0.1:${raw.PORT}`);
+
 export const env = {
   ...raw,
-  CORS_ORIGINS: raw.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean),
+  CORS_ORIGINS: [...new Set(corsOrigins)],
+  graphqlSandbox,
   TRUST_PROXY: parseTrustProxy(raw.TRUST_PROXY),
   isProduction: raw.NODE_ENV === 'production',
   accessTtlMs: toMs(raw.ACCESS_TOKEN_TTL),

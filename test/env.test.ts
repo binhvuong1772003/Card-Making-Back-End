@@ -77,6 +77,25 @@ describe('environment parsing', () => {
     await expect(loadEnv({ GRAPHQL_RATE_LIMIT: '0' })).rejects.toThrow(/GRAPHQL_RATE_LIMIT/);
   });
 
+  it('turns the Apollo Sandbox on by default only in development, and lets its own origin through', async () => {
+    const dev = await loadEnv({ NODE_ENV: 'development', GRAPHQL_SANDBOX: undefined, PORT: '4000', CORS_ORIGINS: 'http://localhost:3001' });
+    expect(dev.graphqlSandbox).toBe(true);
+    expect(dev.CORS_ORIGINS).toEqual(['http://localhost:3001', 'http://localhost:4000', 'http://127.0.0.1:4000']);
+
+    const test = await loadEnv({ NODE_ENV: 'test', GRAPHQL_SANDBOX: undefined, CORS_ORIGINS: 'http://localhost:3001' });
+    expect(test.graphqlSandbox).toBe(false);
+    expect(test.CORS_ORIGINS).toEqual(['http://localhost:3001']); // không nới origin khi Sandbox tắt
+
+    expect((await loadEnv({ NODE_ENV: 'development', GRAPHQL_SANDBOX: 'false' })).graphqlSandbox).toBe(false);
+    expect((await loadEnv({ NODE_ENV: 'test', GRAPHQL_SANDBOX: 'true' })).graphqlSandbox).toBe(true);
+  });
+
+  it('keeps the Apollo Sandbox off in production and refuses to start with it on', async () => {
+    const production = { NODE_ENV: 'production', MAIL_TRANSPORT: 'gmail', GMAIL_USER: 'me@gmail.com', GMAIL_APP_PASSWORD: 'abcdefgh' };
+    expect((await loadEnv({ ...production, GRAPHQL_SANDBOX: undefined })).graphqlSandbox).toBe(false);
+    await expect(loadEnv({ ...production, GRAPHQL_SANDBOX: 'true' })).rejects.toThrow(/GRAPHQL_SANDBOX/);
+  });
+
   it('refuses the log transport in production', async () => {
     await expect(loadEnv({ NODE_ENV: 'production', MAIL_TRANSPORT: 'log' })).rejects.toThrow(/MAIL_TRANSPORT/);
   });

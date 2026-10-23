@@ -267,6 +267,30 @@ describe('transport protection', () => {
   });
 });
 
+describe('apollo sandbox (development only)', () => {
+  const open = createApp({ graphql: build({ sandbox: true }) });
+
+  it('serves the embedded landing page on GET /graphql without the CSP, and keeps the CSP everywhere else', async () => {
+    const page = await request(open).get('/graphql').set('Accept', 'text/html');
+    expect(page.status).toBe(200);
+    expect(page.headers['content-type']).toMatch(/html/);
+    expect(page.text).toMatch(/apollographql/i);
+    expect(page.text).toMatch(/runTelemetry["']?\s*:\s*false/); // không gửi dữ liệu thao tác về Apollo
+    expect(page.headers['content-security-policy']).toBeUndefined();
+
+    expect((await request(open).get('/health')).headers['content-security-policy']).toBeDefined();
+    const post = await request(open).post('/graphql').send({ query: '{ ping }' });
+    expect(post.body.data.ping).toBe('pong');
+    expect(post.headers['content-security-policy']).toBeDefined();
+  });
+
+  it('is off by default (tests run with NODE_ENV=test): no landing page and the CSP stays on /graphql', async () => {
+    const res = await request(app).get('/graphql').set('Accept', 'text/html');
+    expect(res.text).not.toMatch(/<html/i);
+    expect(res.headers['content-security-policy']).toBeDefined();
+  });
+});
+
 describe('lifecycle', () => {
   it('starts lazily, can be started and stopped explicitly, and starts again after a stop', async () => {
     const graphql = build();
