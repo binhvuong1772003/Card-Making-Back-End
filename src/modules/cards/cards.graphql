@@ -23,4 +23,10 @@ type Card {
 type Mutation {
   """Tạo thiệp mới; người gọi là chủ sở hữu."""
   createCard(input: CreateCardInput!): Card!
+
+  """Đổi tiêu đề (owner hoặc editor). Không đụng tới nội dung và revision."""
+  updateCardTitle(id: ID!, title: String!): Card!
+
+  """Xóa thiệp cùng bản publish và link mời (chỉ owner)."""
+  deleteCard(id: ID!): Boolean!
 }

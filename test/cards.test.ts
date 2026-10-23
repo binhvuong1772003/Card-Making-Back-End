@@ -5,6 +5,7 @@ import { prisma } from '../src/infra/prisma';
 import { closeQueueing } from '../src/infra/queue';
 import { closeRedis } from '../src/infra/redis';
 import { createUserWithToken } from './helpers/auth';
+import { resetDatabase } from './helpers/database';
 
 const app = createApp();
 
@@ -17,17 +18,6 @@ const createCard = (token: string | undefined, title: unknown) => {
   return req.send({ query: CREATE, variables: { input: { title } } });
 };
 const errorCode = (res: request.Response): string | undefined => res.body.errors?.[0]?.extensions?.code;
-
-// Xóa theo thứ tự phụ thuộc: user.deleteMany() bị chặn (Restrict) nếu còn bản ghi nào trỏ tới nó, kể cả do file test khác để lại.
-async function resetDatabase() {
-  await prisma.session.deleteMany();
-  await prisma.identity.deleteMany();
-  await prisma.verificationToken.deleteMany();
-  await prisma.publication.deleteMany();
-  await prisma.cardInvite.deleteMany();
-  await prisma.card.deleteMany();
-  await prisma.user.deleteMany();
-}
 
 beforeEach(resetDatabase);
 
