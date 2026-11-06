@@ -115,7 +115,7 @@ model Card {
   id               String       @id @default(auto()) @map("_id") @db.ObjectId
   ownerId          String       @db.ObjectId
   title            String
-  document         Json // bản nháp, chỉ đổi qua applyOps; cấu trúc chưa chốt
+  document         Json // bản nháp: một PageData của editor (có schemaVersion); cách ghi (applyOps hay ghi cả bản) chưa chốt
   revision         Int          @default(0) // tăng mỗi lần ghi, dùng làm điều kiện ghi
   sourceTemplateId String?      @db.ObjectId // thiệp tạo từ mẫu nào; cố ý KHÔNG là relation để gỡ mẫu không bị chặn
   members          CardMember[]
