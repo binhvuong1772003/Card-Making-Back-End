@@ -150,3 +150,18 @@ export async function getCard(actor: string, id: string): Promise<CardDetailView
   if (!card || !role || !can(role, 'view')) throw new AppError('NOT_FOUND', 'Card not found');
   return { ...toCardView(card, actor), document: card.document };
 }
+
+// Lưu bản nháp: ghi cả PageData một lần, có điều kiện `revision` client đang giữ (và vai trò owner/editor ngay trong điều kiện ghi),
+// tăng `revision` thêm 1. `revision` cũ thì CONFLICT và client tải lại. Chưa kiểm cấu trúc PageData, chỉ kiểm là object.
+export async function saveCardDocument(actor: string, id: string, revision: number, document: unknown): Promise<{ revision: number }> {
+  await requireAccess(actor, id, 'edit');
+  if (typeof document !== 'object' || document === null || Array.isArray(document)) {
+    throw new AppError('VALIDATION', 'document must be an object');
+  }
+  const { count } = await prisma.card.updateMany({
+    where: { id, revision, OR: [{ ownerId: actor }, { members: { some: { userId: actor, role: 'EDITOR' } } }] },
+    data: { document: document as Prisma.InputJsonObject, revision: { increment: 1 } },
+  });
+  if (count === 0) throw new AppError('CONFLICT', 'Revision is stale');
+  return { revision: revision + 1 };
+}

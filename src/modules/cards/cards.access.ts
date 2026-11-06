@@ -1,5 +1,5 @@
 export type CardAccessRole = 'OWNER' | 'EDITOR' | 'VIEWER';
-export type CardAction = 'view' | 'rename' | 'delete';
+export type CardAction = 'view' | 'rename' | 'edit' | 'delete';
 
 interface CardAccessFields {
   ownerId: string;
@@ -15,6 +15,7 @@ export function roleOf(card: CardAccessFields, userId: string): CardAccessRole |
 const ALLOWED: Record<CardAction, readonly CardAccessRole[]> = {
   view: ['OWNER', 'EDITOR', 'VIEWER'],
   rename: ['OWNER', 'EDITOR'],
+  edit: ['OWNER', 'EDITOR'],
   delete: ['OWNER'],
 };
 

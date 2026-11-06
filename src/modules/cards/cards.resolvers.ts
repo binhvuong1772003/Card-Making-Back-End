@@ -31,6 +31,11 @@ const resolvers = {
       return cardsService.updateCardTitle(actor, parseCardId(args.id), updateCardTitleInput.parse({ title: args.title }));
     },
 
+    saveCardDocument: (_parent: unknown, args: { id: unknown; revision: number; document: unknown }, ctx: GraphqlContext) => {
+      const actor = requireUser(ctx);
+      return cardsService.saveCardDocument(actor, parseCardId(args.id), args.revision, args.document);
+    },
+
     deleteCard: async (_parent: unknown, args: { id: unknown }, ctx: GraphqlContext) => {
       const actor = requireUser(ctx);
       await cardsService.deleteCard(actor, parseCardId(args.id));

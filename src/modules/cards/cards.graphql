@@ -43,6 +43,11 @@ type CardDetail {
   document: JSON!
 }
 
+"""Kết quả lưu bản nháp: `revision` mới."""
+type SaveDocumentResult {
+  revision: Int!
+}
+
 extend type Query {
   """Thiệp của người đang gọi (sở hữu và được chia sẻ), mới sửa nhất lên đầu. first từ 1 đến 50, mặc định 20."""
   cards(first: Int = 20, after: String): CardConnection!
@@ -61,4 +66,7 @@ type Mutation {
 
   """Xóa thiệp cùng bản publish và link mời (chỉ owner)."""
   deleteCard(id: ID!): Boolean!
+
+  """Lưu cả bản nháp (owner hoặc editor), có điều kiện `revision`: CONFLICT nếu `revision` cũ."""
+  saveCardDocument(id: ID!, revision: Int!, document: JSON!): SaveDocumentResult!
 }
