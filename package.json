@@ -9,7 +9,8 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc && node scripts/copy-graphql.js",
     "dev:worker": "tsx watch src/worker.ts",
-    "start:worker": "node dist/worker.js"
+    "start:worker": "node dist/worker.js",
+    "grant-admin": "tsx scripts/grant-admin.ts"
   },
   "keywords": [],
   "author": "",
