@@ -24,6 +24,14 @@ enum CardRole {
   VIEWER
 }
 
+// Dịp của thiệp, chọn lúc tạo thiệp. Thiệp tạo trước khi có trường này không có giá trị và được coi là OTHER.
+enum CardOccasion {
+  WEDDING
+  BIRTHDAY
+  EVENT
+  OTHER
+}
+
 enum TemplateStatus {
   PUBLISHED
   UNLISTED
@@ -116,6 +124,7 @@ model Card {
   ownerId          String       @db.ObjectId
   title            String
   document         Json // bản nháp: một PageData của editor (có schemaVersion); cách ghi (applyOps hay ghi cả bản) chưa chốt
+  occasion         CardOccasion? // trống = OTHER (thiệp cũ); lọc OTHER phải gồm cả trường vắng
   revision         Int          @default(0) // tăng mỗi lần ghi, dùng làm điều kiện ghi
   sourceTemplateId String?      @db.ObjectId // thiệp tạo từ mẫu nào; cố ý KHÔNG là relation để gỡ mẫu không bị chặn
   members          CardMember[]

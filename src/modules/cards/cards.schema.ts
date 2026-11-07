@@ -4,7 +4,10 @@ import { AppError } from '../../shared/errors';
 // GraphQL chỉ kiểm kiểu (String!); luật về nội dung nằm ở đây.
 export const cardTitle = z.string().trim().min(1).max(100);
 
-export const createCardInput = z.object({ title: cardTitle });
+export const cardOccasion = z.enum(['WEDDING', 'BIRTHDAY', 'EVENT', 'OTHER']);
+export type CardOccasion = z.infer<typeof cardOccasion>;
+
+export const createCardInput = z.object({ title: cardTitle, occasion: cardOccasion.optional() });
 export const updateCardTitleInput = z.object({ title: cardTitle });
 
 export type CreateCardInput = z.infer<typeof createCardInput>;
@@ -23,6 +26,9 @@ export function parseCardId(value: unknown): string {
 export const listCardsArgs = z.object({
   first: z.number().int().min(1).max(50).default(20),
   after: z.string().min(1).max(200).optional(),
+  occasion: cardOccasion.optional(),
+  // Tìm trong tiêu đề; cắt khoảng trắng, chuỗi rỗng coi như không tìm.
+  search: z.string().trim().max(100).optional(),
 });
 export type ListCardsArgs = z.infer<typeof listCardsArgs>;
 

@@ -2,7 +2,7 @@ import { Prisma, type Card } from '@prisma/client';
 import { prisma } from '../../infra/prisma';
 import { AppError } from '../../shared/errors';
 import { can, roleOf, type CardAccessRole, type CardAction } from './cards.access';
-import { decodeCursor, encodeCursor, type CreateCardInput, type ListCardsArgs, type UpdateCardTitleInput } from './cards.schema';
+import { decodeCursor, encodeCursor, type CardOccasion, type CreateCardInput, type ListCardsArgs, type UpdateCardTitleInput } from './cards.schema';
 
 // Hình dạng trả cho tầng giao tiếp: không có document (cấu trúc nội dung chưa chốt nên chưa đưa ra API).
 export interface CardView {
@@ -11,6 +11,8 @@ export interface CardView {
   revision: number;
   role: CardAccessRole;
   ownerId: string;
+  occasion: CardOccasion;
+  published: boolean; // có bản xuất bản đang công khai
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,7 +27,12 @@ export interface CardPage {
   pageInfo: { hasNextPage: boolean; endCursor: string | null };
 }
 
-type CardRow = Pick<Card, 'id' | 'title' | 'revision' | 'ownerId' | 'members' | 'createdAt' | 'updatedAt'>;
+type CardRow = Pick<Card, 'id' | 'title' | 'revision' | 'ownerId' | 'members' | 'occasion' | 'createdAt' | 'updatedAt'> & {
+  publication?: { unpublishedAt: Date | null } | null;
+};
+
+// Đủ để biết thiệp đang công khai hay không, không tải bản chụp document của publication.
+const WITH_PUBLICATION = { publication: { select: { unpublishedAt: true } } } as const;
 
 function toCardView(card: CardRow, actor: string): CardView {
   const role = roleOf(card, actor);
@@ -36,6 +43,8 @@ function toCardView(card: CardRow, actor: string): CardView {
     revision: card.revision,
     role,
     ownerId: card.ownerId,
+    occasion: card.occasion ?? 'OTHER', // thiệp cũ chưa có dịp
+    published: Boolean(card.publication && !card.publication.unpublishedAt),
     createdAt: card.createdAt,
     updatedAt: card.updatedAt,
   };
@@ -59,6 +68,7 @@ export async function createCard(actor: string, input: CreateCardInput): Promise
     data: {
       ownerId: actor,
       title: input.title,
+      occasion: input.occasion ?? 'OTHER',
       document: {}, // giữ chỗ: cấu trúc nội dung thiệp chưa chốt
       revision: 0,
       members: [], // tường minh: bỏ trống thì Prisma không ghi trường này và các bộ lọc none/isEmpty/NOT some không khớp
@@ -92,6 +102,7 @@ export function updateCardTitle(actor: string, id: string, input: UpdateCardTitl
       const card = await prisma.card.update({
         where: { id, OR: [{ ownerId: actor }, { members: { some: { userId: actor, role: 'EDITOR' } } }] },
         data: { title: input.title },
+        include: WITH_PUBLICATION,
         omit: { document: true },
       });
       return toCardView(card, actor);
@@ -118,6 +129,10 @@ export async function deleteCard(actor: string, id: string): Promise<void> {
   });
 }
 
+// OTHER gồm cả thiệp chưa có dịp (trường vắng hẳn vì Prisma trên Mongo không ghi null).
+const occasionFilter = (occasion: CardOccasion): Prisma.CardWhereInput =>
+  occasion === 'OTHER' ? { OR: [{ occasion: 'OTHER' }, { occasion: { isSet: false } }] } : { occasion };
+
 // Thiệp của người gọi: thiệp họ sở hữu và thiệp được chia sẻ. userId luôn là actor, không nhận từ client (không thể xem
 // danh sách của người khác). Mới nhất lên đầu; không tải document.
 export async function listCards(actor: string, args: ListCardsArgs): Promise<CardPage> {
@@ -126,6 +141,8 @@ export async function listCards(actor: string, args: ListCardsArgs): Promise<Car
     where: {
       AND: [
         { OR: [{ ownerId: actor }, { members: { some: { userId: actor } } }] },
+        ...(args.occasion ? [occasionFilter(args.occasion)] : []),
+        ...(args.search ? [{ title: { contains: args.search, mode: 'insensitive' as const } }] : []),
         ...(cursor
           ? [{ OR: [{ updatedAt: { lt: cursor.updatedAt } }, { updatedAt: cursor.updatedAt, id: { lt: cursor.id } }] }]
           : []),
@@ -133,6 +150,7 @@ export async function listCards(actor: string, args: ListCardsArgs): Promise<Car
     },
     orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     take: args.first + 1, // lấy dư một dòng để biết còn trang sau
+    include: WITH_PUBLICATION,
     omit: { document: true },
   });
   const page = rows.slice(0, args.first);
@@ -145,7 +163,7 @@ export async function listCards(actor: string, args: ListCardsArgs): Promise<Car
 
 // Chi tiết một thiệp kèm bản nháp. Người không liên quan và id không tồn tại cùng nhận NOT_FOUND.
 export async function getCard(actor: string, id: string): Promise<CardDetailView> {
-  const card = await prisma.card.findUnique({ where: { id } });
+  const card = await prisma.card.findUnique({ where: { id }, include: WITH_PUBLICATION });
   const role = card && roleOf(card, actor);
   if (!card || !role || !can(role, 'view')) throw new AppError('NOT_FOUND', 'Card not found');
   return { ...toCardView(card, actor), document: card.document };
@@ -164,4 +182,27 @@ export async function saveCardDocument(actor: string, id: string, revision: numb
   });
   if (count === 0) throw new AppError('CONFLICT', 'Revision is stale');
   return { revision: revision + 1 };
+}
+
+
+// Nhân bản vào thư viện của người gọi: thiệp mới thuộc về họ, sao chép bản nháp và dịp, revision 0. Ai xem được thiệp đều
+// nhân bản được (nội dung họ đã thấy). Ảnh giữ nguyên địa chỉ, không sao chép sang kho của người nhân bản.
+const COPY_SUFFIX = ' (bản sao)';
+export async function duplicateCard(actor: string, id: string): Promise<CardView> {
+  const source = await prisma.card.findUnique({ where: { id } });
+  const role = source && roleOf(source, actor);
+  if (!source || !role || !can(role, 'view')) throw new AppError('NOT_FOUND', 'Card not found');
+  const title = source.title.slice(0, 100 - COPY_SUFFIX.length).trimEnd() + COPY_SUFFIX;
+  const copy = await prisma.card.create({
+    data: {
+      ownerId: actor,
+      title,
+      occasion: source.occasion ?? 'OTHER',
+      document: source.document as Prisma.InputJsonValue,
+      revision: 0,
+      members: [], // tường minh, xem createCard
+    },
+    omit: { document: true },
+  });
+  return toCardView(copy, actor);
 }

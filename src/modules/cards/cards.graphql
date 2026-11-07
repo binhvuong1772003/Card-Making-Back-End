@@ -4,8 +4,17 @@ enum CardRole {
   VIEWER
 }
 
+"""Dịp của thiệp. OTHER là thiệp không thuộc ba dịp chính, và cũng là giá trị của thiệp cũ chưa có dịp."""
+enum CardOccasion {
+  WEDDING
+  BIRTHDAY
+  EVENT
+  OTHER
+}
+
 input CreateCardInput {
   title: String!
+  occasion: CardOccasion
 }
 
 type Card {
@@ -15,6 +24,9 @@ type Card {
   """Vai trò của người đang gọi trên thiệp này."""
   role: CardRole!
   ownerId: ID!
+  occasion: CardOccasion!
+  """Có bản xuất bản đang công khai không."""
+  published: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -37,6 +49,8 @@ type CardDetail {
   revision: Int!
   role: CardRole!
   ownerId: ID!
+  occasion: CardOccasion!
+  published: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
   """Bản nháp. Cấu trúc chưa chốt nên hiện chỉ là JSON nguyên xi."""
@@ -49,8 +63,8 @@ type SaveDocumentResult {
 }
 
 extend type Query {
-  """Thiệp của người đang gọi (sở hữu và được chia sẻ), mới sửa nhất lên đầu. first từ 1 đến 50, mặc định 20."""
-  cards(first: Int = 20, after: String): CardConnection!
+  """Thiệp của người đang gọi (sở hữu và được chia sẻ), mới sửa nhất lên đầu. first từ 1 đến 50, mặc định 20. `occasion` lọc theo dịp (OTHER gồm cả thiệp chưa có dịp); `search` tìm trong tiêu đề, không phân biệt hoa thường."""
+  cards(first: Int = 20, after: String, occasion: CardOccasion, search: String): CardConnection!
 
   """Chi tiết một thiệp; NOT_FOUND nếu không tồn tại hoặc người gọi không liên quan."""
   card(id: ID!): CardDetail
@@ -60,6 +74,9 @@ extend type Query {
 type Mutation {
   """Tạo thiệp mới; người gọi là chủ sở hữu."""
   createCard(input: CreateCardInput!): Card!
+
+  """Nhân bản thiệp vào thư viện của người gọi: sao chép bản nháp và dịp, revision 0, tiêu đề thêm "(bản sao)". Ai xem được thiệp đều nhân bản được."""
+  duplicateCard(id: ID!): Card!
 
   """Đổi tiêu đề (owner hoặc editor). Không đụng tới nội dung và revision."""
   updateCardTitle(id: ID!, title: String!): Card!
