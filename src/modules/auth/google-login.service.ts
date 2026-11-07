@@ -4,7 +4,7 @@ import { AppError } from '../../shared/errors';
 import { createSession, toPublicUser, type IssuedSession, type PublicUser, type SessionMeta } from './auth.service';
 import type { GoogleClaims } from './google-oauth';
 
-type UserRow = Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'emailVerifiedAt' | 'createdAt'>;
+type UserRow = Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'emailVerifiedAt' | 'role' | 'createdAt'>;
 
 // Prisma trên MongoDB không ghi null cho trường chưa đặt, nên "chưa dùng/chưa thu hồi" phải khớp cả vắng mặt lẫn null.
 const NOT_USED = [{ usedAt: { isSet: false } }, { usedAt: null }];

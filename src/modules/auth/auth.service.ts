@@ -17,6 +17,7 @@ export interface PublicUser {
   name: string | null;
   avatarUrl: string | null;
   emailVerified: boolean;
+  role: 'USER' | 'ADMIN';
   createdAt: Date;
 }
 
@@ -32,12 +33,13 @@ export interface IssuedSession {
   refreshMaxAgeMs: number;
 }
 
-export const toPublicUser = (user: Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'emailVerifiedAt' | 'createdAt'>): PublicUser => ({
+export const toPublicUser = (user: Pick<User, 'id' | 'email' | 'name' | 'avatarUrl' | 'emailVerifiedAt' | 'role' | 'createdAt'>): PublicUser => ({
   id: user.id,
   email: user.email,
   name: user.name,
   avatarUrl: user.avatarUrl,
   emailVerified: user.emailVerifiedAt !== null,
+  role: user.role ?? 'USER', // người dùng cũ chưa có vai trò
   createdAt: user.createdAt,
 });
 

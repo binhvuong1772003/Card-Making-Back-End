@@ -165,6 +165,19 @@ describe('login', () => {
   });
 });
 
+describe('me role', () => {
+  it('says USER by default and ADMIN once the role is granted, read fresh on each call', async () => {
+    await register(creds);
+    await verify(creds.email);
+    const agent = request.agent(app);
+    const login = await agent.post(`${base}/login`).send(creds);
+    expect(login.body.user.role).toBe('USER');
+    expect((await agent.get(`${base}/me`)).body.user.role).toBe('USER');
+    await prisma.user.update({ where: { email: creds.email }, data: { role: 'ADMIN' } });
+    expect((await agent.get(`${base}/me`)).body.user.role).toBe('ADMIN');
+  });
+});
+
 describe('me', () => {
   it('returns the current user for the cookie, a Bearer token, and rejects bad credentials', async () => {
     await register(creds);
