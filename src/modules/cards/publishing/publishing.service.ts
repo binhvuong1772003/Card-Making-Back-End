@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../infra/prisma';
 import { AppError } from '../../../shared/errors';
 import { can, roleOf } from '../cards.access';
+import { parsePageDocument } from '../page-document';
 import { galleryStateOf, hideFromGallery, submitToGallery, type GalleryStatus } from '../gallery/gallery.service';
 
 export interface PublicationView {
@@ -48,16 +49,13 @@ const view = (p: { slug: string; publishedAt: Date; listInGallery: boolean | nul
   galleryRejectReason: gallery.rejectReason,
 });
 
-const hasContent = (document: unknown): boolean =>
-  typeof document === 'object' && document !== null && 'root' in document && typeof (document as { root: unknown }).root === 'object';
-
 // Chụp bản nháp hiện tại làm trang công khai. Gọi lại để cập nhật trang; slug cũ được giữ nếu không truyền slug mới.
 export async function publishCard(actor: string, cardId: string, requestedSlug?: string, listInGallery = false): Promise<PublicationView> {
   const card = await requireOwner(actor, cardId);
-  if (!hasContent(card.document)) throw new AppError('VALIDATION', 'The card has no content to publish');
+  const page = parsePageDocument(card.document); // thiệp mới (document rỗng) hoặc dữ liệu hỏng thì không xuất bản được
   const existing = await prisma.publication.findUnique({ where: { cardId }, select: { slug: true } });
   const now = new Date();
-  const snapshot = card.document as Prisma.InputJsonObject;
+  const snapshot = page as unknown as Prisma.InputJsonObject;
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const slug = requestedSlug ?? existing?.slug ?? slugFromTitle(card.title);

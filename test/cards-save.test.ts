@@ -6,6 +6,7 @@ import { closeQueueing } from '../src/infra/queue';
 import { closeRedis } from '../src/infra/redis';
 import { createUserWithToken } from './helpers/auth';
 import { resetDatabase } from './helpers/database';
+import { samplePage } from './helpers/pages';
 
 const app = createApp();
 const SAVE =
@@ -26,7 +27,7 @@ describe('saveCardDocument', () => {
   it('writes the whole document and bumps the revision', async () => {
     const owner = await createUserWithToken('owner@example.com');
     const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'T', document: {}, revision: 0, members: [] } });
-    const page = { schemaVersion: 1, root: { id: 'root', type: 'Page', children: [] } };
+    const page = samplePage('Xin chào');
 
     const res = await save(owner.token, card.id, 0, page);
     expect(res.body.errors).toBeUndefined();
@@ -41,7 +42,7 @@ describe('saveCardDocument', () => {
     const owner = await createUserWithToken('owner@example.com');
     const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'T', document: { a: 1 }, revision: 3, members: [] } });
 
-    const res = await save(owner.token, card.id, 2, { a: 2 });
+    const res = await save(owner.token, card.id, 2, samplePage('mới'));
     expect(code(res)).toBe('CONFLICT');
     const after = await prisma.card.findUniqueOrThrow({ where: { id: card.id } });
     expect(after.document).toEqual({ a: 1 });
@@ -56,8 +57,28 @@ describe('saveCardDocument', () => {
       data: { ownerId: owner.id, title: 'T', document: {}, revision: 0, members: [{ userId: viewer.id, role: 'VIEWER', addedAt: new Date() }] },
     });
 
-    expect(code(await save(viewer.token, card.id, 0, { a: 1 }))).toBe('FORBIDDEN');
-    expect(code(await save(stranger.token, card.id, 0, { a: 1 }))).toBe('NOT_FOUND');
+    expect(code(await save(viewer.token, card.id, 0, samplePage('a')))).toBe('FORBIDDEN');
+    expect(code(await save(stranger.token, card.id, 0, samplePage('a')))).toBe('NOT_FOUND');
+    expect((await prisma.card.findUniqueOrThrow({ where: { id: card.id } })).revision).toBe(0);
+  });
+
+  it('refuses a document that is not a valid page and keeps the stored one', async () => {
+    const owner = await createUserWithToken('owner@example.com');
+    const stored = samplePage('giữ nguyên');
+    const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'T', document: stored, revision: 2, members: [] } });
+
+    for (const bad of [{ a: 1 }, {}, 'text', { schemaVersion: 1, root: { id: 'root', type: 'Page', children: [] } }, { ...samplePage('x'), schemaVersion: 99 }]) {
+      expect(code(await save(owner.token, card.id, 2, bad))).toBe('VALIDATION');
+    }
+    const after = await prisma.card.findUniqueOrThrow({ where: { id: card.id } });
+    expect(after.document).toEqual(stored);
+    expect(after.revision).toBe(2);
+  });
+
+  it('refuses a page over the size limit', async () => {
+    const owner = await createUserWithToken('owner@example.com');
+    const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'T', document: {}, revision: 0, members: [] } });
+    expect(code(await save(owner.token, card.id, 0, samplePage('x'.repeat(850 * 1024))))).toBe('VALIDATION');
     expect((await prisma.card.findUniqueOrThrow({ where: { id: card.id } })).revision).toBe(0);
   });
 });

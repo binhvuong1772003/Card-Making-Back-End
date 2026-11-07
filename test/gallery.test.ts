@@ -6,6 +6,7 @@ import { closeQueueing } from '../src/infra/queue';
 import { closeRedis } from '../src/infra/redis';
 import { createUserWithToken } from './helpers/auth';
 import { resetDatabase } from './helpers/database';
+import { samplePage } from './helpers/pages';
 
 // Không gọi Cloudinary thật: mỗi ảnh "được sao chép" thành một địa chỉ mới theo thư mục đích.
 vi.mock('../src/infra/cloudinary', async (importOriginal) => ({
@@ -37,10 +38,7 @@ const REMOVE = 'mutation($id: ID!) { removeTemplate(id: $id) { id status } }';
 const USE = 'mutation($id: ID!) { createCardFromTemplate(id: $id) { id title occasion revision role ownerId } }';
 const CARD_DOC = 'query($id: ID!) { card(id: $id) { document } }';
 
-const page = (text: string, src?: string) => ({
-  schemaVersion: 1,
-  root: { id: 'root', type: 'Page', children: [{ id: 'a', type: 'Text', props: { text } }, ...(src ? [{ id: 'i', type: 'Image', props: { src } }] : [])] },
-});
+const page = (text: string, src?: string) => samplePage(text, { image: src });
 
 beforeEach(async () => {
   await resetDatabase();
@@ -296,7 +294,7 @@ describe('images on approval', () => {
 
   it('copies our pictures into the shared template folder and rewrites the snapshot, leaving outside links alone', async () => {
     const owner = await createUserWithToken('o@example.com');
-    const card = await seed(owner.id, 'T', 'WEDDING', { ...page('x', own), meta: { image: own, other: outside } });
+    const card = await seed(owner.id, 'T', 'WEDDING', samplePage(`link ${outside}`, { image: own, metaImage: own }));
     const tpl = await publishToGallery(owner.token, card.id);
     const boss = await admin();
     const res = await gql(boss.token, APPROVE, { id: tpl.id });

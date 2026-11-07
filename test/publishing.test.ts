@@ -6,6 +6,7 @@ import { closeQueueing } from '../src/infra/queue';
 import { closeRedis } from '../src/infra/redis';
 import { createUserWithToken } from './helpers/auth';
 import { resetDatabase } from './helpers/database';
+import { samplePage } from './helpers/pages';
 
 const app = createApp();
 const gql = (token: string, query: string, variables?: Record<string, unknown>) =>
@@ -18,7 +19,7 @@ const PUBLICATION = 'query($cardId: ID!) { publication(cardId: $cardId) { slug p
 const LIST = 'query { cards { nodes { id published } } }';
 const SAVE = 'mutation($id: ID!, $revision: Int!, $document: JSON!) { saveCardDocument(id: $id, revision: $revision, document: $document) { revision } }';
 
-const page = (text: string) => ({ schemaVersion: 1, root: { id: 'root', type: 'Page', children: [{ id: 'a', type: 'Text', props: { text } }] } });
+const page = (text: string) => samplePage(text);
 
 beforeEach(resetDatabase);
 afterAll(async () => {

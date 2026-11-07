@@ -2,6 +2,7 @@ import { Prisma, type Card } from '@prisma/client';
 import { prisma } from '../../infra/prisma';
 import { AppError } from '../../shared/errors';
 import { can, roleOf, type CardAccessRole, type CardAction } from './cards.access';
+import { parsePageDocument } from './page-document';
 import { decodeCursor, encodeCursor, type CardOccasion, type CreateCardInput, type ListCardsArgs, type UpdateCardTitleInput } from './cards.schema';
 
 // Hình dạng trả cho tầng giao tiếp: không có document (cấu trúc nội dung chưa chốt nên chưa đưa ra API).
@@ -170,15 +171,13 @@ export async function getCard(actor: string, id: string): Promise<CardDetailView
 }
 
 // Lưu bản nháp: ghi cả PageData một lần, có điều kiện `revision` client đang giữ (và vai trò owner/editor ngay trong điều kiện ghi),
-// tăng `revision` thêm 1. `revision` cũ thì CONFLICT và client tải lại. Chưa kiểm cấu trúc PageData, chỉ kiểm là object.
+// tăng `revision` thêm 1. `revision` cũ thì CONFLICT và client tải lại. Trang phải qua `parsePageDocument` (VALIDATION nếu không).
 export async function saveCardDocument(actor: string, id: string, revision: number, document: unknown): Promise<{ revision: number }> {
   await requireAccess(actor, id, 'edit');
-  if (typeof document !== 'object' || document === null || Array.isArray(document)) {
-    throw new AppError('VALIDATION', 'document must be an object');
-  }
+  const page = parsePageDocument(document); // trang từ trình duyệt không được tin: kiểm hình dạng, phiên bản, loại khối và cỡ trước khi ghi
   const { count } = await prisma.card.updateMany({
     where: { id, revision, OR: [{ ownerId: actor }, { members: { some: { userId: actor, role: 'EDITOR' } } }] },
-    data: { document: document as Prisma.InputJsonObject, revision: { increment: 1 } },
+    data: { document: page as unknown as Prisma.InputJsonObject, revision: { increment: 1 } },
   });
   if (count === 0) throw new AppError('CONFLICT', 'Revision is stale');
   return { revision: revision + 1 };
