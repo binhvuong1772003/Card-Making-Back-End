@@ -31,6 +31,8 @@ type Template {
   status: TemplateStatus!
   rejectReason: String
   publishedAt: DateTime
+  """Lần gửi hoặc đổi trạng thái gần nhất (gửi lại thì cập nhật)."""
+  updatedAt: DateTime!
   """Bản chụp của trang (PageData) để dựng xem trước."""
   snapshot: JSON!
 }

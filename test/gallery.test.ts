@@ -30,7 +30,7 @@ const UNPUBLISH = 'mutation($id: ID!) { unpublishCard(id: $id) }';
 const PUBLICATION = 'query($cardId: ID!) { publication(cardId: $cardId) { listInGallery galleryStatus galleryRejectReason } }';
 const TEMPLATES = 'query($category: CardOccasion, $first: Int, $after: String) { templates(category: $category, first: $first, after: $after) { nodes { id title category authorName useCount } pageInfo { hasNextPage endCursor } } }';
 const COUNTS = 'query { templateCounts { category count } }';
-const ADMIN_LIST = 'query($status: TemplateStatus!) { adminTemplates(status: $status) { nodes { id title status authorEmail rejectReason snapshot } } }';
+const ADMIN_LIST = 'query($status: TemplateStatus!) { adminTemplates(status: $status) { nodes { id title status authorEmail rejectReason updatedAt snapshot } } }';
 const APPROVE = 'mutation($id: ID!) { approveTemplate(id: $id) { id status snapshot } }';
 const REJECT = 'mutation($id: ID!, $reason: String!) { rejectTemplate(id: $id, reason: $reason) { id status rejectReason } }';
 const REMOVE = 'mutation($id: ID!) { removeTemplate(id: $id) { id status } }';
@@ -131,6 +131,7 @@ describe('review', () => {
     const res = await gql(boss.token, ADMIN_LIST, { status: 'PENDING' });
     expect(res.body.data.adminTemplates.nodes).toHaveLength(1);
     expect(res.body.data.adminTemplates.nodes[0]).toMatchObject({ title: 'T', status: 'PENDING', authorEmail: 'hostess@example.com' });
+    expect(Number.isNaN(Date.parse(res.body.data.adminTemplates.nodes[0].updatedAt))).toBe(false); // lúc gửi hoặc đổi trạng thái gần nhất
   });
 
   it('approves: the template goes live and appears in the list', async () => {

@@ -18,6 +18,7 @@ export interface TemplateView {
   status: TemplateStatus;
   rejectReason: string | null;
   publishedAt: Date | null;
+  updatedAt: Date;
   snapshot: unknown;
 }
 
@@ -48,6 +49,7 @@ function toView(row: TemplateRow, forAdmin: boolean): TemplateView {
     status: row.status,
     rejectReason: row.rejectReason ?? null,
     publishedAt: row.publishedAt ?? null,
+    updatedAt: row.updatedAt,
     snapshot: row.snapshot,
   };
 }
