@@ -41,3 +41,51 @@ export async function copyImage(
     throw new AppError('PROVIDER_FAILED', 'Could not copy an image to the template folder');
   }
 }
+
+// ---- Admin API: liệt kê và xoá ảnh trong kho (dùng cho job dọn ảnh). Xác thực bằng Basic (api key và secret trong header, không nằm trong địa chỉ). ----
+
+export interface ImageResource {
+  publicId: string;
+  createdAt: string;
+}
+
+const adminHeaders = (config: CloudinaryConfig): Record<string, string> => ({
+  Authorization: `Basic ${Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64')}`,
+});
+
+// Mọi ảnh có public_id bắt đầu bằng `prefix`, đi qua từng trang (500 ảnh một trang).
+export async function listImages(prefix: string, config: CloudinaryConfig, fetchImpl: typeof fetch = fetch): Promise<ImageResource[]> {
+  const found: ImageResource[] = [];
+  let cursor: string | undefined;
+  try {
+    do {
+      const query = new URLSearchParams({ prefix, max_results: '500', ...(cursor ? { next_cursor: cursor } : {}) });
+      const res = await fetchImpl(`https://api.cloudinary.com/v1_1/${config.cloudName}/resources/image/upload?${query}`, { headers: adminHeaders(config) });
+      if (!res.ok) throw new Error(`Cloudinary answered ${res.status}`);
+      const data = (await res.json()) as { resources?: { public_id: string; created_at: string }[]; next_cursor?: string };
+      for (const item of data.resources ?? []) found.push({ publicId: item.public_id, createdAt: item.created_at });
+      cursor = data.next_cursor;
+    } while (cursor);
+  } catch {
+    throw new AppError('PROVIDER_FAILED', 'Could not list the images');
+  }
+  return found;
+}
+
+// Xoá ảnh theo lô 100 (giới hạn của Cloudinary). Trả số ảnh Cloudinary báo đã xoá.
+export async function deleteImages(publicIds: readonly string[], config: CloudinaryConfig, fetchImpl: typeof fetch = fetch): Promise<number> {
+  let deleted = 0;
+  try {
+    for (let i = 0; i < publicIds.length; i += 100) {
+      const body = new URLSearchParams();
+      for (const id of publicIds.slice(i, i + 100)) body.append('public_ids[]', id);
+      const res = await fetchImpl(`https://api.cloudinary.com/v1_1/${config.cloudName}/resources/image/upload`, { method: 'DELETE', headers: adminHeaders(config), body });
+      if (!res.ok) throw new Error(`Cloudinary answered ${res.status}`);
+      const data = (await res.json()) as { deleted?: Record<string, string> };
+      deleted += Object.values(data.deleted ?? {}).filter((state) => state === 'deleted').length;
+    }
+  } catch {
+    throw new AppError('PROVIDER_FAILED', 'Could not delete the images');
+  }
+  return deleted;
+}
