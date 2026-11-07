@@ -31,6 +31,8 @@ export interface AppOptions {
   // Không truyền: dùng cấu hình Cloudinary của env. `null`: tắt kho ảnh (test).
   cloudinary?: CloudinaryConfig | null;
   assetsRateLimit?: number;
+  assetsUserHourlyLimit?: number;
+  assetsUserDailyLimit?: number;
   publicRateLimit?: number;
 }
 
@@ -71,6 +73,8 @@ export function createApp(options: AppOptions = {}): express.Express {
   );
   api.use('/assets', createAssetsRouter({
     rateLimit: options.assetsRateLimit ?? env.ASSETS_RATE_LIMIT,
+    userHourlyLimit: options.assetsUserHourlyLimit ?? env.ASSETS_USER_HOURLY_LIMIT,
+    userDailyLimit: options.assetsUserDailyLimit ?? env.ASSETS_USER_DAILY_LIMIT,
     cloudinary: options.cloudinary === undefined ? env.cloudinary : options.cloudinary,
   }));
   api.use('/publications', createPublicationsRouter({ rateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT }));

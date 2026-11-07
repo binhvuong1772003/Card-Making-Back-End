@@ -84,6 +84,8 @@ const schema = z.object({
   // Kho ảnh Cloudinary: cloudinary://<api_key>:<api_secret>@<cloud_name>. Để trống thì tính năng tắt (endpoint ký trả 503).
   CLOUDINARY_URL: emptyAsUnset(z.string().regex(/^cloudinary:\/\/[^:@/\s]+:[^@/\s]+@[\w-]+$/, 'must look like cloudinary://<api_key>:<api_secret>@<cloud_name>')),
   ASSETS_RATE_LIMIT: z.coerce.number().int().positive().default(100), // yêu cầu ký tải ảnh mỗi IP mỗi 15 phút
+  ASSETS_USER_HOURLY_LIMIT: z.coerce.number().int().positive().default(60), // yêu cầu ký tải ảnh mỗi người dùng mỗi giờ
+  ASSETS_USER_DAILY_LIMIT: z.coerce.number().int().positive().default(300), // và mỗi ngày
   PUBLIC_RATE_LIMIT: z.coerce.number().int().positive().default(600), // lượt xem trang công khai mỗi IP mỗi 15 phút
 }).superRefine((value, ctx) => {
   if (Boolean(value.GOOGLE_CLIENT_ID) !== Boolean(value.GOOGLE_CLIENT_SECRET)) {

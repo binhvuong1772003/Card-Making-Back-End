@@ -10,7 +10,7 @@ import { createUserWithToken } from './helpers/auth';
 import { resetDatabase } from './helpers/database';
 
 const cloudinary = { apiKey: '123456789012345', apiSecret: 'test-secret-value', cloudName: 'demo-cloud' };
-const app = createApp({ cloudinary });
+const app = createApp({ cloudinary, assetsUserHourlyLimit: 3, assetsUserDailyLimit: 5 });
 const sha1 = (text: string) => createHash('sha1').update(text).digest('hex');
 
 beforeEach(resetDatabase);
@@ -32,8 +32,25 @@ describe('POST /api/v1/assets/sign', () => {
     expect(res.body.timestamp).toBeGreaterThanOrEqual(before);
     expect(res.body.timestamp).toBeLessThanOrEqual(before + 5);
     // Cùng công thức Cloudinary, tính độc lập với mã nguồn.
-    const expected = sha1(`allowed_formats=${res.body.allowedFormats}&folder=cardmaking/${user.id}&timestamp=${res.body.timestamp}test-secret-value`);
+    const expected = sha1(`allowed_formats=${res.body.allowedFormats}&folder=cardmaking/${user.id}&timestamp=${res.body.timestamp}&transformation=${res.body.transformation}test-secret-value`);
     expect(res.body.signature).toBe(expected);
+  });
+
+  it('signs a size cap so a huge picture is shrunk as it is stored', async () => {
+    const user = await createUserWithToken('uploader@example.com');
+    const res = await request(app).post('/api/v1/assets/sign').set('Authorization', `Bearer ${user.token}`);
+    expect(res.body.transformation).toBe('c_limit,h_4000,w_4000');
+  });
+
+  it('limits how many uploads one person can ask to sign, without affecting others', async () => {
+    const heavy = await createUserWithToken('heavy@example.com');
+    const other = await createUserWithToken('other@example.com');
+    const sign = (token: string) => request(app).post('/api/v1/assets/sign').set('Authorization', `Bearer ${token}`);
+    for (let i = 0; i < 3; i++) expect((await sign(heavy.token)).status).toBe(200);
+    const blocked = await sign(heavy.token);
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error.code).toBe('RATE_LIMITED');
+    expect((await sign(other.token)).status).toBe(200);
   });
 
   it('never sends the api secret to the client', async () => {
