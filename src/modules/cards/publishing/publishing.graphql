@@ -4,6 +4,11 @@ type Publication {
   slug: String!
   """Lần xuất bản gần nhất (xuất bản lại thì cập nhật)."""
   publishedAt: DateTime!
+  """Chủ thiệp có gửi thiệp vào thư viện công khai không."""
+  listInGallery: Boolean!
+  galleryStatus: GalleryStatus!
+  """Lý do admin từ chối, khi galleryStatus là REJECTED."""
+  galleryRejectReason: String
 }
 
 extend type Query {
@@ -12,8 +17,8 @@ extend type Query {
 }
 
 extend type Mutation {
-  """Xuất bản thiệp (chỉ owner): chụp bản nháp hiện tại làm trang công khai. `slug` bỏ trống thì giữ slug cũ, hoặc tự đặt từ tiêu đề. Xuất bản lại để cập nhật trang."""
-  publishCard(id: ID!, slug: String): Publication!
+  """Xuất bản thiệp (chỉ owner): chụp bản nháp hiện tại làm trang công khai. `slug` bỏ trống thì giữ slug cũ, hoặc tự đặt từ tiêu đề. Xuất bản lại để cập nhật trang. `listInGallery` bật thì gửi bản chụp vào hàng chờ duyệt của thư viện công khai (xuất bản lại khi đã chờ thì thay bản chờ); tắt thì rút thiệp khỏi thư viện."""
+  publishCard(id: ID!, slug: String, listInGallery: Boolean = false): Publication!
 
   """Gỡ trang công khai (chỉ owner). Gỡ rồi xuất bản lại thì giữ slug cũ nếu không bị ai lấy mất."""
   unpublishCard(id: ID!): Boolean!

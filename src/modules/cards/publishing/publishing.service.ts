@@ -3,10 +3,14 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../infra/prisma';
 import { AppError } from '../../../shared/errors';
 import { can, roleOf } from '../cards.access';
+import { galleryStateOf, hideFromGallery, submitToGallery, type GalleryStatus } from '../gallery/gallery.service';
 
 export interface PublicationView {
   slug: string;
   publishedAt: Date;
+  listInGallery: boolean;
+  galleryStatus: GalleryStatus;
+  galleryRejectReason: string | null;
 }
 
 // Slug tự đặt từ tiêu đề: bỏ dấu tiếng Việt (đ riêng), chữ thường, mọi ký tự khác thành gạch nối, tối đa 40 ký tự,
@@ -29,18 +33,26 @@ const isUniqueViolation = (err: unknown): boolean => err instanceof Prisma.Prism
 
 // Chỉ owner xuất bản. Người ngoài nhận NOT_FOUND, người có vai trò nhưng không đủ quyền nhận FORBIDDEN.
 async function requireOwner(actor: string, cardId: string) {
-  const card = await prisma.card.findUnique({ where: { id: cardId }, select: { ownerId: true, members: true, title: true, document: true } });
+  const card = await prisma.card.findUnique({ where: { id: cardId }, select: { ownerId: true, members: true, title: true, document: true, occasion: true } });
   const role = card && roleOf(card, actor);
   if (!card || !role) throw new AppError('NOT_FOUND', 'Card not found');
   if (!can(role, 'publish')) throw new AppError('FORBIDDEN', 'You do not have permission to do that');
   return card;
 }
 
+const view = (p: { slug: string; publishedAt: Date; listInGallery: boolean | null }, gallery: { status: GalleryStatus; rejectReason: string | null }): PublicationView => ({
+  slug: p.slug,
+  publishedAt: p.publishedAt,
+  listInGallery: p.listInGallery ?? false,
+  galleryStatus: gallery.status,
+  galleryRejectReason: gallery.rejectReason,
+});
+
 const hasContent = (document: unknown): boolean =>
   typeof document === 'object' && document !== null && 'root' in document && typeof (document as { root: unknown }).root === 'object';
 
 // Chụp bản nháp hiện tại làm trang công khai. Gọi lại để cập nhật trang; slug cũ được giữ nếu không truyền slug mới.
-export async function publishCard(actor: string, cardId: string, requestedSlug?: string): Promise<PublicationView> {
+export async function publishCard(actor: string, cardId: string, requestedSlug?: string, listInGallery = false): Promise<PublicationView> {
   const card = await requireOwner(actor, cardId);
   if (!hasContent(card.document)) throw new AppError('VALIDATION', 'The card has no content to publish');
   const existing = await prisma.publication.findUnique({ where: { cardId }, select: { slug: true } });
@@ -51,9 +63,12 @@ export async function publishCard(actor: string, cardId: string, requestedSlug?:
     const slug = requestedSlug ?? existing?.slug ?? slugFromTitle(card.title);
     try {
       const saved = existing
-        ? await prisma.publication.update({ where: { cardId }, data: { slug, document: snapshot, publishedAt: now, unpublishedAt: null } })
-        : await prisma.publication.create({ data: { cardId, slug, document: snapshot, publishedAt: now } });
-      return { slug: saved.slug, publishedAt: saved.publishedAt };
+        ? await prisma.publication.update({ where: { cardId }, data: { slug, document: snapshot, publishedAt: now, unpublishedAt: null, listInGallery } })
+        : await prisma.publication.create({ data: { cardId, slug, document: snapshot, publishedAt: now, listInGallery } });
+      // Thư viện công khai: bật thì gửi bản chụp này vào hàng chờ duyệt, tắt thì rút thiệp khỏi thư viện.
+      if (listInGallery) await submitToGallery({ id: cardId, ownerId: card.ownerId, title: card.title, occasion: card.occasion ?? 'OTHER' }, snapshot);
+      else await hideFromGallery(cardId);
+      return view(saved, await galleryStateOf(cardId));
     } catch (err) {
       if (!isUniqueViolation(err)) throw err;
       if (requestedSlug) throw new AppError('CONFLICT', 'This link is already taken'); // slug do người dùng chọn
@@ -69,8 +84,9 @@ export async function unpublishCard(actor: string, cardId: string): Promise<void
   await requireOwner(actor, cardId);
   await prisma.publication.updateMany({
     where: { cardId, OR: [{ unpublishedAt: null }, { unpublishedAt: { isSet: false } }] },
-    data: { unpublishedAt: new Date() },
+    data: { unpublishedAt: new Date(), listInGallery: false },
   });
+  await hideFromGallery(cardId); // trang đã gỡ thì mẫu cũng rút khỏi thư viện
 }
 
 // Liên kết đang công khai của thiệp; ai xem được thiệp cũng xem được. null nếu chưa xuất bản hoặc đã gỡ.
@@ -78,7 +94,7 @@ export async function getPublication(actor: string, cardId: string): Promise<Pub
   const card = await prisma.card.findUnique({ where: { id: cardId }, select: { ownerId: true, members: true } });
   const role = card && roleOf(card, actor);
   if (!card || !role || !can(role, 'view')) throw new AppError('NOT_FOUND', 'Card not found');
-  const publication = await prisma.publication.findUnique({ where: { cardId }, select: { slug: true, publishedAt: true, unpublishedAt: true } });
+  const publication = await prisma.publication.findUnique({ where: { cardId }, select: { slug: true, publishedAt: true, unpublishedAt: true, listInGallery: true } });
   if (!publication || publication.unpublishedAt) return null;
-  return { slug: publication.slug, publishedAt: publication.publishedAt };
+  return view(publication, await galleryStateOf(cardId));
 }

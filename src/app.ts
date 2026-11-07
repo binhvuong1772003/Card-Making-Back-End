@@ -16,6 +16,7 @@ import type { CloudinaryConfig } from './modules/assets/assets.service';
 import { authenticate } from './modules/auth/authenticate';
 import { createAuthRouter } from './modules/auth/auth.routes';
 import { cardsModule } from './modules/cards/cards.resolvers';
+import { galleryModule } from './modules/cards/gallery/gallery.resolvers';
 import { publishingModule } from './modules/cards/publishing/publishing.resolvers';
 import { createPublicationsRouter } from './modules/publications/publications.routes';
 import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
@@ -34,7 +35,7 @@ export interface AppOptions {
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
-export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule], authenticate });
+export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule, galleryModule], authenticate });
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
 

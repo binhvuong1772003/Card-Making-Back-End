@@ -12,10 +12,10 @@ const resolvers = {
       publishing.getPublication(requireUser(ctx), parseCardId(args.cardId)),
   },
   Mutation: {
-    publishCard: (_parent: unknown, args: { id: unknown; slug?: string | null }, ctx: GraphqlContext) => {
+    publishCard: (_parent: unknown, args: { id: unknown; slug?: string | null; listInGallery?: boolean | null }, ctx: GraphqlContext) => {
       const actor = requireUser(ctx);
       const { slug } = publishArgs.parse({ slug: args.slug || undefined });
-      return publishing.publishCard(actor, parseCardId(args.id), slug);
+      return publishing.publishCard(actor, parseCardId(args.id), slug, args.listInGallery ?? false);
     },
     unpublishCard: async (_parent: unknown, args: { id: unknown }, ctx: GraphqlContext) => {
       await publishing.unpublishCard(requireUser(ctx), parseCardId(args.id));

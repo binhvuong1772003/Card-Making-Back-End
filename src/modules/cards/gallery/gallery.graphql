@@ -1,0 +1,74 @@
+enum TemplateStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+  UNLISTED
+  REMOVED
+}
+
+"""Thiệp của chủ thiệp trong thư viện công khai, nhìn từ phía chủ thiệp."""
+enum GalleryStatus {
+  """Không gửi vào thư viện."""
+  NONE
+  """Có bản đang chờ admin duyệt (kể cả khi bản cũ vẫn đang hiện)."""
+  PENDING
+  """Admin từ chối bản gửi gần nhất; xem lý do."""
+  REJECTED
+  """Đang hiện trong thư viện."""
+  LIVE
+}
+
+"""Một mẫu trong thư viện công khai: bản chụp đóng băng của một thiệp đã xuất bản."""
+type Template {
+  id: ID!
+  title: String!
+  category: CardOccasion!
+  """Tên hiển thị của tác giả; người chưa đặt tên hiện là "Người dùng CardMaking" (không lộ email)."""
+  authorName: String!
+  """Chỉ admin thấy."""
+  authorEmail: String
+  useCount: Int!
+  status: TemplateStatus!
+  rejectReason: String
+  publishedAt: DateTime
+  """Bản chụp của trang (PageData) để dựng xem trước."""
+  snapshot: JSON!
+}
+
+type TemplateConnection {
+  nodes: [Template!]!
+  pageInfo: PageInfo!
+}
+
+type CategoryCount {
+  category: CardOccasion!
+  count: Int!
+}
+
+extend type Query {
+  """Mẫu đang hiện trong thư viện, mới duyệt nhất lên đầu. Cần đăng nhập. first từ 1 đến 50, mặc định 20."""
+  templates(category: CardOccasion, first: Int = 20, after: String): TemplateConnection!
+
+  """Một mẫu đang hiện; NOT_FOUND nếu không có hoặc không còn hiện."""
+  template(id: ID!): Template
+
+  """Số mẫu đang hiện theo từng loại (đủ bốn loại, loại trống là 0)."""
+  templateCounts: [CategoryCount!]!
+
+  """Chỉ admin: danh sách mẫu theo trạng thái (chờ duyệt, đang hiện, bị từ chối...), mới nhất lên đầu."""
+  adminTemplates(status: TemplateStatus!, first: Int = 20, after: String): TemplateConnection!
+}
+
+extend type Mutation {
+  """Dùng mẫu: tạo thiệp mới của người gọi từ bản chụp của mẫu (độc lập với mẫu từ đó), tăng số lần dùng."""
+  createCardFromTemplate(id: ID!): Card!
+
+  """Chỉ admin: duyệt một mẫu đang chờ. Sao chép ảnh sang thư mục chung; nếu thiệp đã có bản đang hiện thì thay bản đó tại chỗ."""
+  approveTemplate(id: ID!): Template!
+
+  """Chỉ admin: từ chối một mẫu đang chờ, kèm lý do cho chủ thiệp."""
+  rejectTemplate(id: ID!, reason: String!): Template!
+
+  """Chỉ admin: gỡ mẫu đang hiện khỏi thư viện. Thiệp đã tạo từ mẫu không bị ảnh hưởng."""
+  removeTemplate(id: ID!): Template!
+}

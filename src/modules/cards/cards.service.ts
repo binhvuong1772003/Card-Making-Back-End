@@ -206,3 +206,24 @@ export async function duplicateCard(actor: string, id: string): Promise<CardView
   });
   return toCardView(copy, actor);
 }
+
+// Tạo thiệp của người gọi từ một bản chụp có sẵn (dùng mẫu): độc lập với nguồn từ đây, chỉ nhớ `sourceTemplateId`.
+// Ảnh trong bản chụp giữ nguyên địa chỉ (mẫu đã đưa ảnh vào thư mục chung lúc duyệt).
+export async function createCardFromSnapshot(
+  actor: string,
+  input: { title: string; occasion: CardOccasion; document: unknown; sourceTemplateId: string },
+): Promise<CardView> {
+  const card = await prisma.card.create({
+    data: {
+      ownerId: actor,
+      title: input.title,
+      occasion: input.occasion,
+      document: input.document as Prisma.InputJsonValue,
+      revision: 0,
+      sourceTemplateId: input.sourceTemplateId,
+      members: [], // tường minh, xem createCard
+    },
+    omit: { document: true },
+  });
+  return toCardView(card, actor);
+}

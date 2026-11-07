@@ -32,8 +32,17 @@ enum CardOccasion {
   OTHER
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// PENDING: chờ admin duyệt. PUBLISHED: đang hiện trong thư viện. REJECTED: admin từ chối (kèm lý do). UNLISTED: chủ thiệp ẩn.
+// REMOVED: admin gỡ.
 enum TemplateStatus {
+  PENDING
   PUBLISHED
+  REJECTED
   UNLISTED
   REMOVED
 }
@@ -45,6 +54,7 @@ model User {
   name            String?
   avatarUrl       String?
   passwordHash    String? // argon2id; null nếu chỉ đăng nhập bằng Google
+  role            UserRole? // trống = USER (người dùng cũ); cấp ADMIN bằng scripts/grant-admin.ts
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -166,6 +176,7 @@ model Publication {
   unpublishedAt DateTime? // trống khi đang công khai
   indexable     Boolean   @default(false)
   ogImageUrl    String?
+  listInGallery Boolean? // trống = false: chủ thiệp có gửi thiệp vào thư viện công khai không
 
   card Card @relation(fields: [cardId], references: [id])
 
@@ -186,6 +197,9 @@ model Template {
   version          Int            @default(1) // tăng khi tác giả đăng lại
   status           TemplateStatus @default(PUBLISHED)
   useCount         Int            @default(0)
+  rejectReason     String? // lý do admin từ chối, hiện cho chủ thiệp
+  reviewedAt       DateTime?
+  reviewedById     String?        @db.ObjectId
   publishedAt      DateTime?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
