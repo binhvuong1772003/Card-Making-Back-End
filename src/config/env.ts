@@ -81,6 +81,9 @@ const schema = z.object({
   GOOGLE_REDIRECT_URI: emptyAsUnset(
     z.string().refine((value) => /^https?:\/\//.test(value) && URL.canParse(value), 'must be an http(s) URL'),
   ),
+  // Kho ảnh Cloudinary: cloudinary://<api_key>:<api_secret>@<cloud_name>. Để trống thì tính năng tắt (endpoint ký trả 503).
+  CLOUDINARY_URL: emptyAsUnset(z.string().regex(/^cloudinary:\/\/[^:@/\s]+:[^@/\s]+@[\w-]+$/, 'must look like cloudinary://<api_key>:<api_secret>@<cloud_name>')),
+  ASSETS_RATE_LIMIT: z.coerce.number().int().positive().default(100), // yêu cầu ký tải ảnh mỗi IP mỗi 15 phút
 }).superRefine((value, ctx) => {
   if (Boolean(value.GOOGLE_CLIENT_ID) !== Boolean(value.GOOGLE_CLIENT_SECRET)) {
     const missing = value.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_SECRET' : 'GOOGLE_CLIENT_ID';
@@ -114,6 +117,14 @@ const corsOrigins = raw.CORS_ORIGINS.split(',').map((origin) => origin.trim()).f
 // đang bật, tức chỉ ở dev) để originCheck không chặn POST từ chính trang đó.
 if (graphqlSandbox) corsOrigins.push(`http://localhost:${raw.PORT}`, `http://127.0.0.1:${raw.PORT}`);
 
+// Tách CLOUDINARY_URL một lần; `null` khi chưa cấu hình. Secret chỉ ở backend, không bao giờ trả về client.
+const cloudinary = raw.CLOUDINARY_URL
+  ? (() => {
+      const url = new URL(raw.CLOUDINARY_URL);
+      return { apiKey: decodeURIComponent(url.username), apiSecret: decodeURIComponent(url.password), cloudName: url.hostname };
+    })()
+  : null;
+
 export const env = {
   ...raw,
   CORS_ORIGINS: [...new Set(corsOrigins)],
@@ -126,6 +137,7 @@ export const env = {
   refreshGraceMs: raw.REFRESH_GRACE_SECONDS * 1000,
   emailVerifyTtlMs: toMs(raw.EMAIL_VERIFY_TTL),
   googleEnabled: Boolean(raw.GOOGLE_CLIENT_ID && raw.GOOGLE_CLIENT_SECRET),
+  cloudinary,
   GOOGLE_REDIRECT_URI: raw.GOOGLE_REDIRECT_URI ?? `http://localhost:${raw.PORT}/api/v1/auth/google/callback`,
   FRONTEND_URL: raw.FRONTEND_URL.replace(/\/+$/, ''),
   // Gmail luôn ghi đè From bằng chính tài khoản đã đăng nhập, nên mặc định dùng đúng địa chỉ đó.

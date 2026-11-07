@@ -11,6 +11,8 @@ import systemRoutes from './http/system.routes';
 import { createGraphql, type Graphql } from './graphql/create-graphql';
 import { rateLimiter } from './http/rate-limit';
 import { logger, requestSerializer } from './infra/logger';
+import { createAssetsRouter } from './modules/assets/assets.routes';
+import type { CloudinaryConfig } from './modules/assets/assets.service';
 import { authenticate } from './modules/auth/authenticate';
 import { createAuthRouter } from './modules/auth/auth.routes';
 import { cardsModule } from './modules/cards/cards.resolvers';
@@ -23,6 +25,9 @@ export interface AppOptions {
   // Không truyền: dùng bản mặc định (defaultGraphql). Test truyền bản có module giả.
   graphql?: Graphql;
   graphqlRateLimit?: number;
+  // Không truyền: dùng cấu hình Cloudinary của env. `null`: tắt kho ảnh (test).
+  cloudinary?: CloudinaryConfig | null;
+  assetsRateLimit?: number;
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
@@ -60,6 +65,10 @@ export function createApp(options: AppOptions = {}): express.Express {
       google: options.google === undefined ? defaultGoogleOAuth() : options.google,
     }),
   );
+  api.use('/assets', createAssetsRouter({
+    rateLimit: options.assetsRateLimit ?? env.ASSETS_RATE_LIMIT,
+    cloudinary: options.cloudinary === undefined ? env.cloudinary : options.cloudinary,
+  }));
   app.use('/api/v1', api);
 
   const graphql = (options.graphql ??= defaultGraphql());
