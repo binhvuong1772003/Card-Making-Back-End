@@ -16,6 +16,8 @@ import type { CloudinaryConfig } from './modules/assets/assets.service';
 import { authenticate } from './modules/auth/authenticate';
 import { createAuthRouter } from './modules/auth/auth.routes';
 import { cardsModule } from './modules/cards/cards.resolvers';
+import { publishingModule } from './modules/cards/publishing/publishing.resolvers';
+import { createPublicationsRouter } from './modules/publications/publications.routes';
 import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
 
 export interface AppOptions {
@@ -28,10 +30,11 @@ export interface AppOptions {
   // Không truyền: dùng cấu hình Cloudinary của env. `null`: tắt kho ảnh (test).
   cloudinary?: CloudinaryConfig | null;
   assetsRateLimit?: number;
+  publicRateLimit?: number;
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
-export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule], authenticate });
+export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule], authenticate });
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
 
@@ -69,6 +72,7 @@ export function createApp(options: AppOptions = {}): express.Express {
     rateLimit: options.assetsRateLimit ?? env.ASSETS_RATE_LIMIT,
     cloudinary: options.cloudinary === undefined ? env.cloudinary : options.cloudinary,
   }));
+  api.use('/publications', createPublicationsRouter({ rateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT }));
   app.use('/api/v1', api);
 
   const graphql = (options.graphql ??= defaultGraphql());

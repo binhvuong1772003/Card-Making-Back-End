@@ -1,1 +1,20 @@
-# SDL: publishCard, unpublishCard.
+"""Bản xuất bản đang công khai của một thiệp."""
+type Publication {
+  """Đường dẫn công khai: /thiep/<slug>."""
+  slug: String!
+  """Lần xuất bản gần nhất (xuất bản lại thì cập nhật)."""
+  publishedAt: DateTime!
+}
+
+extend type Query {
+  """Bản xuất bản đang công khai của thiệp (mọi vai trò xem được thiệp đều xem được); null nếu chưa xuất bản hoặc đã gỡ."""
+  publication(cardId: ID!): Publication
+}
+
+extend type Mutation {
+  """Xuất bản thiệp (chỉ owner): chụp bản nháp hiện tại làm trang công khai. `slug` bỏ trống thì giữ slug cũ, hoặc tự đặt từ tiêu đề. Xuất bản lại để cập nhật trang."""
+  publishCard(id: ID!, slug: String): Publication!
+
+  """Gỡ trang công khai (chỉ owner). Gỡ rồi xuất bản lại thì giữ slug cũ nếu không bị ai lấy mất."""
+  unpublishCard(id: ID!): Boolean!
+}
