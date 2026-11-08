@@ -13,25 +13,20 @@ const optional = <T extends z.ZodType>(schema: T) => z.preprocess((value) => (ty
 export const rsvpAnswer = z.enum(['YES', 'NO', 'MAYBE']);
 export type RsvpAnswerValue = z.infer<typeof rsvpAnswer>;
 
-export const rsvpInput = z.object({
+// Khách gửi câu trả lời theo bản đồ mã ô → giá trị; luật nội dung của từng ô nằm ở `form-fields.ts` vì phải đọc cấu hình form.
+export const formInput = z.object({
   blockId,
-  name: text(1, 100),
-  attending: rsvpAnswer,
-  guests: z.number().int().min(1).max(100).optional(),
-  phone: optional(text(6, 20).regex(/^[0-9+().\-\s]+$/, 'Invalid phone number')),
-  note: optional(text(1, 500)),
+  answers: z.record(z.string(), z.unknown()).default({}),
   // Ô ẩn chống thư rác: người điền thật không thấy nên để trống.
   website: z.string().max(200).optional(),
 });
-export type RsvpInput = z.infer<typeof rsvpInput>;
+export type FormInput = z.infer<typeof formInput>;
 
-export const guestbookInput = z.object({
+export const entriesQuery = z.object({
   blockId,
-  name: text(1, 60),
-  message: text(1, 500),
-  website: z.string().max(200).optional(),
+  first: z.coerce.number().int().min(1).max(50).default(10),
+  after: z.string().min(1).max(200).optional(),
 });
-export type GuestbookInput = z.infer<typeof guestbookInput>;
 
 export const entryStatus = z.enum(['VISIBLE', 'HIDDEN', 'PENDING']);
 export type EntryStatusValue = z.infer<typeof entryStatus>;
@@ -40,9 +35,7 @@ export const guestbookQuery = z.object({
   blockId,
   first: z.coerce.number().int().min(1).max(50).default(10),
   after: z.string().min(1).max(200).optional(),
-});
-
-export const listRsvpsArgs = z.object({
+});export const listRsvpsArgs = z.object({
   blockId: blockId.optional(),
   answer: rsvpAnswer.optional(),
   search: z.string().trim().max(100).optional(),

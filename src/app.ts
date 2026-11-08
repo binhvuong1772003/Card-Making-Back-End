@@ -37,8 +37,7 @@ export interface AppOptions {
   assetsUserHourlyLimit?: number;
   assetsUserDailyLimit?: number;
   publicRateLimit?: number;
-  rsvpHourlyLimit?: number;
-  guestbookHourlyLimit?: number;
+  formsHourlyLimit?: number;
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
@@ -83,11 +82,10 @@ export function createApp(options: AppOptions = {}): express.Express {
     cloudinary: options.cloudinary === undefined ? env.cloudinary : options.cloudinary,
   }));
   api.use('/publications', createPublicationsRouter({ rateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT }));
-  // Khách gửi xác nhận và lời chúc, đọc sổ lưu bút: công khai, cùng tiền tố với trang công khai.
+  // Khách gửi câu trả lời form và đọc sổ công khai: công khai, cùng tiền tố với trang công khai.
   api.use('/publications', createResponsesRouter({
     publicRateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT,
-    rsvpHourlyLimit: options.rsvpHourlyLimit ?? env.RESPONSES_RSVP_HOURLY_LIMIT,
-    guestbookHourlyLimit: options.guestbookHourlyLimit ?? env.RESPONSES_GUESTBOOK_HOURLY_LIMIT,
+    formsHourlyLimit: options.formsHourlyLimit ?? env.FORMS_HOURLY_LIMIT,
   }));
   // Tải xác nhận tham dự của một thiệp thành CSV: cần đăng nhập; quyền xem được kiểm trong service.
   api.get('/cards/:id/rsvps.csv', requireAuth, rsvpsCsv);

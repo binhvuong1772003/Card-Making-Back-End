@@ -1,16 +1,17 @@
 import { createHmac } from 'node:crypto';
+import { Prisma } from '@prisma/client';
 import { env } from '../../../config/env';
 import { prisma } from '../../../infra/prisma';
 import { AppError } from '../../../shared/errors';
 import { can, roleOf } from '../cards.access';
-import { findBlock, GUESTBOOK_BLOCK, guestbookConfig, isClosed, RSVP_BLOCK, rsvpConfig } from './responses.config';
-import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type GuestbookInput, type ListEntriesArgs, type ListRsvpsArgs, type RsvpAnswerValue, type RsvpInput } from './responses.schema';
+import { findBlock, FORM_BLOCK } from './responses.config';
+import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type FormInput, type ListEntriesArgs, type ListRsvpsArgs, type RsvpAnswerValue } from './responses.schema';
+import { isClosed, parseFormBlock, publicView, validateAnswers, type StoredAnswer } from './form-fields';
 
-// Xác nhận tham dự và sổ lưu bút do khách gửi qua form trên trang công khai. Khách ghi không cần đăng nhập; chỉ chủ thiệp và người sửa thiệp
-// đọc xác nhận, còn lời chúc VISIBLE thì ai xem thiệp cũng thấy. Cấu hình form lấy từ bản đã xuất bản của thiệp, không từ khách.
+// Câu trả lời của khách cho khối `Form` trên trang công khai. Khách ghi không cần đăng nhập; chỉ chủ thiệp và người sửa thiệp
+// đọc câu trả lời, còn dòng VISIBLE của form bật sổ công khai thì ai xem thiệp cũng thấy. Cấu hình form lấy từ bản đã xuất bản.
 export const LIMITS = {
-  maxRsvps: 2000, // dòng xác nhận mỗi thiệp
-  maxEntries: 5000, // lời chúc mỗi thiệp
+  maxResponses: 5000, // câu trả lời mỗi thiệp (mọi form cộng lại)
   duplicateWindowMs: 60_000, // gửi lặp y hệt trong khoảng này coi là một
 };
 
@@ -38,9 +39,9 @@ async function findPublished(slug: string): Promise<{ cardId: string; document: 
   return publication;
 }
 
-function formBlock(document: unknown, blockId: string, type: string) {
+function formBlock(document: unknown, blockId: string) {
   const block = findBlock((document as { root?: unknown } | null)?.root, blockId);
-  if (!block || block.type !== type) throw new AppError('NOT_FOUND', 'Form not found');
+  if (!block || block.type !== FORM_BLOCK) throw new AppError('NOT_FOUND', 'Form not found');
   return block;
 }
 
@@ -50,65 +51,62 @@ export interface SubmitContext {
 
 // ---- Khách gửi ----
 
-export async function submitRsvp(slug: string, input: RsvpInput, context: SubmitContext, deps: Deps = realDeps): Promise<{ id: string }> {
+export interface PublicEntry {
+  id: string;
+  name: string;
+  text: string;
+  createdAt: Date;
+}
+
+export interface SubmitResult {
+  id: string;
+  status: EntryStatusValue;
+  /** Chỉ có khi dòng đang VISIBLE và form bật sổ công khai. */
+  entry: PublicEntry | null;
+}
+
+// Câu trả lời đã lưu là mảng tự mô tả; đọc lại phòng khi dữ liệu cũ hỏng thay vì làm cả trang lỗi.
+const storedAnswers = (value: unknown): StoredAnswer[] => (Array.isArray(value) ? (value as StoredAnswer[]) : []);
+
+function publicEntryOf(row: { id: string; answers: unknown; createdAt: Date }, list: ReturnType<typeof parseFormBlock>['publicList']): PublicEntry | null {
+  const view = publicView(storedAnswers(row.answers), list);
+  return view ? { id: row.id, name: view.name, text: view.text, createdAt: row.createdAt } : null;
+}
+
+// So sánh nội dung đã chuẩn hoá (đúng thứ tự ô, đã bỏ ô lạ/ô ẩn) của lần gửi này với các dòng gần đây.
+const sameAnswers = (left: unknown, right: StoredAnswer[]): boolean => JSON.stringify(left) === JSON.stringify(right);
+
+export async function submitForm(slug: string, input: FormInput, context: SubmitContext, deps: Deps = realDeps): Promise<SubmitResult> {
   // Ô ẩn có chữ là máy điền: bỏ qua nhưng vẫn trả như thành công để máy không biết mình bị chặn.
-  if (input.website) return { id: 'ignored' };
+  if (input.website) return { id: 'ignored', status: 'VISIBLE', entry: null };
   const { cardId, document } = await findPublished(slug);
-  const config = rsvpConfig(formBlock(document, input.blockId, RSVP_BLOCK).props);
+  const config = parseFormBlock(formBlock(document, input.blockId).props);
   const now = deps.now();
   if (isClosed(config.deadline, now)) throw new AppError('CONFLICT', 'This form is closed', { reason: 'CLOSED' });
-  if (input.attending === 'MAYBE' && !config.askMaybe) throw new AppError('VALIDATION', 'Invalid answer');
 
-  // NO không có số khách. Còn lại: không hỏi số khách thì là 1; hỏi thì mặc định 1 và không vượt tối đa của khối.
-  let guests: number | undefined;
-  if (input.attending !== 'NO') {
-    guests = config.askGuests ? (input.guests ?? 1) : 1;
-    if (guests > config.maxGuests) throw new AppError('VALIDATION', `At most ${config.maxGuests} guests`);
-  }
-  const phone = config.askPhone ? input.phone : undefined;
-  const note = config.askNote ? input.note : undefined;
+  const result = validateAnswers(config.fields, input.answers);
+  if ('errors' in result) throw new AppError('VALIDATION', 'Invalid answer', result.errors);
+  const answers = result.answers;
+  // Chỉ form bật sổ công khai mới có trạng thái chờ duyệt; form khác luôn VISIBLE (không ai xem công khai nên không cần duyệt).
+  const status: EntryStatusValue = config.publicList.enabled && config.moderation ? 'PENDING' : 'VISIBLE';
 
   const ipHash = ipHashOf(context.ip, now);
-  const recent = await prisma.rsvp.findMany({
+  const recent = await prisma.formResponse.findMany({
     where: { cardId, blockId: input.blockId, ipHash, createdAt: { gte: new Date(now.getTime() - deps.limits.duplicateWindowMs) } },
     orderBy: { createdAt: 'desc' },
     take: 5,
   });
-  const same = recent.find((row) => row.name === input.name && row.attending === input.attending && (row.guests ?? undefined) === guests && (row.phone ?? undefined) === phone && (row.note ?? undefined) === note);
-  if (same) return { id: same.id };
+  const same = recent.find((row) => sameAnswers(row.answers, answers));
+  if (same) return { id: same.id, status: same.status, entry: same.status === 'VISIBLE' ? publicEntryOf(same, config.publicList) : null };
 
-  if ((await prisma.rsvp.count({ where: { cardId } })) >= deps.limits.maxRsvps) throw new AppError('CONFLICT', 'This card cannot take more responses', { reason: 'FULL' });
-  const row = await prisma.rsvp.create({
-    data: { cardId, blockId: input.blockId, name: input.name, attending: input.attending, ...(guests !== undefined ? { guests } : {}), ...(phone ? { phone } : {}), ...(note ? { note } : {}), ipHash, createdAt: now },
-    select: { id: true },
+  if ((await prisma.formResponse.count({ where: { cardId } })) >= deps.limits.maxResponses) {
+    throw new AppError('CONFLICT', 'This card cannot take more responses', { reason: 'FULL' });
+  }
+  const row = await prisma.formResponse.create({
+    data: { cardId, blockId: input.blockId, answers: answers as unknown as Prisma.InputJsonValue, status, ipHash, createdAt: now },
+    select: { id: true, answers: true, createdAt: true },
   });
-  return { id: row.id };
-}
-
-export interface PublicEntry {
-  id: string;
-  name: string;
-  message: string;
-  createdAt: Date;
-}
-
-export async function submitGuestbook(slug: string, input: GuestbookInput, context: SubmitContext, deps: Deps = realDeps): Promise<{ id: string; status: EntryStatusValue; entry: PublicEntry | null }> {
-  if (input.website) return { id: 'ignored', status: 'VISIBLE', entry: null };
-  const { cardId, document } = await findPublished(slug);
-  const config = guestbookConfig(formBlock(document, input.blockId, GUESTBOOK_BLOCK).props);
-  const now = deps.now();
-  const status: EntryStatusValue = config.moderation ? 'PENDING' : 'VISIBLE';
-  const view = (row: { id: string; name: string; message: string; createdAt: Date }): PublicEntry | null => (status === 'VISIBLE' ? { id: row.id, name: row.name, message: row.message, createdAt: row.createdAt } : null);
-
-  const ipHash = ipHashOf(context.ip, now);
-  const same = await prisma.guestbookEntry.findFirst({
-    where: { cardId, blockId: input.blockId, ipHash, name: input.name, message: input.message, createdAt: { gte: new Date(now.getTime() - deps.limits.duplicateWindowMs) } },
-  });
-  if (same) return { id: same.id, status: same.status, entry: same.status === 'VISIBLE' ? { id: same.id, name: same.name, message: same.message, createdAt: same.createdAt } : null };
-
-  if ((await prisma.guestbookEntry.count({ where: { cardId } })) >= deps.limits.maxEntries) throw new AppError('CONFLICT', 'This card cannot take more responses', { reason: 'FULL' });
-  const row = await prisma.guestbookEntry.create({ data: { cardId, blockId: input.blockId, name: input.name, message: input.message, status, ipHash, createdAt: now } });
-  return { id: row.id, status, entry: view(row) };
+  return { id: row.id, status, entry: status === 'VISIBLE' ? publicEntryOf(row, config.publicList) : null };
 }
 
 export interface PublicEntryPage {
@@ -117,24 +115,30 @@ export interface PublicEntryPage {
   total: number;
 }
 
-// Lời chúc đang hiện của một sổ lưu bút, mới nhất trước. Chỉ tên, lời và thời gian: không có trạng thái, mã IP hay mã thiệp.
-export async function listGuestbook(slug: string, blockId: string, args: { first: number; after?: string | undefined }): Promise<PublicEntryPage> {
+// Sổ công khai của một form: chỉ dòng VISIBLE, mới nhất trước, chỉ tên và lời. Form không bật sổ thì coi như không có.
+export async function listPublicEntries(slug: string, blockId: string, args: { first: number; after?: string | undefined }): Promise<PublicEntryPage> {
   const { cardId, document } = await findPublished(slug);
-  formBlock(document, blockId, GUESTBOOK_BLOCK);
+  const config = parseFormBlock(formBlock(document, blockId).props);
+  if (!config.publicList.enabled) throw new AppError('NOT_FOUND', 'Form not found');
   const cursor = args.after ? decodeRowCursor(args.after) : undefined;
   const base = { cardId, blockId, status: 'VISIBLE' as const };
   const [rows, total] = await Promise.all([
-    prisma.guestbookEntry.findMany({
+    prisma.formResponse.findMany({
       where: cursor ? { ...base, OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }] } : base,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: args.first + 1,
-      select: { id: true, name: true, message: true, createdAt: true },
+      select: { id: true, answers: true, createdAt: true },
     }),
-    prisma.guestbookEntry.count({ where: base }),
+    prisma.formResponse.count({ where: base }),
   ]);
   const page = rows.slice(0, args.first);
+  // Dòng cũ có thể thiếu ô tên/lời sau khi chủ thiệp đổi ô: bỏ khỏi sổ chứ không hiện dòng trống.
+  const entries = page.flatMap((row) => {
+    const entry = publicEntryOf(row, config.publicList);
+    return entry ? [entry] : [];
+  });
   const last = page.at(-1);
-  return { entries: page, nextCursor: rows.length > args.first && last ? encodeRowCursor(last) : null, total };
+  return { entries, nextCursor: rows.length > args.first && last ? encodeRowCursor(last) : null, total };
 }
 
 // ---- Chủ thiệp và người sửa thiệp ----

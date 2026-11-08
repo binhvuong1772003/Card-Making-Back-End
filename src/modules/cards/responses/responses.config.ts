@@ -2,6 +2,8 @@
 // việc có duyệt trước. Tên loại khối và tên thuộc tính là hợp đồng với frontend (`CMFE/lib/cards/blocks`): đổi bên nào phải đổi bên kia.
 export const RSVP_BLOCK = 'Rsvp';
 export const GUESTBOOK_BLOCK = 'Guestbook';
+// Khối form tuỳ biến thay hai khối cứng trên; chỉ nó nhận câu trả lời mới.
+export const FORM_BLOCK = 'Form';
 
 export interface BlockNode {
   id: string;

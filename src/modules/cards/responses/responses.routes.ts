@@ -5,8 +5,8 @@ import { rateLimiter } from '../../../http/rate-limit';
 import { validateBody, validateQuery } from '../../../http/validate';
 import { AppError } from '../../../shared/errors';
 import { parseCardId } from '../cards.schema';
-import { guestbookInput, guestbookQuery, rsvpInput, type GuestbookInput, type RsvpInput } from './responses.schema';
-import { exportRsvpsCsv, listGuestbook, submitGuestbook, submitRsvp } from './responses.service';
+import { entriesQuery, formInput, type FormInput } from './responses.schema';
+import { exportRsvpsCsv, listPublicEntries, submitForm } from './responses.service';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -24,33 +24,27 @@ const perIpAndSlug = (limit: number) =>
 
 const slugOf = (req: Request): string => String(req.params.slug);
 
-const postRsvp: RequestHandler = async (req, res) => {
-  res.status(201).json(await submitRsvp(slugOf(req), res.locals.body as RsvpInput, { ip: req.ip ?? '' }));
+const postForm: RequestHandler = async (req, res) => {
+  res.status(201).json(await submitForm(slugOf(req), res.locals.body as FormInput, { ip: req.ip ?? '' }));
 };
 
-const postGuestbook: RequestHandler = async (req, res) => {
-  const result = await submitGuestbook(slugOf(req), res.locals.body as GuestbookInput, { ip: req.ip ?? '' });
-  res.status(201).json(result);
-};
-
-const getGuestbook: RequestHandler = async (req, res) => {
+const getEntries: RequestHandler = async (req, res) => {
   const query = res.locals.query as { blockId: string; first: number; after?: string };
-  const page = await listGuestbook(slugOf(req), query.blockId, { first: query.first, after: query.after });
-  // Lời chúc mới hiện sau vài giây là đủ; lưu tạm ngắn để một thiệp nhiều người xem không dội thẳng vào cơ sở dữ liệu.
+  const page = await listPublicEntries(slugOf(req), query.blockId, { first: query.first, after: query.after });
+  // Lời mới hiện sau vài giây là đủ; lưu tạm ngắn để một thiệp nhiều người xem không dội thẳng vào cơ sở dữ liệu.
   res.set('Cache-Control', 'public, max-age=10');
   res.json(page);
 };
 
 // Công khai, không cần đăng nhập, nằm dưới /publications/:slug cùng với trang công khai (module `publications`, chỉ đọc).
-export function createResponsesRouter(options: { publicRateLimit: number; rsvpHourlyLimit: number; guestbookHourlyLimit: number }): Router {
+export function createResponsesRouter(options: { publicRateLimit: number; formsHourlyLimit: number }): Router {
   const router = Router();
-  router.post('/:slug/rsvps', rateLimiter(options.publicRateLimit), perIpAndSlug(options.rsvpHourlyLimit), validateBody(rsvpInput), postRsvp);
-  router.post('/:slug/guestbook', rateLimiter(options.publicRateLimit), perIpAndSlug(options.guestbookHourlyLimit), validateBody(guestbookInput), postGuestbook);
-  router.get('/:slug/guestbook', rateLimiter(options.publicRateLimit), validateQuery(guestbookQuery), getGuestbook);
+  router.post('/:slug/forms', rateLimiter(options.publicRateLimit), perIpAndSlug(options.formsHourlyLimit), validateBody(formInput), postForm);
+  router.get('/:slug/forms/entries', rateLimiter(options.publicRateLimit), validateQuery(entriesQuery), getEntries);
   return router;
 }
 
-// Chạy SAU requireAuth (app.ts gắn): res.locals.auth.userId do nó đặt. Tệp CSV UTF-8 có BOM, không cho lưu tạm vì có tên và số điện thoại của khách.
+// Chạy SAU requireAuth (app.ts gắn): res.locals.auth.userId do nó đặt. Tệp CSV UTF-8 có BOM, không cho lưu tạm vì có câu trả lời của khách.
 export const rsvpsCsv: RequestHandler = async (req: Request, res: Response) => {
   const userId = res.locals.auth?.userId;
   if (typeof userId !== 'string') throw new AppError('UNAUTHENTICATED', 'Authentication required');

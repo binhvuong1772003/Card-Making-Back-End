@@ -4,8 +4,7 @@ import { createApp } from '../src/app';
 import { prisma } from '../src/infra/prisma';
 import { closeQueueing } from '../src/infra/queue';
 import { closeRedis } from '../src/infra/redis';
-import { buildRsvpsCsv, ipHashOf, submitGuestbook, submitRsvp, type RsvpView } from '../src/modules/cards/responses/responses.service';
-import { isClosed } from '../src/modules/cards/responses/responses.config';
+import { buildRsvpsCsv, ipHashOf, submitForm, type RsvpView } from '../src/modules/cards/responses/responses.service';
 import { createUserWithToken } from './helpers/auth';
 import { resetDatabase } from './helpers/database';
 
@@ -16,16 +15,24 @@ afterAll(async () => {
   await closeRedis();
 });
 
-const app = createApp({ rsvpHourlyLimit: 1000, guestbookHourlyLimit: 1000 });
+const app = createApp({ formsHourlyLimit: 1000 });
 const gql = (token: string, query: string, variables?: Record<string, unknown>) => request(app).post('/graphql').set('Authorization', `Bearer ${token}`).send({ query, variables });
 const code = (res: request.Response): string | undefined => res.body.errors?.[0]?.extensions?.code;
 
 const block = (id: string, type: string, props: Record<string, unknown> = {}) => ({ id, type, props, styles: {}, children: [] });
 const pageWith = (...blocks: unknown[]) => ({ schemaVersion: 1, root: { id: 'root', type: 'Page', props: {}, styles: {}, children: blocks } });
 
-// Thiệp đã xuất bản dựng thẳng trong DB: các khối form chưa có trong danh sách khối của editor, mà service chỉ đọc bản xuất bản.
-async function seed(options: { members?: { userId: string; role: 'EDITOR' | 'VIEWER' }[]; slug?: string; blocks?: unknown[]; published?: boolean } = {}) {
-  const owner = await createUserWithToken('owner@example.com');
+// Ô của form "Xác nhận tham dự" dựng sẵn; mỗi lần gọi trả bản mới để test sửa được.
+const rsvpFields = () => [
+  { id: 'name', type: 'text', label: 'Họ và tên', required: true },
+  { id: 'attending', type: 'choice', label: 'Bạn sẽ đến chứ?', required: true, options: ['Có, tôi sẽ đến', 'Rất tiếc, không đến được'] },
+  { id: 'guests', type: 'number', label: 'Số khách (tính cả bạn)', required: true, min: 1, max: 4, showIf: { fieldId: 'attending', equals: 'Có, tôi sẽ đến' } },
+];
+const formBlock = (props: Record<string, unknown> = {}) => block('form1', 'Form', { heading: 'Đăng ký', fields: rsvpFields(), ...props });
+
+// Thiệp đã xuất bản dựng thẳng trong DB: service chỉ đọc bản xuất bản, không đọc bản nháp.
+async function seed(options: { members?: { userId: string; role: 'EDITOR' | 'VIEWER' }[]; slug?: string; blocks?: unknown[]; published?: boolean; email?: string } = {}) {
+  const owner = await createUserWithToken(options.email ?? 'owner@example.com');
   const card = await prisma.card.create({
     data: { ownerId: owner.id, title: 'Thiệp cưới mẫu', document: {}, members: (options.members ?? []).map((m) => ({ ...m, addedAt: new Date() })) },
   });
@@ -37,102 +44,124 @@ async function seed(options: { members?: { userId: string; role: 'EDITOR' | 'VIE
   return { owner, card, slug };
 }
 
-const postRsvp = (slug: string, body: Record<string, unknown>) => request(app).post(`/api/v1/publications/${slug}/rsvps`).send({ blockId: 'rsvp1', name: 'Nguyễn Minh Anh', attending: 'YES', guests: 2, ...body });
-const postEntry = (slug: string, body: Record<string, unknown>) => request(app).post(`/api/v1/publications/${slug}/guestbook`).send({ blockId: 'gb1', name: 'Lan Chi', message: 'Chúc mừng hai bạn!', ...body });
+const ANSWERS = { name: 'Nguyễn Minh Anh', attending: 'Có, tôi sẽ đến', guests: 2 };
+const postForm = (slug: string, body: Record<string, unknown> = {}) => request(app).post(`/api/v1/publications/${slug}/forms`).send({ blockId: 'form1', answers: ANSWERS, ...body });
 
-describe('isClosed', () => {
-  it('stays open through the whole deadline day in Vietnam, then closes', () => {
-    expect(isClosed(null, new Date('2030-01-01T00:00:00Z'))).toBe(false);
-    expect(isClosed('2025-12-20', new Date('2025-12-20T16:59:59.999Z'))).toBe(false); // 23:59:59.999 giờ Việt Nam
-    expect(isClosed('2025-12-20', new Date('2025-12-20T17:00:00.000Z'))).toBe(true); // 00:00 ngày 21
-  });
-
-  it('treats a date that does not exist as no deadline', () => {
-    expect(isClosed('2025-02-30', new Date('2030-01-01T00:00:00Z'))).toBe(false);
-  });
-});
-
-describe('POST /publications/:slug/rsvps', () => {
-  it('stores an answer and says nothing about the card or the other guests', async () => {
-    const { card, slug } = await seed();
-    const res = await postRsvp(slug, { phone: '0900000000', note: 'Cho mình chỗ gần sân khấu' });
+describe('POST /publications/:slug/forms', () => {
+  it('stores the answers in field order with their labels, and returns the id', async () => {
+    const { card, slug } = await seed({ blocks: [formBlock()] });
+    const res = await postForm(slug);
     expect(res.status).toBe(201);
-    expect(Object.keys(res.body)).toEqual(['id']);
-    const row = await prisma.rsvp.findFirstOrThrow({ where: { cardId: card.id } });
-    expect(row).toMatchObject({ blockId: 'rsvp1', name: 'Nguyễn Minh Anh', attending: 'YES', guests: 2, note: 'Cho mình chỗ gần sân khấu' });
-    expect(row.phone).toBeNull(); // khối không bật hỏi số điện thoại nên bỏ
+    expect(res.body).toMatchObject({ status: 'VISIBLE', entry: null });
+    expect(typeof res.body.id).toBe('string');
+    const row = await prisma.formResponse.findFirstOrThrow({ where: { cardId: card.id } });
+    expect(row).toMatchObject({ blockId: 'form1', status: 'VISIBLE' });
+    expect(row.answers).toEqual([
+      { id: 'name', label: 'Họ và tên', type: 'text', value: 'Nguyễn Minh Anh' },
+      { id: 'attending', label: 'Bạn sẽ đến chứ?', type: 'choice', value: 'Có, tôi sẽ đến' },
+      { id: 'guests', label: 'Số khách (tính cả bạn)', type: 'number', value: 2 },
+    ]);
   });
 
-  it('keeps the phone only when the block asks for it, and drops the note when it does not', async () => {
-    const { card, slug } = await seed({ blocks: [block('rsvp1', 'Rsvp', { askPhone: true, askNote: false })] });
-    await postRsvp(slug, { phone: '0900 000 000', note: 'bỏ' }).expect(201);
-    const row = await prisma.rsvp.findFirstOrThrow({ where: { cardId: card.id } });
-    expect(row.phone).toBe('0900 000 000');
-    expect(row.note).toBeNull();
+  it('returns the entry when the form shows answers publicly', async () => {
+    const { slug } = await seed({
+      blocks: [
+        formBlock({
+          fields: [
+            { id: 'name', type: 'text', label: 'Tên của bạn', required: true },
+            { id: 'message', type: 'longtext', label: 'Lời chúc', required: true },
+          ],
+          publicList: { enabled: true, nameFieldId: 'name', textFieldId: 'message' },
+        }),
+      ],
+    });
+    const res = await postForm(slug, { answers: { name: 'Lan Chi', message: 'Chúc mừng hai bạn!' } });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ status: 'VISIBLE', entry: { name: 'Lan Chi', text: 'Chúc mừng hai bạn!' } });
+    expect(Object.keys(res.body.entry).sort()).toEqual(['createdAt', 'id', 'name', 'text']);
   });
 
-  it('gives a No no guest count, and a Yes one guest when the block does not ask', async () => {
-    const { card, slug } = await seed({ blocks: [block('rsvp1', 'Rsvp', { askGuests: false })] });
-    await postRsvp(slug, { attending: 'NO', guests: 3, name: 'A' }).expect(201);
-    await postRsvp(slug, { attending: 'YES', guests: 3, name: 'B' }).expect(201);
-    const rows = await prisma.rsvp.findMany({ where: { cardId: card.id }, orderBy: { name: 'asc' } });
-    expect(rows.map((r) => [r.name, r.attending, r.guests])).toEqual([['A', 'NO', null], ['B', 'YES', 1]]);
+  it('holds an answer back as PENDING when the public list moderates', async () => {
+    const { slug } = await seed({
+      blocks: [
+        formBlock({
+          moderation: true,
+          fields: [
+            { id: 'name', type: 'text', label: 'Tên', required: true },
+            { id: 'message', type: 'longtext', label: 'Lời', required: true },
+          ],
+          publicList: { enabled: true, nameFieldId: 'name', textFieldId: 'message' },
+        }),
+      ],
+    });
+    const res = await postForm(slug, { answers: { name: 'Lan', message: 'Chúc mừng' } });
+    expect(res.body).toMatchObject({ status: 'PENDING', entry: null });
   });
 
-  it('refuses more guests than the block allows, and Maybe when the block does not offer it', async () => {
-    const { slug } = await seed({ blocks: [block('rsvp1', 'Rsvp', { maxGuests: 2, askMaybe: false })] });
-    expect((await postRsvp(slug, { guests: 3 })).status).toBe(400);
-    expect((await postRsvp(slug, { attending: 'MAYBE' })).status).toBe(400);
+  it('names the field that is missing or wrong, and drops the ones hidden by a condition', async () => {
+    const { card, slug } = await seed({ blocks: [formBlock()] });
+    const missing = await postForm(slug, { answers: { attending: 'Có, tôi sẽ đến' } });
+    expect(missing.status).toBe(400);
+    expect(missing.body.error).toMatchObject({ code: 'VALIDATION' });
+    expect(missing.body.error.details.map((d: { path: string }) => d.path).sort()).toEqual(['guests', 'name']);
+
+    // "Không đến" ẩn ô số khách: gửi kèm cũng bị bỏ, không bắt buộc.
+    await postForm(slug, { answers: { name: 'An', attending: 'Rất tiếc, không đến được', guests: 3 } }).expect(201);
+    const row = await prisma.formResponse.findFirstOrThrow({ where: { cardId: card.id } });
+    expect(row.answers).toEqual([
+      { id: 'name', label: 'Họ và tên', type: 'text', value: 'An' },
+      { id: 'attending', label: 'Bạn sẽ đến chứ?', type: 'choice', value: 'Rất tiếc, không đến được' },
+    ]);
   });
 
-  it('refuses input that breaks the rules', async () => {
-    const { slug } = await seed();
-    for (const body of [{ name: '' }, { name: 'x'.repeat(101) }, { attending: 'PERHAPS' }, { guests: 0 }, { phone: 'abc' }, { note: 'x'.repeat(501) }, { name: 'a\u0000b' }]) {
-      expect((await postRsvp(slug, body)).status, JSON.stringify(body).slice(0, 40)).toBe(400);
-    }
+  it('drops answer keys that are not fields of the form', async () => {
+    const { card, slug } = await seed({ blocks: [formBlock()] });
+    await postForm(slug, { answers: { ...ANSWERS, injected: '<script>' } }).expect(201);
+    const row = await prisma.formResponse.findFirstOrThrow({ where: { cardId: card.id } });
+    expect(JSON.stringify(row.answers)).not.toContain('injected');
   });
 
   it('answers 404 for an unpublished card, a bad slug, a block that is missing or not a form', async () => {
-    const live = await seed();
-    expect((await postRsvp('khong-co', {})).status).toBe(404);
-    expect((await postRsvp('Bad Slug', {})).status).toBe(404);
-    expect((await postRsvp(live.slug, { blockId: 'nope' })).status).toBe(404);
-    expect((await postRsvp(live.slug, { blockId: 't1' })).status).toBe(404);
-    expect((await postRsvp(live.slug, { blockId: 'gb1' })).status).toBe(404); // khối sổ lưu bút không nhận xác nhận
+    const live = await seed({ blocks: [formBlock(), block('t1', 'Text')] });
+    expect((await postForm('khong-co')).status).toBe(404);
+    expect((await postForm('Bad Slug')).status).toBe(404);
+    expect((await postForm(live.slug, { blockId: 'nope' })).status).toBe(404);
+    expect((await postForm(live.slug, { blockId: 't1' })).status).toBe(404);
+    expect((await postForm(live.slug, { blockId: 'rsvp1' })).status).toBe(404); // khối kiểu cũ không nhận nữa
     await prisma.publication.updateMany({ data: { unpublishedAt: new Date() } });
-    expect((await postRsvp(live.slug, {})).status).toBe(404);
+    expect((await postForm(live.slug)).status).toBe(404);
   });
 
   it('closes after the deadline with CONFLICT and a reason, and stays open before it', async () => {
-    const past = await seed({ blocks: [block('rsvp1', 'Rsvp', { deadline: '2000-01-01' })], slug: 'het-han' });
-    const res = await postRsvp(past.slug, {});
+    const past = await seed({ blocks: [formBlock({ deadline: '2000-01-01' })], slug: 'het-han' });
+    const res = await postForm(past.slug);
     expect(res.status).toBe(409);
     expect(res.body.error).toMatchObject({ code: 'CONFLICT', details: { reason: 'CLOSED' } });
-    await prisma.publication.update({ where: { cardId: past.card.id }, data: { document: pageWith(block('rsvp1', 'Rsvp', { deadline: '2999-01-01' })) } });
-    expect((await postRsvp(past.slug, {})).status).toBe(201);
+    await prisma.publication.update({ where: { cardId: past.card.id }, data: { document: pageWith(formBlock({ deadline: '2999-01-01' })) } });
+    expect((await postForm(past.slug)).status).toBe(201);
   });
 
   it('ignores a bot that fills the hidden field, yet answers as if it worked', async () => {
-    const { card, slug } = await seed();
-    const res = await postRsvp(slug, { website: 'http://spam.example' });
+    const { card, slug } = await seed({ blocks: [formBlock()] });
+    const res = await postForm(slug, { website: 'http://spam.example' });
     expect(res.status).toBe(201);
-    expect(await prisma.rsvp.count({ where: { cardId: card.id } })).toBe(0);
+    expect(await prisma.formResponse.count({ where: { cardId: card.id } })).toBe(0);
   });
 
   it('counts an identical submission within a minute as one (a double click)', async () => {
-    const { card, slug } = await seed();
-    const first = await postRsvp(slug, {});
-    const second = await postRsvp(slug, {});
+    const { card, slug } = await seed({ blocks: [formBlock()] });
+    const first = await postForm(slug);
+    const second = await postForm(slug);
     expect(second.body.id).toBe(first.body.id);
-    expect(await prisma.rsvp.count({ where: { cardId: card.id } })).toBe(1);
-    await postRsvp(slug, { guests: 3 }).expect(201); // khác nội dung thì là dòng mới
-    expect(await prisma.rsvp.count({ where: { cardId: card.id } })).toBe(2);
+    expect(await prisma.formResponse.count({ where: { cardId: card.id } })).toBe(1);
+    await postForm(slug, { answers: { ...ANSWERS, guests: 3 } }).expect(201); // khác nội dung thì là dòng mới
+    expect(await prisma.formResponse.count({ where: { cardId: card.id } })).toBe(2);
   });
 
   it('does not keep the IP, only a hash that changes with the day', async () => {
-    const { card, slug } = await seed();
-    await postRsvp(slug, {});
-    const row = await prisma.rsvp.findFirstOrThrow({ where: { cardId: card.id } });
+    const { card, slug } = await seed({ blocks: [formBlock()] });
+    await postForm(slug);
+    const row = await prisma.formResponse.findFirstOrThrow({ where: { cardId: card.id } });
     expect(row.ipHash).toMatch(/^[0-9a-f]{32}$/);
     expect(JSON.stringify(row)).not.toMatch(/127\.0\.0\.1|::1|::ffff/);
     expect(ipHashOf('1.2.3.4', new Date('2026-01-01T10:00:00Z'))).toBe(ipHashOf('1.2.3.4', new Date('2026-01-01T23:00:00Z')));
@@ -140,100 +169,88 @@ describe('POST /publications/:slug/rsvps', () => {
   });
 
   it('stops taking answers once a card is full', async () => {
-    const { slug } = await seed();
-    const deps = { now: () => new Date(), limits: { maxRsvps: 1, maxEntries: 1, duplicateWindowMs: 0 } };
-    await submitRsvp(slug, { blockId: 'rsvp1', name: 'A', attending: 'YES' }, { ip: '1.1.1.1' }, deps);
-    await expect(submitRsvp(slug, { blockId: 'rsvp1', name: 'B', attending: 'YES' }, { ip: '1.1.1.1' }, deps)).rejects.toMatchObject({ code: 'CONFLICT', details: { reason: 'FULL' } });
+    const { slug } = await seed({ blocks: [formBlock()] });
+    const deps = { now: () => new Date(), limits: { maxResponses: 1, duplicateWindowMs: 0 } };
+    await submitForm(slug, { blockId: 'form1', answers: ANSWERS }, { ip: '1.1.1.1' }, deps);
+    await expect(submitForm(slug, { blockId: 'form1', answers: { ...ANSWERS, name: 'B' } }, { ip: '1.1.1.1' }, deps)).rejects.toMatchObject({
+      code: 'CONFLICT',
+      details: { reason: 'FULL' },
+    });
   });
 
   it('answers 429 after too many tries from one IP to one card, and not for another card', async () => {
-    const limited = createApp({ rsvpHourlyLimit: 2 });
-    const a = await seed({ slug: 'thiep-a' });
-    for (let i = 0; i < 2; i++) await request(limited).post(`/api/v1/publications/${a.slug}/rsvps`).send({ blockId: 'rsvp1', name: `K${i}`, attending: 'NO' }).expect(201);
-    expect((await request(limited).post(`/api/v1/publications/${a.slug}/rsvps`).send({ blockId: 'rsvp1', name: 'K9', attending: 'NO' })).status).toBe(429);
+    const limited = createApp({ formsHourlyLimit: 2 });
+    const a = await seed({ slug: 'thiep-a', blocks: [formBlock()] });
+    for (let i = 0; i < 2; i++) await request(limited).post(`/api/v1/publications/${a.slug}/forms`).send({ blockId: 'form1', answers: { ...ANSWERS, name: `K${i}` } }).expect(201);
+    expect((await request(limited).post(`/api/v1/publications/${a.slug}/forms`).send({ blockId: 'form1', answers: { ...ANSWERS, name: 'K9' } })).status).toBe(429);
     const owner = await createUserWithToken('other@example.com');
     const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'B', document: {}, members: [] } });
-    await prisma.publication.create({ data: { cardId: card.id, slug: 'thiep-b', document: pageWith(block('rsvp1', 'Rsvp')), publishedAt: new Date() } });
-    await request(limited).post('/api/v1/publications/thiep-b/rsvps').send({ blockId: 'rsvp1', name: 'K', attending: 'NO' }).expect(201);
+    await prisma.publication.create({ data: { cardId: card.id, slug: 'thiep-b', document: pageWith(formBlock()), publishedAt: new Date() } });
+    await request(limited).post('/api/v1/publications/thiep-b/forms').send({ blockId: 'form1', answers: ANSWERS }).expect(201);
   });
 });
 
-describe('guestbook, public side', () => {
-  it('shows a new message at once by default and returns it to the sender', async () => {
-    const { slug } = await seed();
-    const res = await postEntry(slug, {});
-    expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ status: 'VISIBLE', entry: { name: 'Lan Chi', message: 'Chúc mừng hai bạn!' } });
-    const list = await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1`).expect(200);
-    expect(list.body).toMatchObject({ total: 1, nextCursor: null });
-    expect(Object.keys(list.body.entries[0]).sort()).toEqual(['createdAt', 'id', 'message', 'name']);
-    expect(list.headers['cache-control']).toBe('public, max-age=10');
-  });
+describe('GET /publications/:slug/forms/entries', () => {
+  const guestbookForm = () =>
+    formBlock({
+      fields: [
+        { id: 'name', type: 'text', label: 'Tên của bạn', required: true },
+        { id: 'message', type: 'longtext', label: 'Lời chúc', required: true },
+      ],
+      publicList: { enabled: true, nameFieldId: 'name', textFieldId: 'message' },
+    });
+  const entries = (slug: string) => `/api/v1/publications/${slug}/forms/entries?blockId=form1`;
 
-  it('holds a message back as PENDING when the block moderates, and does not list it', async () => {
-    const { slug } = await seed({ blocks: [block('gb1', 'Guestbook', { moderation: true })] });
-    const res = await postEntry(slug, {});
-    expect(res.body).toMatchObject({ status: 'PENDING', entry: null });
-    const list = await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1`).expect(200);
-    expect(list.body).toMatchObject({ entries: [], total: 0 });
-  });
-
-  it('lists the newest first, ten at a time by default, and pages with a cursor', async () => {
-    const { card, slug } = await seed();
+  it('lists the visible answers newest first and pages with a cursor', async () => {
+    const { card, slug } = await seed({ blocks: [guestbookForm()] });
     const base = Date.now();
-    for (let i = 0; i < 5; i++) await prisma.guestbookEntry.create({ data: { cardId: card.id, blockId: 'gb1', name: `K${i}`, message: `m${i}`, status: 'VISIBLE', ipHash: 'x', createdAt: new Date(base + i * 1000) } });
-    await prisma.guestbookEntry.create({ data: { cardId: card.id, blockId: 'gb1', name: 'Ẩn', message: 'ẩn', status: 'HIDDEN', ipHash: 'x', createdAt: new Date(base + 9000) } });
-    const one = await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1&first=2`).expect(200);
-    expect(one.body.entries.map((e: { name: string }) => e.name)).toEqual(['K4', 'K3']);
+    const make = (name: string, status: 'VISIBLE' | 'HIDDEN' | 'PENDING', at: number) =>
+      prisma.formResponse.create({
+        data: {
+          cardId: card.id,
+          blockId: 'form1',
+          answers: [
+            { id: 'name', label: 'Tên', type: 'text', value: name },
+            { id: 'message', label: 'Lời', type: 'longtext', value: `Lời của ${name}` },
+          ],
+          status,
+          ipHash: 'x',
+          createdAt: new Date(at),
+        },
+      });
+    for (let i = 0; i < 5; i++) await make(`K${i}`, 'VISIBLE', base + i * 1000);
+    await make('Ẩn', 'HIDDEN', base + 9000);
+    await make('Chờ', 'PENDING', base + 9500);
+
+    const one = await request(app).get(`${entries(slug)}&first=2`).expect(200);
+    expect(one.body.entries.map((entry: { name: string }) => entry.name)).toEqual(['K4', 'K3']);
     expect(one.body.total).toBe(5);
-    const two = await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1&first=2&after=${one.body.nextCursor}`).expect(200);
-    expect(two.body.entries.map((e: { name: string }) => e.name)).toEqual(['K2', 'K1']);
-    const three = await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1&first=2&after=${two.body.nextCursor}`).expect(200);
-    expect(three.body.entries.map((e: { name: string }) => e.name)).toEqual(['K0']);
+    expect(Object.keys(one.body.entries[0]).sort()).toEqual(['createdAt', 'id', 'name', 'text']);
+    expect(one.headers['cache-control']).toBe('public, max-age=10');
+
+    const two = await request(app).get(`${entries(slug)}&first=2&after=${one.body.nextCursor}`).expect(200);
+    expect(two.body.entries.map((entry: { name: string }) => entry.name)).toEqual(['K2', 'K1']);
+    const three = await request(app).get(`${entries(slug)}&first=2&after=${two.body.nextCursor}`).expect(200);
+    expect(three.body.entries.map((entry: { name: string }) => entry.name)).toEqual(['K0']);
     expect(three.body.nextCursor).toBeNull();
-    expect((await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1&after=junk`)).status).toBe(400);
+    expect((await request(app).get(`${entries(slug)}&after=junk`)).status).toBe(400);
   });
 
-  it('refuses a name over 60 or a message over 500, and an empty one', async () => {
-    const { slug } = await seed();
-    for (const body of [{ name: 'x'.repeat(61) }, { message: 'x'.repeat(501) }, { message: '   ' }, { name: '' }]) expect((await postEntry(slug, body)).status).toBe(400);
+  it('is 404 when the form does not show answers publicly, the card is gone, or the block is not a Form', async () => {
+    const off = await seed({ blocks: [formBlock()] });
+    expect((await request(app).get(entries(off.slug))).status).toBe(404);
+    const live = await seed({ slug: 'thiep-hien', email: 'owner2@example.com', blocks: [guestbookForm()] });
+    expect((await request(app).get('/api/v1/publications/khong-co/forms/entries?blockId=form1')).status).toBe(404);
+    expect((await request(app).get('/api/v1/publications/thiep-hien/forms/entries?blockId=nope')).status).toBe(404);
+    await prisma.publication.updateMany({ data: { unpublishedAt: new Date() } });
+    expect((await request(app).get(entries(live.slug))).status).toBe(404);
   });
 
-  it('stores the message as plain text, as it came', async () => {
-    const { slug } = await seed();
-    await postEntry(slug, { message: '<script>alert(1)</script>\nDòng hai' }).expect(201);
-    const list = await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1`);
-    expect(list.body.entries[0].message).toBe('<script>alert(1)</script>\nDòng hai');
-  });
-
-  it('is gone once the card is unpublished, for sending and for reading', async () => {
-    const { slug } = await seed({ published: false });
-    expect((await postEntry(slug, {})).status).toBe(404);
-    expect((await request(app).get(`/api/v1/publications/${slug}/guestbook?blockId=gb1`)).status).toBe(404);
-  });
-
-  it('ignores the hidden field and counts duplicates as one', async () => {
-    const { card, slug } = await seed();
-    expect((await postEntry(slug, { website: 'x' })).status).toBe(201);
-    expect(await prisma.guestbookEntry.count({ where: { cardId: card.id } })).toBe(0);
-    const first = await postEntry(slug, {});
-    const second = await postEntry(slug, {});
-    expect(second.body.id).toBe(first.body.id);
-    expect(await prisma.guestbookEntry.count({ where: { cardId: card.id } })).toBe(1);
-  });
-
-  it('answers 429 after the hourly limit for one IP and one card', async () => {
-    const limited = createApp({ guestbookHourlyLimit: 1 });
-    const { slug } = await seed();
-    await request(limited).post(`/api/v1/publications/${slug}/guestbook`).send({ blockId: 'gb1', name: 'A', message: 'một' }).expect(201);
-    expect((await request(limited).post(`/api/v1/publications/${slug}/guestbook`).send({ blockId: 'gb1', name: 'A', message: 'hai' })).status).toBe(429);
-  });
-
-  it('stops taking messages once a card is full', async () => {
-    const { slug } = await seed();
-    const deps = { now: () => new Date(), limits: { maxRsvps: 1, maxEntries: 1, duplicateWindowMs: 0 } };
-    await submitGuestbook(slug, { blockId: 'gb1', name: 'A', message: 'một' }, { ip: '1.1.1.1' }, deps);
-    await expect(submitGuestbook(slug, { blockId: 'gb1', name: 'B', message: 'hai' }, { ip: '1.1.1.1' }, deps)).rejects.toMatchObject({ code: 'CONFLICT', details: { reason: 'FULL' } });
+  it('keeps the answer as plain text, as it came', async () => {
+    const { slug } = await seed({ blocks: [guestbookForm()] });
+    await postForm(slug, { answers: { name: 'Lan', message: '<script>alert(1)</script>\nDòng hai' } }).expect(201);
+    const list = await request(app).get(entries(slug));
+    expect(list.body.entries[0].text).toBe('<script>alert(1)</script>\nDòng hai');
   });
 });
 
@@ -322,10 +339,8 @@ describe('what the owner sees', () => {
     const SET = 'mutation($id: ID!, $status: EntryStatus!) { setGuestbookEntryStatus(id: $id, status: $status) { id status } }';
     expect((await gql(owner.token, SET, { id: a.id, status: 'HIDDEN' })).body.data.setGuestbookEntryStatus.status).toBe('HIDDEN');
     expect(code(await gql(owner.token, SET, { id: a.id, status: 'NOPE' }))).toBeDefined();
-    const publicList = await request(app).get('/api/v1/publications/thiep-cuoi-mau/guestbook?blockId=gb1');
-    expect(publicList.body.entries).toEqual([]); // đã ẩn thì khách không thấy
+    // Sổ công khai của khối cũ đã bị bỏ ở đợt form tuỳ biến; phần duyệt được kiểm lại ở bước sau.
     await gql(owner.token, SET, { id: a.id, status: 'VISIBLE' });
-    expect((await request(app).get('/api/v1/publications/thiep-cuoi-mau/guestbook?blockId=gb1')).body.entries).toHaveLength(1);
     await gql(owner.token, 'mutation($id: ID!) { deleteGuestbookEntry(id: $id) }', { id: a.id });
     expect(await prisma.guestbookEntry.count({ where: { cardId: card.id } })).toBe(2);
     const stranger = await createUserWithToken('stranger@example.com');

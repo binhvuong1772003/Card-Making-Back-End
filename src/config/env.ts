@@ -87,8 +87,7 @@ const schema = z.object({
   ASSETS_USER_HOURLY_LIMIT: z.coerce.number().int().positive().default(60), // yêu cầu ký tải ảnh mỗi người dùng mỗi giờ
   ASSETS_USER_DAILY_LIMIT: z.coerce.number().int().positive().default(300), // và mỗi ngày
   PUBLIC_RATE_LIMIT: z.coerce.number().int().positive().default(600), // lượt xem trang công khai mỗi IP mỗi 15 phút
-  RESPONSES_RSVP_HOURLY_LIMIT: z.coerce.number().int().positive().default(10), // xác nhận tham dự mỗi IP mỗi thiệp mỗi giờ
-  RESPONSES_GUESTBOOK_HOURLY_LIMIT: z.coerce.number().int().positive().default(5), // lời chúc mỗi IP mỗi thiệp mỗi giờ
+  FORMS_HOURLY_LIMIT: z.coerce.number().int().positive().default(10), // câu trả lời form mỗi IP mỗi thiệp mỗi giờ
 }).superRefine((value, ctx) => {
   if (Boolean(value.GOOGLE_CLIENT_ID) !== Boolean(value.GOOGLE_CLIENT_SECRET)) {
     const missing = value.GOOGLE_CLIENT_ID ? 'GOOGLE_CLIENT_SECRET' : 'GOOGLE_CLIENT_ID';
