@@ -142,9 +142,40 @@ describe('POST /publications/:slug/forms', () => {
     expect((await postForm('Bad Slug')).status).toBe(404);
     expect((await postForm(live.slug, { blockId: 'nope' })).status).toBe(404);
     expect((await postForm(live.slug, { blockId: 't1' })).status).toBe(404);
-    expect((await postForm(live.slug, { blockId: 'rsvp1' })).status).toBe(404); // khối kiểu cũ không nhận nữa
     await prisma.publication.updateMany({ data: { unpublishedAt: new Date() } });
     expect((await postForm(live.slug)).status).toBe(404);
+  });
+
+  it('stores every kind of question with the value typed as the question asks', async () => {
+    const { card, slug } = await seed({
+      blocks: [
+        formBlock({
+          fields: [
+            { id: 't', type: 'text', label: 'Chữ', required: true },
+            { id: 'lt', type: 'longtext', label: 'Đoạn', required: true },
+            { id: 'c', type: 'choice', label: 'Một', required: true, options: ['A', 'B'] },
+            { id: 'm', type: 'multichoice', label: 'Nhiều', required: true, options: ['X', 'Y', 'Z'] },
+            { id: 'n', type: 'number', label: 'Số', required: true, min: 1, max: 10 },
+            { id: 'y', type: 'yesno', label: 'Có không', required: true },
+            { id: 'd', type: 'date', label: 'Ngày', required: true },
+            { id: 'p', type: 'phone', label: 'Điện thoại', required: true },
+          ],
+        }),
+      ],
+    });
+    const answers = { t: 'Ghi chú', lt: 'Dòng một\nDòng hai', c: 'B', m: ['X', 'Z'], n: 7, y: true, d: '2026-12-31', p: '090 123 4567' };
+    await postForm(slug, { answers }).expect(201);
+    const row = await prisma.formResponse.findFirstOrThrow({ where: { cardId: card.id } });
+    expect(row.answers).toEqual([
+      { id: 't', label: 'Chữ', type: 'text', value: 'Ghi chú' },
+      { id: 'lt', label: 'Đoạn', type: 'longtext', value: 'Dòng một\nDòng hai' },
+      { id: 'c', label: 'Một', type: 'choice', value: 'B' },
+      { id: 'm', label: 'Nhiều', type: 'multichoice', value: ['X', 'Z'] },
+      { id: 'n', label: 'Số', type: 'number', value: 7 },
+      { id: 'y', label: 'Có không', type: 'yesno', value: true },
+      { id: 'd', label: 'Ngày', type: 'date', value: '2026-12-31' },
+      { id: 'p', label: 'Điện thoại', type: 'phone', value: '090 123 4567' },
+    ]);
   });
 
   it('closes after the deadline with CONFLICT and a reason, and stays open before it', async () => {
@@ -403,6 +434,33 @@ describe('what the owner sees', () => {
     expect(code(await gql(owner.token, SET, { id: row.id, status: 'NOPE' }))).toBeDefined();
     const stranger = await createUserWithToken('stranger@example.com');
     expect(code(await gql(stranger.token, SET, { id: row.id, status: 'HIDDEN' }))).toBe('NOT_FOUND');
+  });
+
+  it('keeps a waiting answer out of the public list until it is approved', async () => {
+    const { owner, slug } = await seed({
+      blocks: [
+        formBlock({
+          moderation: true,
+          fields: [
+            { id: 'name', type: 'text', label: 'Tên', required: true },
+            { id: 'message', type: 'longtext', label: 'Lời', required: true },
+          ],
+          publicList: { enabled: true, nameFieldId: 'name', textFieldId: 'message' },
+        }),
+      ],
+    });
+    const posted = await postForm(slug, { answers: { name: 'Lan', message: 'Chúc mừng' } });
+    expect(posted.body.status).toBe('PENDING');
+    const list = () => request(app).get(`/api/v1/publications/${slug}/forms/entries?blockId=form1`);
+    expect((await list()).body.total).toBe(0);
+
+    await gql(owner.token, 'mutation($id: ID!, $status: EntryStatus!) { setFormResponseStatus(id: $id, status: $status) { id status } }', {
+      id: posted.body.id,
+      status: 'VISIBLE',
+    });
+    const after = await list();
+    expect(after.body.total).toBe(1);
+    expect(after.body.entries[0]).toMatchObject({ name: 'Lan', text: 'Chúc mừng' });
   });
 });
 
