@@ -86,6 +86,30 @@ describe('parsePageDocument', () => {
     expect(refusal(page).code).toBe('VALIDATION');
   });
 
+  // Thiệp lưu trước khi có khối `Form` vẫn còn `Rsvp`/`Guestbook`; mở ra phải thành `Form` chứ không bị từ chối.
+  it('opens a page saved with the old Rsvp or Guestbook block as the Form block', () => {
+    const rsvp = blockPage('Rsvp', {
+      heading: 'Bạn sẽ đến chứ?',
+      intro: '',
+      button: 'Gửi xác nhận',
+      askGuests: true,
+      askPhone: false,
+      askNote: true,
+      askMaybe: true,
+      deadline: '',
+      maxGuests: 4,
+      color: '#511419',
+      padding: 16,
+    });
+    const upgraded = parsePageDocument(rsvp).root.children.find((child) => child.id === 'n9')!;
+    expect(upgraded.type).toBe('Form');
+    expect(upgraded.props).toMatchObject({ heading: 'Bạn sẽ đến chứ?', button: 'Gửi xác nhận' });
+    expect(JSON.stringify(rsvp)).toContain('"Rsvp"'); // trang gốc không bị đổi
+
+    const guestbook = blockPage('Guestbook', { heading: 'Sổ lưu bút', intro: '', button: 'Gửi', moderation: false, pageSize: 5, color: '#511419', padding: 16 });
+    expect(parsePageDocument(guestbook).root.children.find((child) => child.id === 'n9')!.type).toBe('Form');
+  });
+
   it('refuses a picture address that is not safe to draw', () => {
     expect(refusal(samplePage('x', { metaImage: 'javascript:alert(1)' })).code).toBe('VALIDATION');
   });
