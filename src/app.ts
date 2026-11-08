@@ -14,9 +14,12 @@ import { logger, requestSerializer } from './infra/logger';
 import { createAssetsRouter } from './modules/assets/assets.routes';
 import type { CloudinaryConfig } from './modules/assets/assets.service';
 import { authenticate } from './modules/auth/authenticate';
+import { requireAuth } from './modules/auth/auth.middleware';
 import { createAuthRouter } from './modules/auth/auth.routes';
 import { cardsModule } from './modules/cards/cards.resolvers';
 import { galleryModule } from './modules/cards/gallery/gallery.resolvers';
+import { responsesModule } from './modules/cards/responses/responses.resolvers';
+import { createResponsesRouter, rsvpsCsv } from './modules/cards/responses/responses.routes';
 import { publishingModule } from './modules/cards/publishing/publishing.resolvers';
 import { createPublicationsRouter } from './modules/publications/publications.routes';
 import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
@@ -34,10 +37,12 @@ export interface AppOptions {
   assetsUserHourlyLimit?: number;
   assetsUserDailyLimit?: number;
   publicRateLimit?: number;
+  rsvpHourlyLimit?: number;
+  guestbookHourlyLimit?: number;
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
-export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule, galleryModule], authenticate });
+export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule, galleryModule, responsesModule], authenticate });
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
 
@@ -78,6 +83,14 @@ export function createApp(options: AppOptions = {}): express.Express {
     cloudinary: options.cloudinary === undefined ? env.cloudinary : options.cloudinary,
   }));
   api.use('/publications', createPublicationsRouter({ rateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT }));
+  // Khách gửi xác nhận và lời chúc, đọc sổ lưu bút: công khai, cùng tiền tố với trang công khai.
+  api.use('/publications', createResponsesRouter({
+    publicRateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT,
+    rsvpHourlyLimit: options.rsvpHourlyLimit ?? env.RESPONSES_RSVP_HOURLY_LIMIT,
+    guestbookHourlyLimit: options.guestbookHourlyLimit ?? env.RESPONSES_GUESTBOOK_HOURLY_LIMIT,
+  }));
+  // Tải xác nhận tham dự của một thiệp thành CSV: cần đăng nhập; quyền xem được kiểm trong service.
+  api.get('/cards/:id/rsvps.csv', requireAuth, rsvpsCsv);
   app.use('/api/v1', api);
 
   const graphql = (options.graphql ??= defaultGraphql());

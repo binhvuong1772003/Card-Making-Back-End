@@ -1,0 +1,83 @@
+"""Đáp án của khách ở form xác nhận tham dự."""
+enum RsvpAnswer {
+  YES
+  NO
+  MAYBE
+}
+
+"""Trạng thái một lời chúc: VISIBLE hiện cho mọi người xem thiệp, PENDING chờ chủ thiệp duyệt, HIDDEN đã ẩn."""
+enum EntryStatus {
+  VISIBLE
+  HIDDEN
+  PENDING
+}
+
+"""Một xác nhận tham dự do khách gửi."""
+type Rsvp {
+  id: ID!
+  """Mã của khối form trong thiệp."""
+  blockId: String!
+  name: String!
+  attending: RsvpAnswer!
+  """Số khách đi cùng (tính cả người gửi); null khi không đến."""
+  guests: Int
+  phone: String
+  note: String
+  createdAt: DateTime!
+}
+
+"""Tổng các xác nhận của thiệp, không theo bộ lọc đáp án hay tìm kiếm."""
+type RsvpSummary {
+  yes: Int!
+  no: Int!
+  maybe: Int!
+  """Tổng số khách của các xác nhận Có."""
+  guests: Int!
+}
+
+type RsvpConnection {
+  nodes: [Rsvp!]!
+  pageInfo: PageInfo!
+  summary: RsvpSummary!
+}
+
+"""Một lời chúc trong sổ lưu bút."""
+type GuestbookEntry {
+  id: ID!
+  blockId: String!
+  name: String!
+  message: String!
+  status: EntryStatus!
+  createdAt: DateTime!
+}
+
+type EntryCounts {
+  visible: Int!
+  hidden: Int!
+  pending: Int!
+}
+
+type GuestbookConnection {
+  nodes: [GuestbookEntry!]!
+  pageInfo: PageInfo!
+  counts: EntryCounts!
+}
+
+extend type Query {
+  """Xác nhận tham dự của thiệp, mới nhất trước (chủ thiệp và người sửa thiệp). `first` từ 1 đến 100. `search` tìm theo tên."""
+  rsvps(cardId: ID!, blockId: String, answer: RsvpAnswer, search: String, first: Int = 20, after: String): RsvpConnection!
+
+  """Lời chúc của thiệp, mới nhất trước, mọi trạng thái (chủ thiệp và người sửa thiệp)."""
+  guestbookEntries(cardId: ID!, blockId: String, status: EntryStatus, first: Int = 20, after: String): GuestbookConnection!
+}
+
+extend type Mutation {
+  """Xoá một xác nhận (chủ thiệp và người sửa thiệp)."""
+  deleteRsvp(id: ID!): Boolean!
+
+  """Xoá một lời chúc (chủ thiệp và người sửa thiệp)."""
+  deleteGuestbookEntry(id: ID!): Boolean!
+
+  """Ẩn, hiện hoặc duyệt một lời chúc (chủ thiệp và người sửa thiệp)."""
+  setGuestbookEntryStatus(id: ID!, status: EntryStatus!): GuestbookEntry!
+}

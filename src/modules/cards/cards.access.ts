@@ -1,5 +1,5 @@
 export type CardAccessRole = 'OWNER' | 'EDITOR' | 'VIEWER';
-export type CardAction = 'view' | 'rename' | 'edit' | 'delete' | 'publish';
+export type CardAction = 'view' | 'rename' | 'edit' | 'delete' | 'publish' | 'responses';
 
 interface CardAccessFields {
   ownerId: string;
@@ -18,6 +18,7 @@ const ALLOWED: Record<CardAction, readonly CardAccessRole[]> = {
   edit: ['OWNER', 'EDITOR'],
   delete: ['OWNER'],
   publish: ['OWNER'],
+  responses: ['OWNER', 'EDITOR'], // xem và quản lý xác nhận tham dự, lời chúc của khách
 };
 
 // Bảng quyền duy nhất của thiệp: mọi thao tác hỏi ở đây thay vì tự so sánh vai trò.

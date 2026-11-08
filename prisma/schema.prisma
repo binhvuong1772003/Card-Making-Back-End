@@ -129,6 +129,20 @@ type CardMember {
 }
 
 // Bản nháp đang sửa. Không có slug: slug chỉ sinh ra khi publish (nằm ở Publication).
+// Đáp án của form xác nhận tham dự.
+enum RsvpAnswer {
+  YES
+  NO
+  MAYBE
+}
+
+// Trạng thái một lời chúc: VISIBLE hiện cho mọi người xem thiệp, PENDING chờ chủ thiệp duyệt, HIDDEN chủ thiệp đã ẩn.
+enum EntryStatus {
+  VISIBLE
+  HIDDEN
+  PENDING
+}
+
 model Card {
   id               String       @id @default(auto()) @map("_id") @db.ObjectId
   ownerId          String       @db.ObjectId
@@ -144,6 +158,8 @@ model Card {
   owner       User         @relation("CardOwner", fields: [ownerId], references: [id])
   invites     CardInvite[]
   publication Publication?
+  rsvps       Rsvp[]
+  guestbook   GuestbookEntry[]
 
   @@index([ownerId, updatedAt(sort: Desc)]) // "thiệp của tôi"
   @@index([members.userId]) // "thiệp được chia sẻ với tôi"
@@ -209,4 +225,40 @@ model Template {
   @@index([status, publishedAt(sort: Desc)])
   @@index([category, status])
   @@index([authorId])
+}
+
+// Xác nhận tham dự do khách (không đăng nhập) gửi qua khối form trên trang công khai. Chỉ chủ thiệp và người sửa thiệp đọc được.
+// Mỗi lần gửi là một dòng mới. Xoá thiệp thì xoá luôn các dòng này (cùng giao dịch với xuất bản và lời mời).
+model Rsvp {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  cardId    String     @db.ObjectId
+  blockId   String // mã của khối form trong thiệp (một thiệp có thể có hơn một form)
+  name      String
+  attending RsvpAnswer
+  guests    Int? // chỉ có khi YES hoặc MAYBE; vắng hẳn khi NO
+  phone     String? // chỉ ghi khi khối bật hỏi số điện thoại
+  note      String?
+  ipHash    String // HMAC của IP và ngày: để giới hạn và gỡ thư rác, không giữ IP thô
+  createdAt DateTime   @default(now())
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@index([cardId, blockId, createdAt(sort: Desc)])
+  @@index([cardId, attending])
+}
+
+// Lời chúc trong sổ lưu bút. Tên và lời của dòng VISIBLE hiện công khai.
+model GuestbookEntry {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  cardId    String      @db.ObjectId
+  blockId   String
+  name      String
+  message   String
+  status    EntryStatus
+  ipHash    String
+  createdAt DateTime    @default(now())
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@index([cardId, blockId, status, createdAt(sort: Desc)])
 }

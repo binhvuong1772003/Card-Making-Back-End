@@ -124,6 +124,8 @@ export async function deleteCard(actor: string, id: string): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await tx.publication.deleteMany({ where: { cardId: id } });
       await tx.cardInvite.deleteMany({ where: { cardId: id } });
+      await tx.rsvp.deleteMany({ where: { cardId: id } });
+      await tx.guestbookEntry.deleteMany({ where: { cardId: id } });
       const deleted = await tx.card.deleteMany({ where: { id, ownerId: actor } });
       if (deleted.count === 0) throw new AppError('NOT_FOUND', 'Card not found'); // hoàn tác cả transaction
     });
