@@ -470,6 +470,87 @@
     },
     "hidden": true
   },
+  "Guestbook": {
+    "label": "Sổ lưu bút",
+    "category": "Thiệp cưới",
+    "icon": "text",
+    "keywords": [
+      "lưu bút",
+      "guestbook",
+      "lời chúc",
+      "chúc mừng",
+      "sổ"
+    ],
+    "size": {
+      "w": 380,
+      "h": 640
+    },
+    "canContain": false,
+    "defaultProps": {
+      "heading": "Sổ lưu bút",
+      "intro": "Gửi vài dòng chúc mừng. Lời chúc hiện công khai trên thiệp cho mọi người cùng đọc.",
+      "button": "Gửi lời chúc",
+      "moderation": false,
+      "pageSize": 5,
+      "color": "#511419",
+      "padding": 16
+    },
+    "defaultStyles": {
+      "borderWidth": 1,
+      "borderColor": "#511419",
+      "borderRadius": 4
+    },
+    "fields": {
+      "heading": {
+        "type": "text",
+        "label": "Tiêu đề",
+        "maxLength": 80,
+        "group": "Nội dung"
+      },
+      "intro": {
+        "type": "text",
+        "label": "Lời dẫn",
+        "maxLength": 300,
+        "multiline": true,
+        "group": "Nội dung",
+        "help": "Để trống thì ẩn."
+      },
+      "button": {
+        "type": "text",
+        "label": "Chữ nút",
+        "maxLength": 40,
+        "group": "Nội dung"
+      },
+      "moderation": {
+        "type": "boolean",
+        "label": "Duyệt trước",
+        "group": "Duyệt",
+        "help": "Bật thì lời chúc mới chờ chủ thiệp duyệt mới hiện."
+      },
+      "pageSize": {
+        "type": "number",
+        "label": "Số lời",
+        "min": 3,
+        "max": 20,
+        "group": "Duyệt",
+        "help": "Số lời chúc mỗi lần tải."
+      },
+      "color": {
+        "type": "color",
+        "label": "Màu chữ và nút",
+        "group": "Giao diện"
+      },
+      "padding": {
+        "type": "number",
+        "label": "Đệm",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Giao diện"
+      }
+    },
+    "hidden": true
+  },
   "Calendar": {
     "label": "Lịch tháng",
     "category": "Lịch",
