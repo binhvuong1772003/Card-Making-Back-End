@@ -155,11 +155,12 @@ model Card {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  owner       User         @relation("CardOwner", fields: [ownerId], references: [id])
-  invites     CardInvite[]
-  publication Publication?
-  rsvps       Rsvp[]
-  guestbook   GuestbookEntry[]
+  owner         User           @relation("CardOwner", fields: [ownerId], references: [id])
+  invites       CardInvite[]
+  publication   Publication?
+  rsvps         Rsvp[]
+  guestbook     GuestbookEntry[]
+  formResponses FormResponse[]
 
   @@index([ownerId, updatedAt(sort: Desc)]) // "thiệp của tôi"
   @@index([members.userId]) // "thiệp được chia sẻ với tôi"
@@ -245,6 +246,23 @@ model Rsvp {
 
   @@index([cardId, blockId, createdAt(sort: Desc)])
   @@index([cardId, attending])
+}
+
+// Câu trả lời cho khối `Form` (form tuỳ biến). `answers` là mảng tự mô tả [{ id, label, type, value }] chụp LÚC TRẢ LỜI,
+// nên chủ thiệp đổi hay xoá câu hỏi sau đó thì câu trả lời cũ vẫn đọc được.
+model FormResponse {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  cardId    String      @db.ObjectId
+  blockId   String // mã khối form trong thiệp (một thiệp có thể có nhiều form)
+  answers   Json
+  status    EntryStatus @default(VISIBLE)
+  ipHash    String // HMAC của IP và ngày: để giới hạn và gỡ thư rác, không giữ IP thô
+  createdAt DateTime    @default(now())
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@index([cardId, blockId, createdAt(sort: Desc)])
+  @@index([cardId, blockId, status, createdAt(sort: Desc)])
 }
 
 // Lời chúc trong sổ lưu bút. Tên và lời của dòng VISIBLE hiện công khai.

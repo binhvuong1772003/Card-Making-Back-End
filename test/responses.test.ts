@@ -379,9 +379,11 @@ describe('deleting a card', () => {
     const { owner, card } = await seed();
     await fill(card.id);
     await prisma.guestbookEntry.create({ data: { cardId: card.id, blockId: 'gb1', name: 'A', message: 'm', status: 'VISIBLE', ipHash: 'x' } });
+    await prisma.formResponse.create({ data: { cardId: card.id, blockId: 'f1', answers: [], ipHash: 'x' } });
     const res = await gql(owner.token, 'mutation($id: ID!) { deleteCard(id: $id) }', { id: card.id });
     expect(res.body.errors).toBeUndefined();
     expect(await prisma.rsvp.count()).toBe(0);
     expect(await prisma.guestbookEntry.count()).toBe(0);
+    expect(await prisma.formResponse.count()).toBe(0);
   });
 });
