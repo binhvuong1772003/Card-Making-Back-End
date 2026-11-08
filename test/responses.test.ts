@@ -64,6 +64,20 @@ describe('POST /publications/:slug/forms', () => {
     ]);
   });
 
+  it('takes answers to a form that was published with the old Rsvp block', async () => {
+    const { card, slug } = await seed({ blocks: [block('rsvp1', 'Rsvp', { maxGuests: 6 })] });
+    const res = await request(app)
+      .post(`/api/v1/publications/${slug}/forms`)
+      .send({ blockId: 'rsvp1', answers: { name: 'An', attending: 'Có, tôi sẽ đến', guests: 5 } });
+    expect(res.status).toBe(201);
+    const row = await prisma.formResponse.findFirstOrThrow({ where: { cardId: card.id } });
+    expect(row.answers).toEqual([
+      { id: 'name', label: 'Họ và tên', type: 'text', value: 'An' },
+      { id: 'attending', label: 'Bạn sẽ đến chứ?', type: 'choice', value: 'Có, tôi sẽ đến' },
+      { id: 'guests', label: 'Số khách (tính cả bạn)', type: 'number', value: 5 },
+    ]);
+  });
+
   it('returns the entry when the form shows answers publicly', async () => {
     const { slug } = await seed({
       blocks: [

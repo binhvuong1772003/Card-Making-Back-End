@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import type { TreeNode } from '@miditor/core';
 import { Prisma } from '@prisma/client';
 import { env } from '../../../config/env';
 import { prisma } from '../../../infra/prisma';
@@ -7,6 +8,7 @@ import { can, roleOf } from '../cards.access';
 import { collectFormBlocks, findBlock, FORM_BLOCK } from './responses.config';
 import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type FormInput, type FormResponsesArgs } from './responses.schema';
 import { isClosed, parseFormBlock, publicView, validateAnswers, type Field, type FieldType, type StoredAnswer } from './form-fields';
+import { upgradeLegacyForms } from './legacy';
 
 // Câu trả lời của khách cho khối `Form` trên trang công khai. Khách ghi không cần đăng nhập; chỉ chủ thiệp và người sửa thiệp
 // đọc câu trả lời, còn dòng VISIBLE của form bật sổ công khai thì ai xem thiệp cũng thấy. Cấu hình form lấy từ bản đã xuất bản.
@@ -28,6 +30,14 @@ export function ipHashOf(ip: string, now: Date): string {
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+// Bản xuất bản lưu từ trước khi có khối `Form` có thể còn `Rsvp` / `Guestbook`: đổi sang `Form` ngay lúc đọc để mọi đường đọc
+// (khách gửi, sổ công khai, trang chủ thiệp, CSV) thấy cùng một hình dạng.
+function upgradedDocument<T>(document: T): T {
+  const root = (document as { root?: TreeNode } | null | undefined)?.root;
+  if (!root || typeof root !== 'object') return document;
+  return { ...(document as object), root: upgradeLegacyForms(root) } as T;
+}
+
 // Thiệp đang công khai theo slug; sai dạng, không có, hoặc đã gỡ đều là NOT_FOUND cùng một thông điệp.
 async function findPublished(slug: string): Promise<{ cardId: string; document: unknown }> {
   if (!SLUG.test(slug) || slug.length > 60) throw new AppError('NOT_FOUND', 'Page not found');
@@ -36,7 +46,7 @@ async function findPublished(slug: string): Promise<{ cardId: string; document: 
     select: { cardId: true, document: true },
   });
   if (!publication) throw new AppError('NOT_FOUND', 'Page not found');
-  return publication;
+  return { cardId: publication.cardId, document: upgradedDocument(publication.document) };
 }
 
 function formBlock(document: unknown, blockId: string) {
@@ -153,7 +163,7 @@ async function requireResponsesAccess(actor: string, cardId: string): Promise<vo
 
 const publishedRoot = async (cardId: string): Promise<unknown> => {
   const publication = await prisma.publication.findUnique({ where: { cardId }, select: { document: true } });
-  return (publication?.document as { root?: unknown } | undefined)?.root;
+  return (upgradedDocument(publication?.document) as { root?: unknown } | undefined)?.root;
 };
 
 export interface FormFieldInfo {
