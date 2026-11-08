@@ -26,7 +26,12 @@ const gql = (token: string, query: string, variables?: Record<string, unknown>) 
   request(app).post('/graphql').set('Authorization', `Bearer ${token}`).send({ query, variables });
 const code = (res: request.Response): string | undefined => res.body.errors?.[0]?.extensions?.code;
 
-const PUBLISH = 'mutation($id: ID!, $gallery: Boolean) { publishCard(id: $id, listInGallery: $gallery) { slug listInGallery galleryStatus galleryRejectReason } }';
+const PUBLISH = 'mutation($id: ID!, $gallery: Boolean, $pid: ID) { publishCard(id: $id, listInGallery: $gallery, publicationId: $pid) { slug listInGallery galleryStatus galleryRejectReason } }';
+// Xuất bản thiệp: cập nhật bản đã có, chưa có thì tạo (mỗi thiệp trong các test này chỉ có một bản).
+async function publish(token: string, id: string, gallery?: boolean) {
+  const existing = await prisma.publication.findFirst({ where: { cardId: id }, select: { id: true } });
+  return gql(token, PUBLISH, { id, gallery, pid: existing?.id });
+}
 const UNPUBLISH = 'mutation($id: ID!) { unpublishCard(id: $id) }';
 const PUBLICATION = 'query($cardId: ID!) { publication(cardId: $cardId) { listInGallery galleryStatus galleryRejectReason } }';
 const TEMPLATES = 'query($category: CardOccasion, $first: Int, $after: String) { templates(category: $category, first: $first, after: $after) { nodes { id title category authorName useCount } pageInfo { hasNextPage endCursor } } }';
@@ -59,7 +64,7 @@ const admin = async (email = 'admin@example.com') => {
 const seed = (ownerId: string, title: string, occasion: 'WEDDING' | 'BIRTHDAY' | 'EVENT' | 'OTHER' = 'WEDDING', document: object = page('Xin chào')) =>
   prisma.card.create({ data: { ownerId, title, document, revision: 0, members: [], occasion } });
 const publishToGallery = async (token: string, cardId: string) => {
-  const res = await gql(token, PUBLISH, { id: cardId, gallery: true });
+  const res = await publish(token, cardId, true);
   expect(res.body.errors).toBeUndefined();
   return prisma.template.findFirstOrThrow({ where: { sourceCardId: cardId }, orderBy: { createdAt: 'desc' } });
 };
@@ -69,7 +74,7 @@ describe('sending a card to the gallery', () => {
     const owner = await createUserWithToken('o@example.com');
     await prisma.user.update({ where: { id: owner.id }, data: { name: 'Thu Hà' } });
     const card = await seed(owner.id, 'Lễ cưới Hà', 'WEDDING');
-    const res = await gql(owner.token, PUBLISH, { id: card.id, gallery: true });
+    const res = await publish(owner.token, card.id, true);
     expect(res.body.data.publishCard).toMatchObject({ listInGallery: true, galleryStatus: 'PENDING' });
     const tpl = await prisma.template.findFirstOrThrow({ where: { sourceCardId: card.id } });
     expect(tpl).toMatchObject({ status: 'PENDING', title: 'Lễ cưới Hà', category: 'WEDDING', authorId: owner.id, version: 1 });
@@ -79,7 +84,7 @@ describe('sending a card to the gallery', () => {
   it('does nothing for the gallery when the switch is off, and a plain publish stays private', async () => {
     const owner = await createUserWithToken('o@example.com');
     const card = await seed(owner.id, 'T');
-    const res = await gql(owner.token, PUBLISH, { id: card.id });
+    const res = await publish(owner.token, card.id);
     expect(res.body.data.publishCard).toMatchObject({ listInGallery: false, galleryStatus: 'NONE' });
     expect(await prisma.template.count()).toBe(0);
   });
@@ -99,7 +104,7 @@ describe('sending a card to the gallery', () => {
     const owner = await createUserWithToken('o@example.com');
     const card = await seed(owner.id, 'T');
     const pending = await publishToGallery(owner.token, card.id);
-    await gql(owner.token, PUBLISH, { id: card.id, gallery: false });
+    await publish(owner.token, card.id, false);
     expect(await prisma.template.findUnique({ where: { id: pending.id } })).toBeNull();
 
     const live = await publishToGallery(owner.token, card.id);
@@ -108,7 +113,7 @@ describe('sending a card to the gallery', () => {
     await gql(owner.token, UNPUBLISH, { id: card.id });
     expect((await prisma.template.findUniqueOrThrow({ where: { id: live.id } })).status).toBe('UNLISTED');
     expect((await gql(owner.token, TEMPLATES)).body.data.templates.nodes).toEqual([]);
-    expect((await prisma.publication.findUniqueOrThrow({ where: { cardId: card.id } })).listInGallery).toBe(false);
+    expect((await prisma.publication.findFirstOrThrow({ where: { cardId: card.id } })).listInGallery).toBe(false);
   });
 });
 
@@ -165,7 +170,7 @@ describe('review', () => {
     expect((await gql(owner.token, TEMPLATES)).body.data.templates.nodes).toEqual([]);
     expect((await gql(owner.token, PUBLICATION, { cardId: card.id })).body.data.publication).toMatchObject({ galleryStatus: 'REJECTED', galleryRejectReason: 'Có số điện thoại' });
 
-    await gql(owner.token, PUBLISH, { id: card.id, gallery: true });
+    await publish(owner.token, card.id, true);
     const again = await prisma.template.findMany({ where: { sourceCardId: card.id } });
     expect(again).toHaveLength(1);
     expect(again[0]).toMatchObject({ id: tpl.id, status: 'PENDING', rejectReason: null });

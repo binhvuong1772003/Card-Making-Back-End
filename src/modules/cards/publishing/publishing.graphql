@@ -1,10 +1,15 @@
-"""Bản xuất bản đang công khai của một thiệp."""
+"""Một bản xuất bản đang công khai của thiệp. Một thiệp có thể có nhiều bản, mỗi bản một liên kết và một bản chụp riêng."""
 type Publication {
+  id: ID!
   """Đường dẫn công khai: /thiep/<slug>."""
   slug: String!
-  """Lần xuất bản gần nhất (xuất bản lại thì cập nhật)."""
+  """Tên bản do chủ thiệp đặt (chỉ chủ thiệp thấy); null nếu chưa đặt."""
+  label: String
+  """Bản chính: bản đang mở đầu tiên. Thư viện công khai chỉ lấy bản này."""
+  isMain: Boolean!
+  """Lần xuất bản gần nhất của bản này (xuất bản lại thì cập nhật)."""
   publishedAt: DateTime!
-  """Chủ thiệp có gửi thiệp vào thư viện công khai không."""
+  """Chủ thiệp có gửi thiệp vào thư viện công khai không (chỉ có nghĩa với bản chính)."""
   listInGallery: Boolean!
   galleryStatus: GalleryStatus!
   """Lý do admin từ chối, khi galleryStatus là REJECTED."""
@@ -12,14 +17,22 @@ type Publication {
 }
 
 extend type Query {
-  """Bản xuất bản đang công khai của thiệp (mọi vai trò xem được thiệp đều xem được); null nếu chưa xuất bản hoặc đã gỡ."""
+  """Các bản đang công khai của thiệp, bản chính đứng đầu (mọi vai trò xem được thiệp đều xem được); rỗng nếu chưa xuất bản hoặc đã gỡ hết."""
+  publications(cardId: ID!): [Publication!]!
+  """Bản chính đang công khai của thiệp; null nếu chưa xuất bản hoặc đã gỡ hết."""
   publication(cardId: ID!): Publication
 }
 
 extend type Mutation {
-  """Xuất bản thiệp (chỉ owner): chụp bản nháp hiện tại làm trang công khai. `slug` bỏ trống thì giữ slug cũ, hoặc tự đặt từ tiêu đề. Xuất bản lại để cập nhật trang. `listInGallery` bật thì gửi bản chụp vào hàng chờ duyệt của thư viện công khai (xuất bản lại khi đã chờ thì thay bản chờ); tắt thì rút thiệp khỏi thư viện."""
-  publishCard(id: ID!, slug: String, listInGallery: Boolean = false): Publication!
+  """Xuất bản thiệp (chỉ owner): chụp bản nháp hiện tại. Có `publicationId` thì cập nhật bản đó (xuất bản lại, giữ slug nếu không truyền slug mới); không có thì tạo bản mới (tối đa 5 bản đang mở, quá thì CONFLICT với reason LIMIT). `label` là tên bản (rỗng là bỏ tên, bỏ trống là giữ tên cũ). `listInGallery` chỉ có nghĩa với bản chính: bật thì gửi bản chụp vào hàng chờ duyệt, tắt thì rút thiệp khỏi thư viện."""
+  publishCard(id: ID!, slug: String, listInGallery: Boolean = false, publicationId: ID, label: String): Publication!
 
-  """Gỡ trang công khai (chỉ owner). Gỡ rồi xuất bản lại thì giữ slug cũ nếu không bị ai lấy mất."""
+  """Gỡ một bản (chỉ owner): liên kết đó trả 404, các bản khác không đổi."""
+  unpublishPublication(cardId: ID!, publicationId: ID!): Boolean!
+
+  """Gỡ mọi bản của thiệp (chỉ owner)."""
   unpublishCard(id: ID!): Boolean!
+
+  """Nạp nội dung của một bản đã xuất bản vào bản nháp (chỉ owner), thay cả bản nháp. Trả `revision` mới."""
+  restoreDraftFromPublication(cardId: ID!, publicationId: ID!): Int!
 }

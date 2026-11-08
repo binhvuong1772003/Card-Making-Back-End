@@ -14,6 +14,7 @@ export interface CardView {
   ownerId: string;
   occasion: CardOccasion;
   published: boolean; // có bản xuất bản đang công khai
+  publicationCount: number; // số bản đang công khai
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,11 +30,12 @@ export interface CardPage {
 }
 
 type CardRow = Pick<Card, 'id' | 'title' | 'revision' | 'ownerId' | 'members' | 'occasion' | 'createdAt' | 'updatedAt'> & {
-  publication?: { unpublishedAt: Date | null } | null;
+  publications?: { id: string }[];
 };
 
 // Đủ để biết thiệp đang công khai hay không, không tải bản chụp document của publication.
-const WITH_PUBLICATION = { publication: { select: { unpublishedAt: true } } } as const;
+const LIVE_PUBLICATIONS: Prisma.PublicationWhereInput = { OR: [{ unpublishedAt: null }, { unpublishedAt: { isSet: false } }] };
+const WITH_PUBLICATION = { publications: { where: LIVE_PUBLICATIONS, select: { id: true } } } as const;
 
 function toCardView(card: CardRow, actor: string): CardView {
   const role = roleOf(card, actor);
@@ -45,7 +47,8 @@ function toCardView(card: CardRow, actor: string): CardView {
     role,
     ownerId: card.ownerId,
     occasion: card.occasion ?? 'OTHER', // thiệp cũ chưa có dịp
-    published: Boolean(card.publication && !card.publication.unpublishedAt),
+    published: (card.publications?.length ?? 0) > 0,
+    publicationCount: card.publications?.length ?? 0,
     createdAt: card.createdAt,
     updatedAt: card.updatedAt,
   };

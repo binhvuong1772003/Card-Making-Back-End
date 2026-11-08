@@ -66,7 +66,7 @@ describe('card schema', () => {
     expect((await prisma.card.findUniqueOrThrow({ where: { id: card.id } })).members).toHaveLength(1);
   });
 
-  it('allows many unpublished cards but only one publication per card and a unique slug', async () => {
+  it('allows many publications per card but a unique slug', async () => {
     const owner = await makeUser('owner@example.com');
     const [a, b] = await Promise.all(
       ['A', 'B'].map((title) => prisma.card.create({ data: { ownerId: owner.id, title, document: {} } })),
@@ -75,10 +75,10 @@ describe('card schema', () => {
       prisma.publication.create({ data: { cardId, slug, document: {}, publishedAt: new Date() } });
 
     await publish(a.id, 'abcxyz');
-    await expect(publish(a.id, 'other')).rejects.toMatchObject({ code: 'P2002' }); // một Publication mỗi thiệp
+    await publish(a.id, 'other'); // nhiều bản mỗi thiệp
     await expect(publish(b.id, 'abcxyz')).rejects.toMatchObject({ code: 'P2002' }); // slug trùng
     await publish(b.id, 'second');
-    expect(await prisma.publication.count()).toBe(2);
+    expect(await prisma.publication.count()).toBe(3);
     expect(Prisma.PrismaClientKnownRequestError).toBeDefined();
   });
 

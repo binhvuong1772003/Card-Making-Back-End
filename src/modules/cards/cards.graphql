@@ -27,6 +27,8 @@ type Card {
   occasion: CardOccasion!
   """Có bản xuất bản đang công khai không."""
   published: Boolean!
+  """Số bản xuất bản đang công khai của thiệp."""
+  publicationCount: Int!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -51,6 +53,8 @@ type CardDetail {
   ownerId: ID!
   occasion: CardOccasion!
   published: Boolean!
+  """Số bản xuất bản đang công khai của thiệp."""
+  publicationCount: Int!
   createdAt: DateTime!
   updatedAt: DateTime!
   """Bản nháp. Cấu trúc chưa chốt nên hiện chỉ là JSON nguyên xi."""

@@ -152,7 +152,7 @@ model Card {
 
   owner         User           @relation("CardOwner", fields: [ownerId], references: [id])
   invites       CardInvite[]
-  publication   Publication?
+  publications  Publication[]
   formResponses FormResponse[]
 
   @@index([ownerId, updatedAt(sort: Desc)]) // "thiệp của tôi"
@@ -175,11 +175,13 @@ model CardInvite {
   @@index([cardId])
 }
 
-// Bản chụp đóng băng để XEM công khai. Chỉ tạo khi publish lần đầu; unpublish giữ nguyên dòng và slug.
-// Xóa thiệp phải xóa dòng này trong cùng một transaction ở service (không dựa vào xóa dây chuyền của Prisma).
+// Bản chụp đóng băng để XEM công khai. Một thiệp có nhiều bản (tối đa MAX_LIVE_PUBLICATIONS bản đang mở), mỗi bản một slug và một bản chụp riêng;
+// unpublish giữ nguyên dòng và slug. Bản chính là bản đang mở có id nhỏ nhất (ObjectId tăng theo thời gian tạo).
+// Xóa thiệp phải xóa các dòng này trong cùng một transaction ở service (không dựa vào xóa dây chuyền của Prisma).
 model Publication {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  cardId        String    @unique @db.ObjectId
+  cardId        String    @db.ObjectId
+  label         String? // tên bản do chủ thiệp đặt ("Nhà trai"); chỉ chủ thiệp thấy
   slug          String    @unique
   document      Json // bản chụp tại lúc publish
   publishedAt   DateTime
@@ -190,6 +192,7 @@ model Publication {
 
   card Card @relation(fields: [cardId], references: [id])
 
+  @@index([cardId])
   @@index([indexable, unpublishedAt]) // sitemap
 }
 
@@ -226,7 +229,8 @@ model Template {
 model FormResponse {
   id        String      @id @default(auto()) @map("_id") @db.ObjectId
   cardId    String      @db.ObjectId
-  blockId   String // mã khối form trong thiệp (một thiệp có thể có nhiều form)
+  blockId   String // khoá của form trong thiệp (một thiệp có thể có nhiều form), xem responses/form-id.ts
+  publicationId String? @db.ObjectId // khách điền qua bản nào; trống với phản hồi từ trước khi có nhiều bản. Không là quan hệ: bản gỡ rồi vẫn giữ phản hồi
   answers   Json
   status    EntryStatus @default(VISIBLE)
   ipHash    String // HMAC của IP và ngày: để giới hạn và gỡ thư rác, không giữ IP thô

@@ -13,7 +13,7 @@ const gql = (token: string, query: string, variables?: Record<string, unknown>) 
   request(app).post('/graphql').set('Authorization', `Bearer ${token}`).send({ query, variables });
 const code = (res: request.Response): string | undefined => res.body.errors?.[0]?.extensions?.code;
 
-const PUBLISH = 'mutation($id: ID!, $slug: String) { publishCard(id: $id, slug: $slug) { slug publishedAt } }';
+const PUBLISH = 'mutation($id: ID!, $slug: String, $publicationId: ID, $label: String) { publishCard(id: $id, slug: $slug, publicationId: $publicationId, label: $label) { id slug label isMain publishedAt } }';
 const UNPUBLISH = 'mutation($id: ID!) { unpublishCard(id: $id) }';
 const PUBLICATION = 'query($cardId: ID!) { publication(cardId: $cardId) { slug publishedAt } }';
 const LIST = 'query { cards { nodes { id published } } }';
@@ -39,20 +39,20 @@ describe('publishCard', () => {
     const res = await gql(owner.token, PUBLISH, { id: card.id });
     expect(res.body.errors).toBeUndefined();
     expect(res.body.data.publishCard.slug).toMatch(/^le-cuoi-minh-dat-[a-z0-9]{4}$/);
-    const stored = await prisma.publication.findUniqueOrThrow({ where: { cardId: card.id } });
+    const stored = await prisma.publication.findFirstOrThrow({ where: { cardId: card.id } });
     expect(stored.document).toEqual(page('Xin chào'));
   });
 
   it('keeps showing the published snapshot while the draft changes, until republished', async () => {
     const owner = await createUserWithToken('o@example.com');
     const card = await seed(owner.id, 'Thiệp');
-    const { slug } = (await gql(owner.token, PUBLISH, { id: card.id })).body.data.publishCard;
+    const { id: publicationId, slug } = (await gql(owner.token, PUBLISH, { id: card.id })).body.data.publishCard;
     await gql(owner.token, SAVE, { id: card.id, revision: 0, document: page('Bản nháp mới') });
 
     const before = await request(app).get(`/api/v1/publications/${slug}`);
     expect(before.body.document).toEqual(page('Xin chào'));
 
-    const again = await gql(owner.token, PUBLISH, { id: card.id });
+    const again = await gql(owner.token, PUBLISH, { id: card.id, publicationId });
     expect(again.body.data.publishCard.slug).toBe(slug); // republishing keeps the link
     const after = await request(app).get(`/api/v1/publications/${slug}`);
     expect(after.body.document).toEqual(page('Bản nháp mới'));
@@ -64,13 +64,13 @@ describe('publishCard', () => {
     const card = await seed(owner.id, 'Thiệp');
     const rival = await seed(other.id, 'Của người khác');
     await gql(other.token, PUBLISH, { id: rival.id, slug: 'da-co-nguoi-dung' });
-    const { slug: first } = (await gql(owner.token, PUBLISH, { id: card.id, slug: 'duong-dan-cu' })).body.data.publishCard;
+    const { id: publicationId, slug: first } = (await gql(owner.token, PUBLISH, { id: card.id, slug: 'duong-dan-cu' })).body.data.publishCard;
     await prisma.formResponse.create({ data: { cardId: card.id, blockId: 'f1', answers: [], ipHash: 'h' } });
 
-    expect(code(await gql(owner.token, PUBLISH, { id: card.id, slug: 'da-co-nguoi-dung' }))).toBe('CONFLICT');
+    expect(code(await gql(owner.token, PUBLISH, { id: card.id, publicationId, slug: 'da-co-nguoi-dung' }))).toBe('CONFLICT');
     expect((await request(app).get(`/api/v1/publications/${first}`)).status).toBe(200); // lần thất bại không đổi gì
 
-    const moved = await gql(owner.token, PUBLISH, { id: card.id, slug: 'duong-dan-moi' });
+    const moved = await gql(owner.token, PUBLISH, { id: card.id, publicationId, slug: 'duong-dan-moi' });
     expect(moved.body.data.publishCard.slug).toBe('duong-dan-moi');
     expect((await request(app).get('/api/v1/publications/duong-dan-moi')).status).toBe(200);
     expect((await request(app).get(`/api/v1/publications/${first}`)).status).toBe(404);
@@ -116,7 +116,7 @@ describe('unpublishCard and reading', () => {
   it('takes the page down and brings it back on republish', async () => {
     const owner = await createUserWithToken('o@example.com');
     const card = await seed(owner.id, 'T');
-    const { slug } = (await gql(owner.token, PUBLISH, { id: card.id })).body.data.publishCard;
+    const { id: publicationId, slug } = (await gql(owner.token, PUBLISH, { id: card.id })).body.data.publishCard;
     expect((await gql(owner.token, LIST)).body.data.cards.nodes[0].published).toBe(true);
 
     expect((await gql(owner.token, UNPUBLISH, { id: card.id })).body.data.unpublishCard).toBe(true);
@@ -124,7 +124,7 @@ describe('unpublishCard and reading', () => {
     expect((await gql(owner.token, PUBLICATION, { cardId: card.id })).body.data.publication).toBeNull();
     expect((await gql(owner.token, LIST)).body.data.cards.nodes[0].published).toBe(false);
 
-    await gql(owner.token, PUBLISH, { id: card.id });
+    await gql(owner.token, PUBLISH, { id: card.id, publicationId }); // mở lại đúng bản đã gỡ, giữ slug cũ
     expect((await request(app).get(`/api/v1/publications/${slug}`)).status).toBe(200);
   });
 
@@ -157,5 +157,94 @@ describe('unpublishCard and reading', () => {
     expect((await request(app).get('/api/v1/publications/BAD%20SLUG')).status).toBe(404);
     await gql(owner.token, 'mutation($id: ID!) { deleteCard(id: $id) }', { id: card.id });
     expect((await request(app).get(`/api/v1/publications/${slug}`)).status).toBe(404);
+  });
+});
+
+const PUBLICATIONS = 'query($cardId: ID!) { publications(cardId: $cardId) { id slug label isMain listInGallery galleryStatus } }';
+const UNPUBLISH_ONE = 'mutation($cardId: ID!, $publicationId: ID!) { unpublishPublication(cardId: $cardId, publicationId: $publicationId) }';
+const RESTORE = 'mutation($cardId: ID!, $publicationId: ID!) { restoreDraftFromPublication(cardId: $cardId, publicationId: $publicationId) }';
+const DRAFT = 'query($id: ID!) { card(id: $id) { revision document } }';
+const COUNT = 'query { cards { nodes { id published publicationCount } } }';
+
+describe('several publications of one card', () => {
+  it('publishes each version under its own link, with its own snapshot and a name; the first is the main one', async () => {
+    const owner = await createUserWithToken('o@example.com');
+    const card = await seed(owner.id, 'Thiệp cưới');
+    const a = (await gql(owner.token, PUBLISH, { id: card.id, slug: 'nha-trai', label: '  Nhà trai ' })).body.data.publishCard;
+    await gql(owner.token, SAVE, { id: card.id, revision: 0, document: page('Bản cho nhà gái') });
+    const b = (await gql(owner.token, PUBLISH, { id: card.id, slug: 'nha-gai', label: 'Nhà gái' })).body.data.publishCard;
+    expect(a).toMatchObject({ slug: 'nha-trai', label: 'Nhà trai', isMain: true });
+    expect(b).toMatchObject({ slug: 'nha-gai', label: 'Nhà gái', isMain: false });
+    expect((await request(app).get('/api/v1/publications/nha-trai')).body.document).toEqual(page('Xin chào'));
+    expect((await request(app).get('/api/v1/publications/nha-gai')).body.document).toEqual(page('Bản cho nhà gái'));
+
+    const list = (await gql(owner.token, PUBLICATIONS, { cardId: card.id })).body.data.publications;
+    expect(list.map((p: { slug: string; isMain: boolean }) => [p.slug, p.isMain])).toEqual([['nha-trai', true], ['nha-gai', false]]);
+    expect((await gql(owner.token, PUBLICATION, { cardId: card.id })).body.data.publication.slug).toBe('nha-trai'); // `publication` là bản chính
+    expect((await gql(owner.token, COUNT)).body.data.cards.nodes[0]).toMatchObject({ published: true, publicationCount: 2 });
+  });
+
+  it('refuses a sixth open version, counts only the open ones, and lets a freed place be used', async () => {
+    const owner = await createUserWithToken('o@example.com');
+    const card = await seed(owner.id, 'Thiệp');
+    const ids: string[] = [];
+    for (let n = 1; n <= 5; n++) ids.push((await gql(owner.token, PUBLISH, { id: card.id, slug: `ban-so-${n}` })).body.data.publishCard.id);
+    const sixth = await gql(owner.token, PUBLISH, { id: card.id, slug: 'ban-so-6' });
+    expect(code(sixth)).toBe('CONFLICT');
+    expect(sixth.body.errors[0].extensions.details ?? sixth.body.errors[0].extensions.reason).toBeDefined();
+    // Cập nhật một bản đã có thì không bị chặn bởi giới hạn.
+    expect(code(await gql(owner.token, PUBLISH, { id: card.id, publicationId: ids[2] }))).toBeUndefined();
+    await gql(owner.token, UNPUBLISH_ONE, { cardId: card.id, publicationId: ids[4] });
+    expect(code(await gql(owner.token, PUBLISH, { id: card.id, slug: 'ban-so-6' }))).toBeUndefined();
+  });
+
+  it('takes down one version only: its link stops, the others and the main flag stay right', async () => {
+    const owner = await createUserWithToken('o@example.com');
+    const card = await seed(owner.id, 'Thiệp');
+    const a = (await gql(owner.token, PUBLISH, { id: card.id, slug: 'ban-chinh' })).body.data.publishCard;
+    await gql(owner.token, PUBLISH, { id: card.id, slug: 'ban-phu' });
+    expect((await gql(owner.token, UNPUBLISH_ONE, { cardId: card.id, publicationId: a.id })).body.data.unpublishPublication).toBe(true);
+    expect((await gql(owner.token, UNPUBLISH_ONE, { cardId: card.id, publicationId: a.id })).body.data.unpublishPublication).toBe(true); // gọi lại không sao
+    expect((await request(app).get('/api/v1/publications/ban-chinh')).status).toBe(404);
+    expect((await request(app).get('/api/v1/publications/ban-phu')).status).toBe(200);
+    const list = (await gql(owner.token, PUBLICATIONS, { cardId: card.id })).body.data.publications;
+    expect(list.map((p: { slug: string; isMain: boolean }) => [p.slug, p.isMain])).toEqual([['ban-phu', true]]); // bản còn lại thành bản chính
+    expect((await gql(owner.token, UNPUBLISH, { id: card.id })).body.data.unpublishCard).toBe(true); // gỡ tất cả
+    expect((await gql(owner.token, COUNT)).body.data.cards.nodes[0]).toMatchObject({ published: false, publicationCount: 0 });
+  });
+
+  it('only lets the owner touch versions, and a version of another card is not found', async () => {
+    const owner = await createUserWithToken('o@example.com');
+    const editor = await createUserWithToken('e@example.com');
+    const card = await seed(owner.id, 'Thiệp', page('Xin chào'), [{ userId: editor.id, role: 'EDITOR', addedAt: new Date() }]);
+    const other = await seed(owner.id, 'Thiệp khác');
+    const a = (await gql(owner.token, PUBLISH, { id: card.id })).body.data.publishCard;
+    expect(code(await gql(editor.token, UNPUBLISH_ONE, { cardId: card.id, publicationId: a.id }))).toBe('FORBIDDEN');
+    expect(code(await gql(editor.token, RESTORE, { cardId: card.id, publicationId: a.id }))).toBe('FORBIDDEN');
+    expect(code(await gql(owner.token, PUBLISH, { id: other.id, publicationId: a.id }))).toBe('NOT_FOUND');
+    expect(code(await gql(owner.token, UNPUBLISH_ONE, { cardId: other.id, publicationId: a.id }))).toBe('NOT_FOUND');
+    expect(code(await gql(owner.token, UNPUBLISH_ONE, { cardId: card.id, publicationId: 'not-an-id' }))).toBe('NOT_FOUND');
+    expect(code(await gql(editor.token, PUBLICATIONS, { cardId: card.id }))).toBeUndefined(); // người sửa xem được danh sách
+  });
+
+  it('loads a published version back into the draft and bumps the revision, leaving the versions alone', async () => {
+    const owner = await createUserWithToken('o@example.com');
+    const card = await seed(owner.id, 'Thiệp');
+    const a = (await gql(owner.token, PUBLISH, { id: card.id, slug: 'ban-cu' })).body.data.publishCard;
+    await gql(owner.token, SAVE, { id: card.id, revision: 0, document: page('Bản nháp đã sửa') });
+    const revision = (await gql(owner.token, RESTORE, { cardId: card.id, publicationId: a.id })).body.data.restoreDraftFromPublication;
+    expect(revision).toBe(2);
+    const draft = (await gql(owner.token, DRAFT, { id: card.id })).body.data.card;
+    expect(draft).toMatchObject({ revision: 2, document: page('Xin chào') });
+    expect((await request(app).get('/api/v1/publications/ban-cu')).body.document).toEqual(page('Xin chào'));
+  });
+
+  it('keeps the name when a version is republished without one, and clears it with an empty one', async () => {
+    const owner = await createUserWithToken('o@example.com');
+    const card = await seed(owner.id, 'Thiệp');
+    const a = (await gql(owner.token, PUBLISH, { id: card.id, label: 'Nhà trai' })).body.data.publishCard;
+    expect((await gql(owner.token, PUBLISH, { id: card.id, publicationId: a.id })).body.data.publishCard.label).toBe('Nhà trai');
+    expect((await gql(owner.token, PUBLISH, { id: card.id, publicationId: a.id, label: '' })).body.data.publishCard.label).toBeNull();
+    expect(code(await gql(owner.token, PUBLISH, { id: card.id, publicationId: a.id, label: 'x'.repeat(41) }))).toBe('VALIDATION');
   });
 });
