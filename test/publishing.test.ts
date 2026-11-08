@@ -58,6 +58,25 @@ describe('publishCard', () => {
     expect(after.body.document).toEqual(page('Bản nháp mới'));
   });
 
+  it('moves a published card to a new slug on republish: the old link stops, a taken slug is refused, and the answers stay', async () => {
+    const owner = await createUserWithToken('o@example.com');
+    const other = await createUserWithToken('p@example.com');
+    const card = await seed(owner.id, 'Thiệp');
+    const rival = await seed(other.id, 'Của người khác');
+    await gql(other.token, PUBLISH, { id: rival.id, slug: 'da-co-nguoi-dung' });
+    const { slug: first } = (await gql(owner.token, PUBLISH, { id: card.id, slug: 'duong-dan-cu' })).body.data.publishCard;
+    await prisma.formResponse.create({ data: { cardId: card.id, blockId: 'f1', answers: [], ipHash: 'h' } });
+
+    expect(code(await gql(owner.token, PUBLISH, { id: card.id, slug: 'da-co-nguoi-dung' }))).toBe('CONFLICT');
+    expect((await request(app).get(`/api/v1/publications/${first}`)).status).toBe(200); // lần thất bại không đổi gì
+
+    const moved = await gql(owner.token, PUBLISH, { id: card.id, slug: 'duong-dan-moi' });
+    expect(moved.body.data.publishCard.slug).toBe('duong-dan-moi');
+    expect((await request(app).get('/api/v1/publications/duong-dan-moi')).status).toBe(200);
+    expect((await request(app).get(`/api/v1/publications/${first}`)).status).toBe(404);
+    expect(await prisma.formResponse.count({ where: { cardId: card.id } })).toBe(1);
+  });
+
   it('refuses a card with no content', async () => {
     const owner = await createUserWithToken('o@example.com');
     const card = await seed(owner.id, 'Trống', {});
