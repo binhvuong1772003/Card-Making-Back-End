@@ -64,6 +64,22 @@ describe('POST /publications/:slug/forms', () => {
     ]);
   });
 
+  it('files the answers under the formId, so a new form that reuses the node id does not inherit them', async () => {
+    const { owner, card, slug } = await seed({ blocks: [formBlock()] });
+    // Form chưa có formId (trang cũ) thì khoá là id của nút.
+    expect((await postForm(slug)).status).toBe(201);
+    const forms = async () =>
+      ((await gql(owner.token, CARD_FORMS, { cardId: card.id })).body.data.cardForms as { blockId: string; removed: boolean; total: number }[]).map((f) => [f.blockId, f.removed, f.total]);
+    expect(await forms()).toEqual([['form1', false, 1]]);
+    // Form bị thay bằng form mới cùng id nút nhưng có formId: phản hồi cũ ở lại thành form đã gỡ, form mới bắt đầu từ 0.
+    await prisma.publication.update({ where: { cardId: card.id }, data: { document: pageWith(formBlock({ formId: 'f_second' })) } });
+    expect(await forms()).toEqual([['f_second', false, 0], ['form1', true, 1]]);
+    // Đã có formId thì id của nút không còn là khoá: gửi theo id nút bị 404, gửi theo formId được.
+    expect((await postForm(slug)).status).toBe(404);
+    expect((await postForm(slug, { blockId: 'f_second' })).status).toBe(201);
+    expect(await forms()).toEqual([['f_second', false, 1], ['form1', true, 1]]);
+  });
+
   it('takes answers to a form that was published with the old Rsvp block', async () => {
     const { card, slug } = await seed({ blocks: [block('rsvp1', 'Rsvp', { maxGuests: 6 })] });
     const res = await request(app)

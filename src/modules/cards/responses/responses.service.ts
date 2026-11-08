@@ -5,7 +5,7 @@ import { env } from '../../../config/env';
 import { prisma } from '../../../infra/prisma';
 import { AppError } from '../../../shared/errors';
 import { can, roleOf } from '../cards.access';
-import { collectFormBlocks, findBlock, FORM_BLOCK } from './responses.config';
+import { collectFormBlocks, findFormBlock, FORM_BLOCK } from './responses.config';
 import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type FormInput, type FormResponsesArgs } from './responses.schema';
 import { isClosed, parseFormBlock, publicView, validateAnswers, type Field, type FieldType, type StoredAnswer } from './form-fields';
 import { upgradeLegacyForms } from './legacy';
@@ -50,7 +50,7 @@ async function findPublished(slug: string): Promise<{ cardId: string; document: 
 }
 
 function formBlock(document: unknown, blockId: string) {
-  const block = findBlock((document as { root?: unknown } | null)?.root, blockId);
+  const block = findFormBlock((document as { root?: unknown } | null)?.root, blockId);
   if (!block || block.type !== FORM_BLOCK) throw new AppError('NOT_FOUND', 'Form not found');
   return block;
 }
@@ -208,9 +208,9 @@ export async function listCardForms(actor: string, cardId: string): Promise<Card
 
   const forms: CardFormView[] = blocks.map((block) => {
     const config = parseFormBlock(block.props);
-    const count = counts.get(block.id) ?? { total: 0, pending: 0 };
+    const count = counts.get(block.key) ?? { total: 0, pending: 0 };
     return {
-      blockId: block.id,
+      blockId: block.key,
       heading: typeof block.props.heading === 'string' ? block.props.heading : '',
       fields: config.fields.map(fieldInfo),
       publicList: config.publicList.enabled,
@@ -294,7 +294,7 @@ export async function listFormResponses(actor: string, cardId: string, args: For
 
   let summary: FormSummaryView[] = [];
   if (args.blockId) {
-    const block = findBlock(await publishedRoot(cardId), args.blockId);
+    const block = findFormBlock(await publishedRoot(cardId), args.blockId);
     const fields = block && block.type === FORM_BLOCK ? parseFormBlock(block.props).fields : fieldsFromAnswers(all.flatMap((row) => storedAnswers(row.answers)));
     summary = summarize(fields, all);
   }
@@ -361,7 +361,7 @@ const fileSlug = (heading: string): string =>
 
 export async function exportFormCsv(actor: string, cardId: string, blockId: string): Promise<{ csv: string; filename: string }> {
   await requireResponsesAccess(actor, cardId);
-  const block = findBlock(await publishedRoot(cardId), blockId);
+  const block = findFormBlock(await publishedRoot(cardId), blockId);
   const config = block && block.type === FORM_BLOCK ? parseFormBlock(block.props) : null;
   const heading = config && typeof block?.props.heading === 'string' ? block.props.heading : '';
 

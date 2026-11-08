@@ -1,6 +1,7 @@
 import { builtInRegistry, migratePage, validatePage, type PageData, type TreeNode } from '@miditor/core';
 import { AppError } from '../../shared/errors';
 import { cardComponents, retiredProps } from './components';
+import { normalizeFormIds } from './responses/form-id';
 import { upgradeLegacyForms } from './responses/legacy';
 
 // Dữ liệu trang đến từ ngoài (trình duyệt) nên không bao giờ được tin cho tới khi qua đây: `migratePage` (đúng hình dạng, đúng phiên
@@ -27,7 +28,7 @@ export function parsePageDocument(input: unknown): PageData {
   if (size > MAX_DOCUMENT_BYTES) throw new AppError('VALIDATION', 'The page is too large');
   const opened = migratePage(input);
   if (!opened.ok) throw new AppError('VALIDATION', `The page is not valid (${opened.reason})`);
-  const page = { ...opened.page, root: withoutRetiredProps(upgradeLegacyForms(opened.page.root)) };
+  const page = { ...opened.page, root: normalizeFormIds(withoutRetiredProps(upgradeLegacyForms(opened.page.root))) };
   const issues = validatePage(registry, page);
   if (issues.length > 0) throw new AppError('VALIDATION', `The page is not valid (${issues.length} problem${issues.length === 1 ? '' : 's'})`);
   return page;

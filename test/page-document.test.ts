@@ -110,6 +110,17 @@ describe('parsePageDocument', () => {
     expect(parsePageDocument(guestbook).root.children.find((child) => child.id === 'n9')!.type).toBe('Form');
   });
 
+  it('gives a copy of a form (same formId) a key of its own when the page is saved, and leaves unique forms alone', () => {
+    const formProps = { formId: 'f_abc', heading: 'Biểu mẫu', intro: '', button: 'Gửi', success: 'Cảm ơn', deadline: '', moderation: false, color: '#511419', padding: 16 };
+    const one = blockPage('Form', formProps);
+    expect(parsePageDocument(one)).toEqual(one);
+    const first = one.root.children.at(-1)!;
+    const twice = { ...one, root: { ...one.root, children: [...one.root.children, { ...first, id: 'n10' }] } };
+    const kids = parsePageDocument(twice).root.children;
+    expect(kids.find((child) => child.id === 'n9')!.props.formId).toBe('f_abc');
+    expect(kids.find((child) => child.id === 'n10')!.props.formId).toBe('f_abc_n10');
+  });
+
   it('refuses a picture address that is not safe to draw', () => {
     expect(refusal(samplePage('x', { metaImage: 'javascript:alert(1)' })).code).toBe('VALIDATION');
   });
