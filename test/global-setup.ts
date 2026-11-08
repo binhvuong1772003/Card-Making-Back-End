@@ -1,8 +1,9 @@
-import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
+import { execFile, execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer, type AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { Redis } from 'ioredis';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 
@@ -56,7 +57,9 @@ async function startRedis(): Promise<string> {
 export async function setup(project: { provide: (key: string, value: string) => void }): Promise<void> {
   repl = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   const uri = repl.getUri('cmbe_test');
-  const output = execFileSync('npx', ['prisma', 'db', 'push', '--skip-generate'], {
+  // Bất đồng bộ có chủ ý: execFileSync chặn vòng lặp sự kiện nên mongod (log qua ống tới tiến trình này) bị kẹt khi ống đầy,
+  // và db push treo khi schema đủ lớn.
+  const { stdout: output } = await promisify(execFile)('npx', ['prisma', 'db', 'push', '--skip-generate'], {
     env: { ...process.env, DATABASE_URL: uri },
     encoding: 'utf8',
   });
