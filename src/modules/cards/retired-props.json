@@ -1,0 +1,48 @@
+{
+  "Map": [
+    "borderStyle",
+    "borderWidth",
+    "borderColor",
+    "radius",
+    "filled",
+    "fill",
+    "shadow",
+    "tilt",
+    "tape"
+  ],
+  "Calendar": [
+    "filled",
+    "fill",
+    "borderWidth",
+    "borderColor",
+    "radius"
+  ],
+  "CalendarHeart": [
+    "filled",
+    "fill",
+    "borderWidth",
+    "borderColor",
+    "radius"
+  ],
+  "CalendarFrame": [
+    "filled",
+    "fill",
+    "borderWidth",
+    "borderColor",
+    "radius"
+  ],
+  "CalendarDark": [
+    "filled",
+    "fill",
+    "borderWidth",
+    "borderColor",
+    "radius"
+  ],
+  "CalendarWeek": [
+    "filled",
+    "fill",
+    "borderWidth",
+    "borderColor",
+    "radius"
+  ]
+}

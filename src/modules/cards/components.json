@@ -1,0 +1,1046 @@
+{
+  "Album": {
+    "label": "Album xoay 3D",
+    "category": "Album",
+    "icon": "img",
+    "keywords": [
+      "album",
+      "ảnh",
+      "gallery",
+      "carousel",
+      "coverflow",
+      "xoay"
+    ],
+    "size": {
+      "w": 380,
+      "h": 360
+    },
+    "canContain": false,
+    "defaultProps": {
+      "images": [],
+      "autoplay": true,
+      "interval": 1.5,
+      "lightbox": true,
+      "radius": 16,
+      "dotColor": "#511419"
+    },
+    "fields": {
+      "images": {
+        "type": "custom",
+        "kind": "image-list",
+        "label": "Ảnh",
+        "group": "Nội dung"
+      },
+      "autoplay": {
+        "type": "boolean",
+        "label": "Tự chạy",
+        "group": "Chuyển ảnh"
+      },
+      "interval": {
+        "type": "number",
+        "label": "Mỗi ảnh",
+        "min": 0.5,
+        "max": 10,
+        "unit": "s",
+        "group": "Chuyển ảnh"
+      },
+      "lightbox": {
+        "type": "boolean",
+        "label": "Phóng to ảnh",
+        "group": "Chuyển ảnh",
+        "help": "Bấm vào ảnh để xem lớn."
+      },
+      "radius": {
+        "type": "number",
+        "label": "Bo góc ảnh",
+        "min": 0,
+        "max": 48,
+        "unit": "px",
+        "group": "Kiểu dáng"
+      },
+      "dotColor": {
+        "type": "color",
+        "label": "Màu chấm",
+        "group": "Kiểu dáng"
+      }
+    },
+    "hidden": true
+  },
+  "AlbumGrid": {
+    "label": "Album lưới",
+    "category": "Album",
+    "icon": "grid",
+    "keywords": [
+      "album",
+      "ảnh",
+      "lưới",
+      "grid",
+      "gallery"
+    ],
+    "size": {
+      "w": 380,
+      "h": 380
+    },
+    "canContain": false,
+    "defaultProps": {
+      "images": [],
+      "columns": 3,
+      "gap": 8,
+      "radius": 8,
+      "lightbox": true
+    },
+    "fields": {
+      "images": {
+        "type": "custom",
+        "kind": "image-list",
+        "label": "Ảnh",
+        "group": "Nội dung"
+      },
+      "columns": {
+        "type": "number",
+        "label": "Cột",
+        "min": 1,
+        "max": 4,
+        "group": "Kiểu dáng",
+        "help": "Số ảnh trên một hàng. Các ảnh chia đều chiều cao của khối."
+      },
+      "gap": {
+        "type": "number",
+        "label": "Cách",
+        "min": 0,
+        "max": 24,
+        "unit": "px",
+        "group": "Kiểu dáng",
+        "help": "Khoảng cách giữa các ảnh."
+      },
+      "radius": {
+        "type": "number",
+        "label": "Bo góc",
+        "min": 0,
+        "max": 32,
+        "unit": "px",
+        "group": "Kiểu dáng"
+      },
+      "lightbox": {
+        "type": "boolean",
+        "label": "Phóng to ảnh",
+        "group": "Chuyển ảnh",
+        "help": "Bấm vào ảnh để xem lớn."
+      }
+    },
+    "hidden": true
+  },
+  "AlbumStrip": {
+    "label": "Album băng ngang",
+    "category": "Album",
+    "icon": "img",
+    "keywords": [
+      "album",
+      "ảnh",
+      "băng",
+      "ngang",
+      "slider",
+      "cuộn"
+    ],
+    "size": {
+      "w": 380,
+      "h": 260
+    },
+    "canContain": false,
+    "defaultProps": {
+      "images": [],
+      "gap": 10,
+      "radius": 10,
+      "lightbox": true
+    },
+    "fields": {
+      "images": {
+        "type": "custom",
+        "kind": "image-list",
+        "label": "Ảnh",
+        "group": "Nội dung"
+      },
+      "gap": {
+        "type": "number",
+        "label": "Cách",
+        "min": 0,
+        "max": 24,
+        "unit": "px",
+        "group": "Kiểu dáng",
+        "help": "Khoảng cách giữa các ảnh."
+      },
+      "radius": {
+        "type": "number",
+        "label": "Bo góc",
+        "min": 0,
+        "max": 32,
+        "unit": "px",
+        "group": "Kiểu dáng"
+      },
+      "lightbox": {
+        "type": "boolean",
+        "label": "Phóng to ảnh",
+        "group": "Chuyển ảnh",
+        "help": "Bấm vào ảnh để xem lớn."
+      }
+    },
+    "hidden": true
+  },
+  "AlbumPolaroid": {
+    "label": "Album ảnh dán",
+    "category": "Album",
+    "icon": "img",
+    "keywords": [
+      "album",
+      "ảnh",
+      "dán",
+      "polaroid",
+      "khung"
+    ],
+    "size": {
+      "w": 380,
+      "h": 560
+    },
+    "canContain": false,
+    "defaultProps": {
+      "images": [],
+      "columns": 2,
+      "tilt": 5,
+      "frameColor": "#ffffff",
+      "radius": 2,
+      "lightbox": true
+    },
+    "fields": {
+      "images": {
+        "type": "custom",
+        "kind": "image-list",
+        "label": "Ảnh",
+        "group": "Nội dung"
+      },
+      "columns": {
+        "type": "number",
+        "label": "Cột",
+        "min": 1,
+        "max": 3,
+        "group": "Kiểu dáng",
+        "help": "Số ảnh trên một hàng. Các ảnh chia đều chiều cao của khối."
+      },
+      "tilt": {
+        "type": "number",
+        "label": "Nghiêng",
+        "min": 0,
+        "max": 12,
+        "unit": "°",
+        "group": "Kiểu dáng",
+        "help": "Độ nghiêng lớn nhất của một ảnh. 0 là thẳng hàng."
+      },
+      "radius": {
+        "type": "number",
+        "label": "Bo góc",
+        "min": 0,
+        "max": 16,
+        "unit": "px",
+        "group": "Kiểu dáng"
+      },
+      "frameColor": {
+        "type": "color",
+        "label": "Màu khung ảnh",
+        "group": "Kiểu dáng"
+      },
+      "lightbox": {
+        "type": "boolean",
+        "label": "Phóng to ảnh",
+        "group": "Chuyển ảnh",
+        "help": "Bấm vào ảnh để xem lớn."
+      }
+    },
+    "hidden": true
+  },
+  "Map": {
+    "label": "Bản đồ",
+    "category": "Thiệp cưới",
+    "icon": "grid",
+    "keywords": [
+      "bản đồ",
+      "map",
+      "địa điểm",
+      "google",
+      "chỉ đường"
+    ],
+    "size": {
+      "w": 380,
+      "h": 440
+    },
+    "canContain": false,
+    "defaultProps": {
+      "name": "",
+      "address": "",
+      "showText": true,
+      "zoom": 16,
+      "heading": "Địa điểm",
+      "divider": true,
+      "button": "Chỉ đường",
+      "color": "#511419",
+      "innerFrame": true,
+      "padding": 14
+    },
+    "defaultStyles": {
+      "borderWidth": 1,
+      "borderColor": "#511419",
+      "borderRadius": 4
+    },
+    "fields": {
+      "name": {
+        "type": "text",
+        "label": "Tên địa điểm",
+        "maxLength": 120,
+        "group": "Địa điểm"
+      },
+      "address": {
+        "type": "text",
+        "label": "Địa chỉ",
+        "maxLength": 300,
+        "multiline": true,
+        "group": "Địa điểm"
+      },
+      "showText": {
+        "type": "boolean",
+        "label": "Tên, địa chỉ",
+        "group": "Địa điểm",
+        "help": "Tắt thì chỉ còn bản đồ; tên và địa chỉ vẫn dùng để tìm vị trí."
+      },
+      "zoom": {
+        "type": "number",
+        "label": "Phóng",
+        "min": 10,
+        "max": 20,
+        "group": "Địa điểm",
+        "help": "Độ phóng của bản đồ, từ 10 đến 20."
+      },
+      "heading": {
+        "type": "text",
+        "label": "Tiêu đề",
+        "maxLength": 60,
+        "group": "Chữ và nút",
+        "help": "Để trống thì ẩn."
+      },
+      "button": {
+        "type": "text",
+        "label": "Chữ nút",
+        "maxLength": 40,
+        "group": "Chữ và nút",
+        "help": "Để trống thì ẩn nút Chỉ đường."
+      },
+      "divider": {
+        "type": "boolean",
+        "label": "Đường kẻ tim",
+        "group": "Chữ và nút",
+        "help": "Đường kẻ có trái tim dưới tiêu đề."
+      },
+      "innerFrame": {
+        "type": "boolean",
+        "label": "Viền trong",
+        "group": "Chữ và nút",
+        "help": "Một đường mảnh nằm trong khối, tạo khung đôi khi khối đã có viền ngoài."
+      },
+      "color": {
+        "type": "color",
+        "label": "Màu chữ và nút",
+        "group": "Chữ và nút"
+      },
+      "padding": {
+        "type": "number",
+        "label": "Đệm",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Chữ và nút",
+        "help": "Khoảng đệm giữa mép khối và bản đồ."
+      }
+    },
+    "hidden": true
+  },
+  "Calendar": {
+    "label": "Lịch tháng",
+    "category": "Lịch",
+    "icon": "grid",
+    "keywords": [
+      "lịch",
+      "calendar",
+      "ngày cưới",
+      "tháng",
+      "ngày"
+    ],
+    "size": {
+      "w": 340,
+      "h": 320
+    },
+    "canContain": false,
+    "defaultProps": {
+      "date": "2026-01-03",
+      "sundayFirst": false,
+      "weekOnly": false,
+      "showTitle": true,
+      "lines": false,
+      "innerFrame": false,
+      "markShape": "Tròn",
+      "markColor": "#511419",
+      "markTextColor": "#ffffff",
+      "color": "#511419",
+      "weekColor": "#8a5a5e",
+      "size": 16,
+      "padding": 0,
+      "font": "",
+      "titleFont": ""
+    },
+    "fields": {
+      "date": {
+        "type": "custom",
+        "kind": "date",
+        "label": "Ngày",
+        "group": "Ngày"
+      },
+      "weekOnly": {
+        "type": "boolean",
+        "label": "Một tuần",
+        "group": "Ngày",
+        "help": "Chỉ hiện tuần có ngày được chọn."
+      },
+      "sundayFirst": {
+        "type": "boolean",
+        "label": "Tuần từ CN",
+        "group": "Ngày",
+        "help": "Bật thì tuần bắt đầu từ Chủ nhật, tắt thì từ Thứ hai."
+      },
+      "showTitle": {
+        "type": "boolean",
+        "label": "Tên tháng",
+        "group": "Ngày",
+        "help": "Hiện dòng tên tháng và năm phía trên."
+      },
+      "lines": {
+        "type": "boolean",
+        "label": "Kẻ ô",
+        "group": "Ngày",
+        "help": "Kẻ đường mảnh giữa các ngày."
+      },
+      "innerFrame": {
+        "type": "boolean",
+        "label": "Viền trong",
+        "group": "Ngày",
+        "help": "Một đường mảnh nằm trong khối, tạo khung đôi khi khối đã có viền ngoài."
+      },
+      "markShape": {
+        "type": "select",
+        "label": "Hình",
+        "options": [
+          "Tròn",
+          "Tim",
+          "Vuông",
+          "Vòng",
+          "Sao"
+        ],
+        "group": "Hình đánh dấu",
+        "help": "Hình bao quanh ngày được chọn."
+      },
+      "markColor": {
+        "type": "color",
+        "label": "Hình đánh dấu",
+        "group": "Màu"
+      },
+      "markTextColor": {
+        "type": "color",
+        "label": "Số trên hình",
+        "group": "Màu"
+      },
+      "color": {
+        "type": "color",
+        "label": "Số ngày và tên tháng",
+        "group": "Màu"
+      },
+      "weekColor": {
+        "type": "color",
+        "label": "Thứ trong tuần",
+        "group": "Màu"
+      },
+      "font": {
+        "type": "font",
+        "label": "Chữ số và thứ",
+        "group": "Chữ"
+      },
+      "titleFont": {
+        "type": "font",
+        "label": "Chữ tên tháng",
+        "group": "Chữ"
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ",
+        "min": 10,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
+      },
+      "padding": {
+        "type": "number",
+        "label": "Đệm",
+        "min": 0,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng đệm giữa mép khối và lịch."
+      }
+    },
+    "hidden": true
+  },
+  "CalendarHeart": {
+    "label": "Lịch trái tim",
+    "category": "Lịch",
+    "icon": "grid",
+    "keywords": [
+      "lịch",
+      "calendar",
+      "ngày cưới",
+      "tháng",
+      "ngày"
+    ],
+    "size": {
+      "w": 340,
+      "h": 320
+    },
+    "canContain": false,
+    "defaultProps": {
+      "date": "2026-01-03",
+      "sundayFirst": false,
+      "weekOnly": false,
+      "showTitle": true,
+      "lines": false,
+      "innerFrame": false,
+      "markShape": "Tim",
+      "markColor": "#c2415b",
+      "markTextColor": "#ffffff",
+      "color": "#7a2f3f",
+      "weekColor": "#c98a96",
+      "size": 17,
+      "padding": 0,
+      "font": "'Cormorant Garamond', serif",
+      "titleFont": "'Great Vibes', cursive"
+    },
+    "fields": {
+      "date": {
+        "type": "custom",
+        "kind": "date",
+        "label": "Ngày",
+        "group": "Ngày"
+      },
+      "weekOnly": {
+        "type": "boolean",
+        "label": "Một tuần",
+        "group": "Ngày",
+        "help": "Chỉ hiện tuần có ngày được chọn."
+      },
+      "sundayFirst": {
+        "type": "boolean",
+        "label": "Tuần từ CN",
+        "group": "Ngày",
+        "help": "Bật thì tuần bắt đầu từ Chủ nhật, tắt thì từ Thứ hai."
+      },
+      "showTitle": {
+        "type": "boolean",
+        "label": "Tên tháng",
+        "group": "Ngày",
+        "help": "Hiện dòng tên tháng và năm phía trên."
+      },
+      "lines": {
+        "type": "boolean",
+        "label": "Kẻ ô",
+        "group": "Ngày",
+        "help": "Kẻ đường mảnh giữa các ngày."
+      },
+      "innerFrame": {
+        "type": "boolean",
+        "label": "Viền trong",
+        "group": "Ngày",
+        "help": "Một đường mảnh nằm trong khối, tạo khung đôi khi khối đã có viền ngoài."
+      },
+      "markShape": {
+        "type": "select",
+        "label": "Hình",
+        "options": [
+          "Tròn",
+          "Tim",
+          "Vuông",
+          "Vòng",
+          "Sao"
+        ],
+        "group": "Hình đánh dấu",
+        "help": "Hình bao quanh ngày được chọn."
+      },
+      "markColor": {
+        "type": "color",
+        "label": "Hình đánh dấu",
+        "group": "Màu"
+      },
+      "markTextColor": {
+        "type": "color",
+        "label": "Số trên hình",
+        "group": "Màu"
+      },
+      "color": {
+        "type": "color",
+        "label": "Số ngày và tên tháng",
+        "group": "Màu"
+      },
+      "weekColor": {
+        "type": "color",
+        "label": "Thứ trong tuần",
+        "group": "Màu"
+      },
+      "font": {
+        "type": "font",
+        "label": "Chữ số và thứ",
+        "group": "Chữ"
+      },
+      "titleFont": {
+        "type": "font",
+        "label": "Chữ tên tháng",
+        "group": "Chữ"
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ",
+        "min": 10,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
+      },
+      "padding": {
+        "type": "number",
+        "label": "Đệm",
+        "min": 0,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng đệm giữa mép khối và lịch."
+      }
+    },
+    "hidden": true
+  },
+  "CalendarFrame": {
+    "label": "Lịch khung viền",
+    "category": "Lịch",
+    "icon": "grid",
+    "keywords": [
+      "lịch",
+      "calendar",
+      "ngày cưới",
+      "tháng",
+      "ngày"
+    ],
+    "size": {
+      "w": 340,
+      "h": 320
+    },
+    "canContain": false,
+    "defaultProps": {
+      "date": "2026-01-03",
+      "sundayFirst": false,
+      "weekOnly": false,
+      "showTitle": true,
+      "lines": true,
+      "innerFrame": false,
+      "markShape": "Vuông",
+      "markColor": "#511419",
+      "markTextColor": "#ffffff",
+      "color": "#511419",
+      "weekColor": "#8a5a5e",
+      "size": 16,
+      "padding": 14,
+      "font": "'Playfair Display', serif",
+      "titleFont": "'Playfair Display', serif"
+    },
+    "fields": {
+      "date": {
+        "type": "custom",
+        "kind": "date",
+        "label": "Ngày",
+        "group": "Ngày"
+      },
+      "weekOnly": {
+        "type": "boolean",
+        "label": "Một tuần",
+        "group": "Ngày",
+        "help": "Chỉ hiện tuần có ngày được chọn."
+      },
+      "sundayFirst": {
+        "type": "boolean",
+        "label": "Tuần từ CN",
+        "group": "Ngày",
+        "help": "Bật thì tuần bắt đầu từ Chủ nhật, tắt thì từ Thứ hai."
+      },
+      "showTitle": {
+        "type": "boolean",
+        "label": "Tên tháng",
+        "group": "Ngày",
+        "help": "Hiện dòng tên tháng và năm phía trên."
+      },
+      "lines": {
+        "type": "boolean",
+        "label": "Kẻ ô",
+        "group": "Ngày",
+        "help": "Kẻ đường mảnh giữa các ngày."
+      },
+      "innerFrame": {
+        "type": "boolean",
+        "label": "Viền trong",
+        "group": "Ngày",
+        "help": "Một đường mảnh nằm trong khối, tạo khung đôi khi khối đã có viền ngoài."
+      },
+      "markShape": {
+        "type": "select",
+        "label": "Hình",
+        "options": [
+          "Tròn",
+          "Tim",
+          "Vuông",
+          "Vòng",
+          "Sao"
+        ],
+        "group": "Hình đánh dấu",
+        "help": "Hình bao quanh ngày được chọn."
+      },
+      "markColor": {
+        "type": "color",
+        "label": "Hình đánh dấu",
+        "group": "Màu"
+      },
+      "markTextColor": {
+        "type": "color",
+        "label": "Số trên hình",
+        "group": "Màu"
+      },
+      "color": {
+        "type": "color",
+        "label": "Số ngày và tên tháng",
+        "group": "Màu"
+      },
+      "weekColor": {
+        "type": "color",
+        "label": "Thứ trong tuần",
+        "group": "Màu"
+      },
+      "font": {
+        "type": "font",
+        "label": "Chữ số và thứ",
+        "group": "Chữ"
+      },
+      "titleFont": {
+        "type": "font",
+        "label": "Chữ tên tháng",
+        "group": "Chữ"
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ",
+        "min": 10,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
+      },
+      "padding": {
+        "type": "number",
+        "label": "Đệm",
+        "min": 0,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng đệm giữa mép khối và lịch."
+      }
+    },
+    "defaultStyles": {
+      "borderWidth": 2,
+      "borderColor": "#511419",
+      "borderRadius": 4
+    },
+    "hidden": true
+  },
+  "CalendarDark": {
+    "label": "Lịch nền đỏ đô",
+    "category": "Lịch",
+    "icon": "grid",
+    "keywords": [
+      "lịch",
+      "calendar",
+      "ngày cưới",
+      "tháng",
+      "ngày"
+    ],
+    "size": {
+      "w": 340,
+      "h": 320
+    },
+    "canContain": false,
+    "defaultProps": {
+      "date": "2026-01-03",
+      "sundayFirst": false,
+      "weekOnly": false,
+      "showTitle": true,
+      "lines": false,
+      "innerFrame": false,
+      "markShape": "Tròn",
+      "markColor": "#f4e6e9",
+      "markTextColor": "#511419",
+      "color": "#f4e6e9",
+      "weekColor": "#d9a9b1",
+      "size": 16,
+      "padding": 16,
+      "font": "'Montserrat', sans-serif",
+      "titleFont": "'Playfair Display', serif"
+    },
+    "fields": {
+      "date": {
+        "type": "custom",
+        "kind": "date",
+        "label": "Ngày",
+        "group": "Ngày"
+      },
+      "weekOnly": {
+        "type": "boolean",
+        "label": "Một tuần",
+        "group": "Ngày",
+        "help": "Chỉ hiện tuần có ngày được chọn."
+      },
+      "sundayFirst": {
+        "type": "boolean",
+        "label": "Tuần từ CN",
+        "group": "Ngày",
+        "help": "Bật thì tuần bắt đầu từ Chủ nhật, tắt thì từ Thứ hai."
+      },
+      "showTitle": {
+        "type": "boolean",
+        "label": "Tên tháng",
+        "group": "Ngày",
+        "help": "Hiện dòng tên tháng và năm phía trên."
+      },
+      "lines": {
+        "type": "boolean",
+        "label": "Kẻ ô",
+        "group": "Ngày",
+        "help": "Kẻ đường mảnh giữa các ngày."
+      },
+      "innerFrame": {
+        "type": "boolean",
+        "label": "Viền trong",
+        "group": "Ngày",
+        "help": "Một đường mảnh nằm trong khối, tạo khung đôi khi khối đã có viền ngoài."
+      },
+      "markShape": {
+        "type": "select",
+        "label": "Hình",
+        "options": [
+          "Tròn",
+          "Tim",
+          "Vuông",
+          "Vòng",
+          "Sao"
+        ],
+        "group": "Hình đánh dấu",
+        "help": "Hình bao quanh ngày được chọn."
+      },
+      "markColor": {
+        "type": "color",
+        "label": "Hình đánh dấu",
+        "group": "Màu"
+      },
+      "markTextColor": {
+        "type": "color",
+        "label": "Số trên hình",
+        "group": "Màu"
+      },
+      "color": {
+        "type": "color",
+        "label": "Số ngày và tên tháng",
+        "group": "Màu"
+      },
+      "weekColor": {
+        "type": "color",
+        "label": "Thứ trong tuần",
+        "group": "Màu"
+      },
+      "font": {
+        "type": "font",
+        "label": "Chữ số và thứ",
+        "group": "Chữ"
+      },
+      "titleFont": {
+        "type": "font",
+        "label": "Chữ tên tháng",
+        "group": "Chữ"
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ",
+        "min": 10,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
+      },
+      "padding": {
+        "type": "number",
+        "label": "Đệm",
+        "min": 0,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng đệm giữa mép khối và lịch."
+      }
+    },
+    "defaultStyles": {
+      "background": "#511419",
+      "borderRadius": 16
+    },
+    "hidden": true
+  },
+  "CalendarWeek": {
+    "label": "Lịch một tuần",
+    "category": "Lịch",
+    "icon": "grid",
+    "keywords": [
+      "lịch",
+      "calendar",
+      "ngày cưới",
+      "tháng",
+      "ngày"
+    ],
+    "size": {
+      "w": 340,
+      "h": 150
+    },
+    "canContain": false,
+    "defaultProps": {
+      "date": "2026-01-03",
+      "sundayFirst": false,
+      "weekOnly": true,
+      "showTitle": true,
+      "lines": false,
+      "innerFrame": false,
+      "markShape": "Tròn",
+      "markColor": "#511419",
+      "markTextColor": "#ffffff",
+      "color": "#511419",
+      "weekColor": "#8a5a5e",
+      "size": 18,
+      "padding": 12,
+      "font": "'Nunito', sans-serif",
+      "titleFont": "'Cormorant Garamond', serif"
+    },
+    "fields": {
+      "date": {
+        "type": "custom",
+        "kind": "date",
+        "label": "Ngày",
+        "group": "Ngày"
+      },
+      "weekOnly": {
+        "type": "boolean",
+        "label": "Một tuần",
+        "group": "Ngày",
+        "help": "Chỉ hiện tuần có ngày được chọn."
+      },
+      "sundayFirst": {
+        "type": "boolean",
+        "label": "Tuần từ CN",
+        "group": "Ngày",
+        "help": "Bật thì tuần bắt đầu từ Chủ nhật, tắt thì từ Thứ hai."
+      },
+      "showTitle": {
+        "type": "boolean",
+        "label": "Tên tháng",
+        "group": "Ngày",
+        "help": "Hiện dòng tên tháng và năm phía trên."
+      },
+      "lines": {
+        "type": "boolean",
+        "label": "Kẻ ô",
+        "group": "Ngày",
+        "help": "Kẻ đường mảnh giữa các ngày."
+      },
+      "innerFrame": {
+        "type": "boolean",
+        "label": "Viền trong",
+        "group": "Ngày",
+        "help": "Một đường mảnh nằm trong khối, tạo khung đôi khi khối đã có viền ngoài."
+      },
+      "markShape": {
+        "type": "select",
+        "label": "Hình",
+        "options": [
+          "Tròn",
+          "Tim",
+          "Vuông",
+          "Vòng",
+          "Sao"
+        ],
+        "group": "Hình đánh dấu",
+        "help": "Hình bao quanh ngày được chọn."
+      },
+      "markColor": {
+        "type": "color",
+        "label": "Hình đánh dấu",
+        "group": "Màu"
+      },
+      "markTextColor": {
+        "type": "color",
+        "label": "Số trên hình",
+        "group": "Màu"
+      },
+      "color": {
+        "type": "color",
+        "label": "Số ngày và tên tháng",
+        "group": "Màu"
+      },
+      "weekColor": {
+        "type": "color",
+        "label": "Thứ trong tuần",
+        "group": "Màu"
+      },
+      "font": {
+        "type": "font",
+        "label": "Chữ số và thứ",
+        "group": "Chữ"
+      },
+      "titleFont": {
+        "type": "font",
+        "label": "Chữ tên tháng",
+        "group": "Chữ"
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ",
+        "min": 10,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
+      },
+      "padding": {
+        "type": "number",
+        "label": "Đệm",
+        "min": 0,
+        "max": 32,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng đệm giữa mép khối và lịch."
+      }
+    },
+    "defaultStyles": {
+      "background": "#f6efe6",
+      "borderRadius": 16
+    },
+    "hidden": true
+  }
+}
