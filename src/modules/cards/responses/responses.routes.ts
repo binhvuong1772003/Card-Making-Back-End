@@ -48,7 +48,7 @@ export function createResponsesRouter(options: { publicRateLimit: number; formsH
 export const formResponsesCsv: RequestHandler = async (req: Request, res: Response) => {
   const userId = res.locals.auth?.userId;
   if (typeof userId !== 'string') throw new AppError('UNAUTHENTICATED', 'Authentication required');
-  const { csv, filename } = await exportFormCsv(userId, parseCardId(req.params.id), String(req.params.blockId));
+  const { csv, filename } = await exportFormCsv(userId, parseCardId(req.params.id), String(req.params.blockId), typeof req.query.publicationId === 'string' && /^[0-9a-f]{24}$/i.test(req.query.publicationId) ? req.query.publicationId : undefined);
   res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store' });
   res.send(csv);
 };

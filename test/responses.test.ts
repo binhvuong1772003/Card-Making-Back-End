@@ -72,7 +72,7 @@ describe('POST /publications/:slug/forms', () => {
       ((await gql(owner.token, CARD_FORMS, { cardId: card.id })).body.data.cardForms as { blockId: string; removed: boolean; total: number }[]).map((f) => [f.blockId, f.removed, f.total]);
     expect(await forms()).toEqual([['form1', false, 1]]);
     // Form bị thay bằng form mới cùng id nút nhưng có formId: phản hồi cũ ở lại thành form đã gỡ, form mới bắt đầu từ 0.
-    await prisma.publication.update({ where: { cardId: card.id }, data: { document: pageWith(formBlock({ formId: 'f_second' })) } });
+    await prisma.publication.updateMany({ where: { cardId: card.id }, data: { document: pageWith(formBlock({ formId: 'f_second' })) } });
     expect(await forms()).toEqual([['f_second', false, 0], ['form1', true, 1]]);
     // Đã có formId thì id của nút không còn là khoá: gửi theo id nút bị 404, gửi theo formId được.
     expect((await postForm(slug)).status).toBe(404);
@@ -199,7 +199,7 @@ describe('POST /publications/:slug/forms', () => {
     const res = await postForm(past.slug);
     expect(res.status).toBe(409);
     expect(res.body.error).toMatchObject({ code: 'CONFLICT', details: { reason: 'CLOSED' } });
-    await prisma.publication.update({ where: { cardId: past.card.id }, data: { document: pageWith(formBlock({ deadline: '2999-01-01' })) } });
+    await prisma.publication.updateMany({ where: { cardId: past.card.id }, data: { document: pageWith(formBlock({ deadline: '2999-01-01' })) } });
     expect((await postForm(past.slug)).status).toBe(201);
   });
 
@@ -530,8 +530,8 @@ describe('CSV', () => {
     const text = res.text;
     expect(text.charCodeAt(0)).toBe(0xfeff);
     const lines = text.slice(1).trimEnd().split('\r\n');
-    expect(lines[0]).toBe('Gửi lúc,Họ và tên,Buổi tham dự,Người lớn,Ô đã gỡ');
-    expect(lines[1]).toMatch(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2},An,Tiệc cưới; Lễ gia tiên,Có,$/);
+    expect(lines[0]).toBe('Gửi lúc,Liên kết,Họ và tên,Buổi tham dự,Người lớn,Ô đã gỡ');
+    expect(lines[1]).toMatch(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2},–,An,Tiệc cưới; Lễ gia tiên,Có,$/);
     expect(lines[2]).toContain('"\'=HYPERLINK(""http://x"")"');
     expect(lines[2]).toContain(',giữ lại');
   });
@@ -543,7 +543,7 @@ describe('CSV', () => {
     });
     const res = await request(app).get(`/api/v1/cards/${card.id}/forms/gone1/responses.csv`).set('Authorization', `Bearer ${owner.token}`);
     expect(res.status).toBe(200);
-    expect(res.text.slice(1).split('\r\n')[0]).toBe('Gửi lúc,Câu hỏi cũ');
+    expect(res.text.slice(1).split('\r\n')[0]).toBe('Gửi lúc,Liên kết,Câu hỏi cũ');
   });
 });
 
@@ -554,5 +554,79 @@ describe('deleting a card', () => {
     const res = await gql(owner.token, 'mutation($id: ID!) { deleteCard(id: $id) }', { id: card.id });
     expect(res.body.errors).toBeUndefined();
     expect(await prisma.formResponse.count()).toBe(0);
+  });
+});
+
+describe('several publications of one card', () => {
+  const FILTERED =
+    'query($cardId: ID!, $blockId: String, $publicationId: ID) { formResponses(cardId: $cardId, blockId: $blockId, publicationId: $publicationId) { nodes { publicationId answers { id value } } counts { visible } summary { fieldId answered } } }';
+
+  // Thiệp có hai bản đang mở: bản chính (form với ô tham dự) và bản phụ (cùng form, nhưng tiêu đề khác và có thêm một form riêng).
+  async function twoVersions() {
+    const { owner, card, slug } = await seed({ slug: 'ban-chinh', blocks: [formBlock({ formId: 'f_chung', heading: 'Bản chính' })] });
+    const second = await prisma.publication.create({
+      data: {
+        cardId: card.id,
+        label: 'Nhà gái',
+        slug: 'ban-phu',
+        document: pageWith(formBlock({ formId: 'f_chung', heading: 'Bản phụ' }), block('form2', 'Form', { heading: 'Riêng bản phụ', fields: [{ id: 'name', type: 'text', label: 'Tên', required: true }] })),
+        publishedAt: new Date(Date.now() + 1000),
+      },
+    });
+    const main = await prisma.publication.findFirstOrThrow({ where: { cardId: card.id, slug } });
+    return { owner, card, main, second };
+  }
+
+  it('records which version the guest filled in, and lets the owner filter by it', async () => {
+    const { owner, card, main, second } = await twoVersions();
+    expect((await postForm('ban-chinh', { blockId: 'f_chung' })).status).toBe(201);
+    expect((await postForm('ban-phu', { blockId: 'f_chung', answers: { ...ANSWERS, name: 'Khách nhà gái' } })).status).toBe(201);
+    const rows = await prisma.formResponse.findMany({ where: { cardId: card.id }, orderBy: { createdAt: 'asc' } });
+    expect(rows.map((row) => row.publicationId)).toEqual([main.id, second.id]);
+
+    const all = (await gql(owner.token, FILTERED, { cardId: card.id, blockId: 'f_chung' })).body.data.formResponses;
+    expect(all.counts.visible).toBe(2);
+    const onlyMain = (await gql(owner.token, FILTERED, { cardId: card.id, blockId: 'f_chung', publicationId: main.id })).body.data.formResponses;
+    expect(onlyMain.counts.visible).toBe(1);
+    expect(onlyMain.nodes).toHaveLength(1);
+    expect(onlyMain.nodes[0].publicationId).toBe(main.id);
+    expect(onlyMain.summary.find((item: { fieldId: string }) => item.fieldId === 'name').answered).toBe(1);
+  });
+
+  it('lists the forms of every open version once each, with the settings of the newest version that has them', async () => {
+    const { owner, card } = await twoVersions();
+    const forms = (await gql(owner.token, CARD_FORMS, { cardId: card.id })).body.data.cardForms as { blockId: string; heading: string; removed: boolean }[];
+    expect(forms.map((f) => [f.blockId, f.heading, f.removed])).toEqual([['f_chung', 'Bản phụ', false], ['form2', 'Riêng bản phụ', false]]);
+  });
+
+  it('keeps the answers of a version that was taken down, and marks the form removed once no open version has it', async () => {
+    const { owner, card, main, second } = await twoVersions();
+    await postForm('ban-phu', { blockId: 'form2', answers: { name: 'Lan' } });
+    await prisma.publication.updateMany({ where: { id: second.id }, data: { unpublishedAt: new Date() } });
+    const forms = (await gql(owner.token, CARD_FORMS, { cardId: card.id })).body.data.cardForms as { blockId: string; removed: boolean; total: number }[];
+    expect(forms.map((f) => [f.blockId, f.removed, f.total])).toEqual([['f_chung', false, 0], ['form2', true, 1]]);
+    expect(main.id).not.toBe(second.id);
+  });
+
+  it('puts the version in the CSV and can limit it to one version', async () => {
+    const { owner, card, main, second } = await twoVersions();
+    await postForm('ban-chinh', { blockId: 'f_chung' });
+    await postForm('ban-phu', { blockId: 'f_chung', answers: { ...ANSWERS, name: 'Khách nhà gái' } });
+    const get = (query = '') => request(app).get(`/api/v1/cards/${card.id}/forms/f_chung/responses.csv${query}`).set('Authorization', `Bearer ${owner.token}`);
+    const lines = (await get()).text.slice(1).trimEnd().split('\r\n');
+    expect(lines[0].split(',').slice(0, 2)).toEqual(['Gửi lúc', 'Liên kết']);
+    expect(lines[1]).toContain(',ban-chinh,'); // chưa đặt tên bản thì dùng slug
+    expect(lines[2]).toContain(',Nhà gái,');
+    const onlySecond = (await get(`?publicationId=${second.id}`)).text.slice(1).trimEnd().split('\r\n');
+    expect(onlySecond).toHaveLength(2);
+    expect(onlySecond[1]).toContain('Khách nhà gái');
+    expect(main.id).not.toBe(second.id);
+  });
+
+  it('answers 404 on the link of a version that was taken down, and keeps the other link open', async () => {
+    const { second } = await twoVersions();
+    await prisma.publication.updateMany({ where: { id: second.id }, data: { unpublishedAt: new Date() } });
+    expect((await postForm('ban-phu', { blockId: 'f_chung' })).status).toBe(404);
+    expect((await postForm('ban-chinh', { blockId: 'f_chung' })).status).toBe(201);
   });
 });

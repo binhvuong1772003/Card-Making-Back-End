@@ -41,6 +41,8 @@ type FormAnswer {
 
 """Một lượt khách gửi form."""
 type FormResponse {
+  """Bản xuất bản mà khách đã điền qua; null với phản hồi từ trước khi có nhiều bản."""
+  publicationId: ID
   id: ID!
   blockId: String!
   answers: [FormAnswer!]!
@@ -83,7 +85,7 @@ extend type Query {
   cardForms(cardId: ID!): [CardForm!]!
 
   """Câu trả lời của một thiệp, mới nhất trước, mọi trạng thái (chủ thiệp và người sửa thiệp). `first` từ 1 đến 100. `search` tìm trong các giá trị chữ."""
-  formResponses(cardId: ID!, blockId: String, status: EntryStatus, search: String, first: Int = 20, after: String): FormResponseConnection!
+  formResponses(cardId: ID!, blockId: String, publicationId: ID, status: EntryStatus, search: String, first: Int = 20, after: String): FormResponseConnection!
 }
 
 extend type Mutation {

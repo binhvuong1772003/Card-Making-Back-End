@@ -39,14 +39,14 @@ function upgradedDocument<T>(document: T): T {
 }
 
 // Thiệp đang công khai theo slug; sai dạng, không có, hoặc đã gỡ đều là NOT_FOUND cùng một thông điệp.
-async function findPublished(slug: string): Promise<{ cardId: string; document: unknown }> {
+async function findPublished(slug: string): Promise<{ publicationId: string; cardId: string; document: unknown }> {
   if (!SLUG.test(slug) || slug.length > 60) throw new AppError('NOT_FOUND', 'Page not found');
   const publication = await prisma.publication.findFirst({
     where: { slug, OR: [{ unpublishedAt: null }, { unpublishedAt: { isSet: false } }] },
-    select: { cardId: true, document: true },
+    select: { id: true, cardId: true, document: true },
   });
   if (!publication) throw new AppError('NOT_FOUND', 'Page not found');
-  return { cardId: publication.cardId, document: upgradedDocument(publication.document) };
+  return { publicationId: publication.id, cardId: publication.cardId, document: upgradedDocument(publication.document) };
 }
 
 function formBlock(document: unknown, blockId: string) {
@@ -89,7 +89,7 @@ const sameAnswers = (left: unknown, right: StoredAnswer[]): boolean => JSON.stri
 export async function submitForm(slug: string, input: FormInput, context: SubmitContext, deps: Deps = realDeps): Promise<SubmitResult> {
   // Ô ẩn có chữ là máy điền: bỏ qua nhưng vẫn trả như thành công để máy không biết mình bị chặn.
   if (input.website) return { id: 'ignored', status: 'VISIBLE', entry: null };
-  const { cardId, document } = await findPublished(slug);
+  const { publicationId, cardId, document } = await findPublished(slug);
   const config = parseFormBlock(formBlock(document, input.blockId).props);
   const now = deps.now();
   if (isClosed(config.deadline, now)) throw new AppError('CONFLICT', 'This form is closed', { reason: 'CLOSED' });
@@ -113,7 +113,7 @@ export async function submitForm(slug: string, input: FormInput, context: Submit
     throw new AppError('CONFLICT', 'This card cannot take more responses', { reason: 'FULL' });
   }
   const row = await prisma.formResponse.create({
-    data: { cardId, blockId: input.blockId, answers: answers as unknown as Prisma.InputJsonValue, status, ipHash, createdAt: now },
+    data: { cardId, blockId: input.blockId, publicationId, answers: answers as unknown as Prisma.InputJsonValue, status, ipHash, createdAt: now },
     select: { id: true, answers: true, createdAt: true },
   });
   return { id: row.id, status, entry: status === 'VISIBLE' ? publicEntryOf(row, config.publicList) : null };
@@ -161,10 +161,34 @@ async function requireResponsesAccess(actor: string, cardId: string): Promise<vo
   if (!can(role, 'responses')) throw new AppError('FORBIDDEN', 'You do not have permission to do that');
 }
 
-const publishedRoot = async (cardId: string): Promise<unknown> => {
-  const publication = await prisma.publication.findUnique({ where: { cardId }, select: { document: true } });
-  return (upgradedDocument(publication?.document) as { root?: unknown } | undefined)?.root;
+// Các form của thiệp, gộp từ MỌI bản đang công khai: mỗi khoá form lấy cấu hình từ bản xuất bản gần nhất có form đó, thứ tự tab theo
+// bản chính trước (id nhỏ nhất) rồi theo thứ tự trong trang.
+interface LiveRoot {
+  id: string;
+  publishedAt: Date;
+  root: unknown;
+}
+
+const liveRootsOf = async (cardId: string): Promise<LiveRoot[]> => {
+  const rows = await prisma.publication.findMany({
+    where: { cardId, OR: [{ unpublishedAt: null }, { unpublishedAt: { isSet: false } }] },
+    select: { id: true, publishedAt: true, document: true },
+    orderBy: { id: 'asc' },
+  });
+  return rows.map((row) => ({ id: row.id, publishedAt: row.publishedAt, root: (upgradedDocument(row.document) as { root?: unknown } | undefined)?.root }));
 };
+
+function mergeForms(roots: LiveRoot[]): ReturnType<typeof collectFormBlocks> {
+  const chosen = new Map<string, ReturnType<typeof collectFormBlocks>[number]>();
+  for (const live of [...roots].sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())) {
+    for (const block of collectFormBlocks(live.root)) if (!chosen.has(block.key)) chosen.set(block.key, block);
+  }
+  const order: string[] = [];
+  for (const live of roots) for (const block of collectFormBlocks(live.root)) if (!order.includes(block.key)) order.push(block.key);
+  return order.map((key) => chosen.get(key)!);
+}
+
+const latestFormBlock = (roots: LiveRoot[], key: string) => mergeForms(roots).find((block) => block.key === key);
 
 export interface FormFieldInfo {
   id: string;
@@ -196,7 +220,7 @@ const fieldInfo = (field: Field): FormFieldInfo => ({ id: field.id, label: field
 // không mất dữ liệu cũ khi sửa thiệp.
 export async function listCardForms(actor: string, cardId: string): Promise<CardFormView[]> {
   await requireResponsesAccess(actor, cardId);
-  const blocks = collectFormBlocks(await publishedRoot(cardId));
+  const blocks = mergeForms(await liveRootsOf(cardId));
   const rows = await prisma.formResponse.findMany({ where: { cardId }, select: { blockId: true, status: true } });
   const counts = new Map<string, Counts>();
   for (const row of rows) {
@@ -238,7 +262,7 @@ export interface FormSummaryView {
 }
 
 export interface FormResponsesPage {
-  nodes: { id: string; blockId: string; answers: StoredAnswer[]; status: EntryStatusValue; createdAt: Date }[];
+  nodes: { id: string; blockId: string; publicationId: string | null; answers: StoredAnswer[]; status: EntryStatusValue; createdAt: Date }[];
   pageInfo: { hasNextPage: boolean; endCursor: string | null };
   summary: FormSummaryView[];
   counts: { visible: number; hidden: number; pending: number };
@@ -283,7 +307,7 @@ const stringValues = (answers: StoredAnswer[]): string[] => answers.flatMap((ans
 
 export async function listFormResponses(actor: string, cardId: string, args: FormResponsesArgs): Promise<FormResponsesPage> {
   await requireResponsesAccess(actor, cardId);
-  const all = (await prisma.formResponse.findMany({ where: { cardId, ...(args.blockId ? { blockId: args.blockId } : {}) }, select: { id: true, blockId: true, answers: true, status: true, createdAt: true } })).sort(newestFirst);
+  const all = (await prisma.formResponse.findMany({ where: { cardId, ...(args.blockId ? { blockId: args.blockId } : {}), ...(args.publicationId ? { publicationId: args.publicationId } : {}) }, select: { id: true, blockId: true, publicationId: true, answers: true, status: true, createdAt: true } })).sort(newestFirst);
 
   const counts = { visible: 0, hidden: 0, pending: 0 };
   for (const row of all) {
@@ -294,7 +318,7 @@ export async function listFormResponses(actor: string, cardId: string, args: For
 
   let summary: FormSummaryView[] = [];
   if (args.blockId) {
-    const block = findFormBlock(await publishedRoot(cardId), args.blockId);
+    const block = latestFormBlock(await liveRootsOf(cardId), args.blockId);
     const fields = block && block.type === FORM_BLOCK ? parseFormBlock(block.props).fields : fieldsFromAnswers(all.flatMap((row) => storedAnswers(row.answers)));
     summary = summarize(fields, all);
   }
@@ -308,7 +332,7 @@ export async function listFormResponses(actor: string, cardId: string, args: For
   const page = nodes.slice(0, args.first);
   const last = page.at(-1);
   return {
-    nodes: page.map((row) => ({ id: row.id, blockId: row.blockId, answers: storedAnswers(row.answers), status: row.status, createdAt: row.createdAt })),
+    nodes: page.map((row) => ({ id: row.id, blockId: row.blockId, publicationId: row.publicationId ?? null, answers: storedAnswers(row.answers), status: row.status, createdAt: row.createdAt })),
     pageInfo: { hasNextPage: nodes.length > args.first, endCursor: last ? encodeRowCursor(last) : null },
     summary,
     counts,
@@ -326,8 +350,8 @@ export async function setFormResponseStatus(actor: string, id: string, status: E
   const row = await prisma.formResponse.findUnique({ where: { id }, select: { cardId: true } });
   if (!row) throw new AppError('NOT_FOUND', 'Not found');
   await requireResponsesAccess(actor, row.cardId);
-  const updated = await prisma.formResponse.update({ where: { id }, data: { status }, select: { id: true, blockId: true, answers: true, status: true, createdAt: true } });
-  return { ...updated, answers: storedAnswers(updated.answers) };
+  const updated = await prisma.formResponse.update({ where: { id }, data: { status }, select: { id: true, blockId: true, publicationId: true, answers: true, status: true, createdAt: true } });
+  return { ...updated, publicationId: updated.publicationId ?? null, answers: storedAnswers(updated.answers) };
 }
 
 // ---- CSV ----
@@ -359,13 +383,15 @@ const valueText = (value: StoredAnswer['value'] | undefined): string => {
 const fileSlug = (heading: string): string =>
   heading.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'phan-hoi';
 
-export async function exportFormCsv(actor: string, cardId: string, blockId: string): Promise<{ csv: string; filename: string }> {
+export async function exportFormCsv(actor: string, cardId: string, blockId: string, publicationId?: string): Promise<{ csv: string; filename: string }> {
   await requireResponsesAccess(actor, cardId);
-  const block = findFormBlock(await publishedRoot(cardId), blockId);
+  const block = latestFormBlock(await liveRootsOf(cardId), blockId);
   const config = block && block.type === FORM_BLOCK ? parseFormBlock(block.props) : null;
   const heading = config && typeof block?.props.heading === 'string' ? block.props.heading : '';
 
-  const rows = await prisma.formResponse.findMany({ where: { cardId, blockId }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  const rows = await prisma.formResponse.findMany({ where: { cardId, blockId, ...(publicationId ? { publicationId } : {}) }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  // Cột Liên kết: tên bản (hoặc slug nếu chưa đặt tên); bản đã bị xoá khỏi DB hoặc phản hồi cũ thì "–".
+  const versions = new Map((await prisma.publication.findMany({ where: { cardId }, select: { id: true, label: true, slug: true } })).map((p) => [p.id, p.label || p.slug]));
   const current = config?.fields ?? [];
   // Câu trả lời cho ô đã bị gỡ vẫn phải có cột, nếu không dữ liệu cũ biến mất khỏi tệp.
   const removed = new Map<string, string>();
@@ -376,10 +402,10 @@ export async function exportFormCsv(actor: string, cardId: string, blockId: stri
   }
   const columns = [...current.map((field) => ({ id: field.id, label: field.label })), ...[...removed].map(([id, label]) => ({ id, label }))];
 
-  const header = ['Gửi lúc', ...columns.map((column) => cell(column.label))].join(',');
+  const header = ['Gửi lúc', 'Liên kết', ...columns.map((column) => cell(column.label))].join(',');
   const lines = rows.map((row) => {
     const answers = storedAnswers(row.answers);
-    return [cell(vnTime(row.createdAt)), ...columns.map((column) => cell(valueText(answers.find((answer) => answer.id === column.id)?.value)))].join(',');
+    return [cell(vnTime(row.createdAt)), cell(row.publicationId ? (versions.get(row.publicationId) ?? '–') : '–'), ...columns.map((column) => cell(valueText(answers.find((answer) => answer.id === column.id)?.value)))].join(',');
   });
   // BOM để Excel mở tệp UTF-8 đúng tiếng Việt; xuống dòng CRLF theo chuẩn CSV.
   return { csv: `﻿${[header, ...lines].join('\r\n')}\r\n`, filename: `${fileSlug(heading)}.csv` };

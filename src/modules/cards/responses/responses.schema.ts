@@ -24,6 +24,8 @@ export type EntryStatusValue = z.infer<typeof entryStatus>;
 
 export const formResponsesArgs = z.object({
   blockId: blockId.optional(),
+  // Lọc theo bản xuất bản (liên kết) mà khách đã điền qua.
+  publicationId: z.string().regex(/^[0-9a-f]{24}$/i).optional(),
   status: entryStatus.optional(),
   search: z.string().trim().max(100).optional(),
   first: z.number().int().min(1).max(100).default(20),
