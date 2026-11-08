@@ -380,6 +380,7 @@
     },
     "canContain": false,
     "defaultProps": {
+      "formId": "",
       "heading": "Biểu mẫu",
       "intro": "",
       "button": "Gửi",
@@ -408,6 +409,12 @@
       "borderRadius": 4
     },
     "fields": {
+      "formId": {
+        "type": "custom",
+        "kind": "form-id",
+        "label": "Mã form",
+        "group": "Nội dung"
+      },
       "heading": {
         "type": "text",
         "label": "Tiêu đề",
