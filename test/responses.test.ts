@@ -1,10 +1,11 @@
 import request from 'supertest';
+import { Prisma } from '@prisma/client';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
 import { prisma } from '../src/infra/prisma';
 import { closeQueueing } from '../src/infra/queue';
 import { closeRedis } from '../src/infra/redis';
-import { buildRsvpsCsv, ipHashOf, submitForm, type RsvpView } from '../src/modules/cards/responses/responses.service';
+import { ipHashOf, submitForm } from '../src/modules/cards/responses/responses.service';
 import { createUserWithToken } from './helpers/auth';
 import { resetDatabase } from './helpers/database';
 
@@ -254,114 +255,186 @@ describe('GET /publications/:slug/forms/entries', () => {
   });
 });
 
-const RSVPS = 'query($cardId: ID!, $answer: RsvpAnswer, $search: String, $first: Int, $after: String) { rsvps(cardId: $cardId, answer: $answer, search: $search, first: $first, after: $after) { nodes { id name attending guests phone note } pageInfo { hasNextPage endCursor } summary { yes no maybe guests } } }';
-const ENTRIES = 'query($cardId: ID!, $status: EntryStatus, $first: Int) { guestbookEntries(cardId: $cardId, status: $status, first: $first) { nodes { id name message status } pageInfo { hasNextPage } counts { visible hidden pending } } }';
+const CARD_FORMS = 'query($cardId: ID!) { cardForms(cardId: $cardId) { blockId heading fields { id label type options } publicList moderation removed total pending } }';
+const FORM_RESPONSES =
+  'query($cardId: ID!, $blockId: String, $status: EntryStatus, $search: String, $first: Int, $after: String) { formResponses(cardId: $cardId, blockId: $blockId, status: $status, search: $search, first: $first, after: $after) { nodes { id blockId status answers { id label type value } } pageInfo { hasNextPage endCursor } summary { fieldId label type answered counts { option count } total } counts { visible hidden pending } } }';
 
-async function fill(cardId: string) {
+const answerOf = (name: string, attending: string, guests?: number) => [
+  { id: 'name', label: 'Họ và tên', type: 'text', value: name },
+  { id: 'attending', label: 'Bạn sẽ đến chứ?', type: 'choice', value: attending },
+  ...(guests === undefined ? [] : [{ id: 'guests', label: 'Số khách (tính cả bạn)', type: 'number', value: guests }]),
+];
+
+async function fillForms(cardId: string, blockId = 'form1') {
   const base = Date.now();
-  const rows: [string, 'YES' | 'NO' | 'MAYBE', number | undefined][] = [['An', 'YES', 2], ['Bình', 'YES', 3], ['Chi', 'NO', undefined], ['Dũng', 'MAYBE', 1]];
-  for (const [i, [name, attending, guests]] of rows.entries()) {
-    await prisma.rsvp.create({ data: { cardId, blockId: 'rsvp1', name, attending, ...(guests ? { guests } : {}), ipHash: 'x', createdAt: new Date(base + i * 1000) } });
+  const rows: [string, string, number | undefined, 'VISIBLE' | 'HIDDEN' | 'PENDING'][] = [
+    ['An', 'Có, tôi sẽ đến', 2, 'VISIBLE'],
+    ['Bình', 'Có, tôi sẽ đến', 3, 'VISIBLE'],
+    ['Chi', 'Rất tiếc, không đến được', undefined, 'HIDDEN'],
+    ['Dũng', 'Có, tôi sẽ đến', 1, 'PENDING'],
+  ];
+  for (const [i, [name, attending, guests, status]] of rows.entries()) {
+    await prisma.formResponse.create({
+      data: { cardId, blockId, answers: answerOf(name, attending, guests) as unknown as Prisma.InputJsonValue, status, ipHash: 'x', createdAt: new Date(base + i * 1000) },
+    });
   }
 }
 
 describe('what the owner sees', () => {
   it('needs a login, and shows nobody else’s card', async () => {
-    const { card } = await seed();
-    const anon = await request(app).post('/graphql').send({ query: RSVPS, variables: { cardId: card.id } });
+    const { card } = await seed({ blocks: [formBlock()] });
+    const anon = await request(app).post('/graphql').send({ query: CARD_FORMS, variables: { cardId: card.id } });
     expect(code(anon)).toBe('UNAUTHENTICATED');
     const stranger = await createUserWithToken('stranger@example.com');
-    expect(code(await gql(stranger.token, RSVPS, { cardId: card.id }))).toBe('NOT_FOUND');
-    expect(code(await gql(stranger.token, RSVPS, { cardId: 'not-an-id' }))).toBe('NOT_FOUND');
+    expect(code(await gql(stranger.token, CARD_FORMS, { cardId: card.id }))).toBe('NOT_FOUND');
+    expect(code(await gql(stranger.token, CARD_FORMS, { cardId: 'not-an-id' }))).toBe('NOT_FOUND');
+    expect(code(await gql(stranger.token, FORM_RESPONSES, { cardId: card.id }))).toBe('NOT_FOUND');
   });
 
   it('lets the owner and an editor in, and keeps a viewer out', async () => {
     const editor = await createUserWithToken('editor@example.com');
     const viewer = await createUserWithToken('viewer@example.com');
-    const { owner, card } = await seed({ members: [{ userId: editor.id, role: 'EDITOR' }, { userId: viewer.id, role: 'VIEWER' }] });
-    expect((await gql(owner.token, RSVPS, { cardId: card.id })).body.errors).toBeUndefined();
-    expect((await gql(editor.token, RSVPS, { cardId: card.id })).body.errors).toBeUndefined();
-    expect(code(await gql(viewer.token, RSVPS, { cardId: card.id }))).toBe('FORBIDDEN');
-    expect(code(await gql(viewer.token, ENTRIES, { cardId: card.id }))).toBe('FORBIDDEN');
+    const { owner, card } = await seed({ members: [{ userId: editor.id, role: 'EDITOR' }, { userId: viewer.id, role: 'VIEWER' }], blocks: [formBlock()] });
+    expect((await gql(owner.token, CARD_FORMS, { cardId: card.id })).body.errors).toBeUndefined();
+    expect((await gql(editor.token, CARD_FORMS, { cardId: card.id })).body.errors).toBeUndefined();
+    expect(code(await gql(viewer.token, CARD_FORMS, { cardId: card.id }))).toBe('FORBIDDEN');
+    expect(code(await gql(viewer.token, FORM_RESPONSES, { cardId: card.id }))).toBe('FORBIDDEN');
   });
 
-  it('lists answers newest first with the totals of the whole card', async () => {
-    const { owner, card } = await seed();
-    await fill(card.id);
-    const res = await gql(owner.token, RSVPS, { cardId: card.id });
-    const data = res.body.data.rsvps;
-    expect(data.nodes.map((n: { name: string }) => n.name)).toEqual(['Dũng', 'Chi', 'Bình', 'An']);
-    expect(data.summary).toEqual({ yes: 2, no: 1, maybe: 1, guests: 5 });
-    expect(data.nodes[1]).toMatchObject({ attending: 'NO', guests: null });
+  it('lists the forms of the published card with their questions, counts and removed blocks', async () => {
+    const { owner, card } = await seed({
+      blocks: [formBlock({ heading: 'Đăng ký', publicList: { enabled: true, nameFieldId: 'name', textFieldId: 'guests' } }), block('t1', 'Text')],
+    });
+    await fillForms(card.id);
+    // Một khối form không còn trong bản xuất bản nhưng đã có câu trả lời.
+    await prisma.formResponse.create({ data: { cardId: card.id, blockId: 'old1', answers: [], status: 'VISIBLE', ipHash: 'x' } });
+
+    const forms = (await gql(owner.token, CARD_FORMS, { cardId: card.id })).body.data.cardForms;
+    expect(forms).toHaveLength(2);
+    expect(forms[0]).toMatchObject({ blockId: 'form1', heading: 'Đăng ký', publicList: true, moderation: false, removed: false, total: 4, pending: 1 });
+    expect(forms[0].fields).toEqual([
+      { id: 'name', label: 'Họ và tên', type: 'text', options: [] },
+      { id: 'attending', label: 'Bạn sẽ đến chứ?', type: 'choice', options: ['Có, tôi sẽ đến', 'Rất tiếc, không đến được'] },
+      { id: 'guests', label: 'Số khách (tính cả bạn)', type: 'number', options: [] },
+    ]);
+    expect(forms[1]).toMatchObject({ blockId: 'old1', removed: true, total: 1 });
+    // Bản nháp chưa xuất bản không có khối form nào: chỉ còn khối có câu trả lời.
+    await prisma.publication.deleteMany({ where: { cardId: card.id } });
+    const unpublished = (await gql(owner.token, CARD_FORMS, { cardId: card.id })).body.data.cardForms;
+    expect(unpublished.map((form: { blockId: string }) => form.blockId)).toEqual(['form1', 'old1']);
+    expect(unpublished[0]).toMatchObject({ removed: true, total: 4 });
   });
 
-  it('filters by answer and by name without changing the totals, and pages', async () => {
-    const { owner, card } = await seed();
-    await fill(card.id);
-    const yes = (await gql(owner.token, RSVPS, { cardId: card.id, answer: 'YES' })).body.data.rsvps;
-    expect(yes.nodes.map((n: { name: string }) => n.name)).toEqual(['Bình', 'An']);
-    expect(yes.summary.no).toBe(1);
-    const found = (await gql(owner.token, RSVPS, { cardId: card.id, search: 'dũ' })).body.data.rsvps;
-    expect(found.nodes.map((n: { name: string }) => n.name)).toEqual(['Dũng']);
-    const special = await gql(owner.token, RSVPS, { cardId: card.id, search: '[(.*' });
+  it('lists answers newest first with their stored labels and the status counts', async () => {
+    const { owner, card } = await seed({ blocks: [formBlock()] });
+    await fillForms(card.id);
+    const data = (await gql(owner.token, FORM_RESPONSES, { cardId: card.id, blockId: 'form1' })).body.data.formResponses;
+    expect(data.nodes.map((node: { answers: { value: string }[] }) => node.answers[0].value)).toEqual(['Dũng', 'Chi', 'Bình', 'An']);
+    expect(data.nodes[1]).toMatchObject({ blockId: 'form1', status: 'HIDDEN' });
+    expect(data.counts).toEqual({ visible: 2, hidden: 1, pending: 1 });
+    expect(data.summary).toEqual([
+      { fieldId: 'name', label: 'Họ và tên', type: 'text', answered: 4, counts: [], total: null },
+      {
+        fieldId: 'attending',
+        label: 'Bạn sẽ đến chứ?',
+        type: 'choice',
+        answered: 4,
+        counts: [
+          { option: 'Có, tôi sẽ đến', count: 3 },
+          { option: 'Rất tiếc, không đến được', count: 1 },
+        ],
+        total: null,
+      },
+      { fieldId: 'guests', label: 'Số khách (tính cả bạn)', type: 'number', answered: 3, counts: [], total: 6 },
+    ]);
+  });
+
+  it('filters by status and by the text of an answer without changing the counts', async () => {
+    const { owner, card } = await seed({ blocks: [formBlock()] });
+    await fillForms(card.id);
+    const hidden = (await gql(owner.token, FORM_RESPONSES, { cardId: card.id, blockId: 'form1', status: 'HIDDEN' })).body.data.formResponses;
+    expect(hidden.nodes).toHaveLength(1);
+    expect(hidden.counts.pending).toBe(1);
+    const found = (await gql(owner.token, FORM_RESPONSES, { cardId: card.id, blockId: 'form1', search: 'bình' })).body.data.formResponses;
+    expect(found.nodes.map((node: { answers: { value: string }[] }) => node.answers[0].value)).toEqual(['Bình']);
+    const special = await gql(owner.token, FORM_RESPONSES, { cardId: card.id, blockId: 'form1', search: '[(.*' });
     expect(special.body.errors).toBeUndefined(); // ký tự đặc biệt trong ô tìm không làm hỏng truy vấn
-    expect(special.body.data.rsvps.nodes).toEqual([]);
-    const first = (await gql(owner.token, RSVPS, { cardId: card.id, first: 3 })).body.data.rsvps;
+    expect(special.body.data.formResponses.nodes).toEqual([]);
+    const first = (await gql(owner.token, FORM_RESPONSES, { cardId: card.id, blockId: 'form1', first: 3 })).body.data.formResponses;
     expect(first.pageInfo.hasNextPage).toBe(true);
-    const next = (await gql(owner.token, RSVPS, { cardId: card.id, first: 3, after: first.pageInfo.endCursor })).body.data.rsvps;
-    expect(next.nodes.map((n: { name: string }) => n.name)).toEqual(['An']);
-    expect(code(await gql(owner.token, RSVPS, { cardId: card.id, first: 101 }))).toBe('VALIDATION');
+    const next = (await gql(owner.token, FORM_RESPONSES, { cardId: card.id, blockId: 'form1', first: 3, after: first.pageInfo.endCursor })).body.data.formResponses;
+    expect(next.nodes).toHaveLength(1);
+    expect(next.pageInfo.hasNextPage).toBe(false);
+    expect(code(await gql(owner.token, FORM_RESPONSES, { cardId: card.id, blockId: 'form1', first: 101 }))).toBe('VALIDATION');
   });
 
   it('deletes an answer, but not one of somebody else’s card', async () => {
-    const mine = await seed();
-    await fill(mine.card.id);
-    const target = await prisma.rsvp.findFirstOrThrow({ where: { cardId: mine.card.id, name: 'An' } });
+    const mine = await seed({ blocks: [formBlock()] });
+    await fillForms(mine.card.id);
+    const target = await prisma.formResponse.findFirstOrThrow({ where: { cardId: mine.card.id } });
     const stranger = await createUserWithToken('stranger@example.com');
-    expect(code(await gql(stranger.token, 'mutation($id: ID!) { deleteRsvp(id: $id) }', { id: target.id }))).toBe('NOT_FOUND');
-    expect(code(await gql(mine.owner.token, 'mutation($id: ID!) { deleteRsvp(id: $id) }', { id: 'xyz' }))).toBe('NOT_FOUND');
-    const ok = await gql(mine.owner.token, 'mutation($id: ID!) { deleteRsvp(id: $id) }', { id: target.id });
-    expect(ok.body.data.deleteRsvp).toBe(true);
-    expect(await prisma.rsvp.count({ where: { cardId: mine.card.id } })).toBe(3);
+    expect(code(await gql(stranger.token, 'mutation($id: ID!) { deleteFormResponse(id: $id) }', { id: target.id }))).toBe('NOT_FOUND');
+    expect(code(await gql(mine.owner.token, 'mutation($id: ID!) { deleteFormResponse(id: $id) }', { id: 'xyz' }))).toBe('NOT_FOUND');
+    const ok = await gql(mine.owner.token, 'mutation($id: ID!) { deleteFormResponse(id: $id) }', { id: target.id });
+    expect(ok.body.data.deleteFormResponse).toBe(true);
+    expect(await prisma.formResponse.count({ where: { cardId: mine.card.id } })).toBe(3);
   });
 
-  it('moderates the guestbook: counts, hide, show, approve and delete', async () => {
-    const { owner, card } = await seed();
-    const make = (name: string, status: 'VISIBLE' | 'HIDDEN' | 'PENDING', at: number) => prisma.guestbookEntry.create({ data: { cardId: card.id, blockId: 'gb1', name, message: `Lời của ${name}`, status, ipHash: 'x', createdAt: new Date(at) } });
-    const a = await make('A', 'VISIBLE', 1000);
-    await make('B', 'PENDING', 2000);
-    await make('C', 'HIDDEN', 3000);
-    const all = (await gql(owner.token, ENTRIES, { cardId: card.id })).body.data.guestbookEntries;
-    expect(all.nodes.map((n: { name: string }) => n.name)).toEqual(['C', 'B', 'A']);
-    expect(all.counts).toEqual({ visible: 1, hidden: 1, pending: 1 });
-    const pending = (await gql(owner.token, ENTRIES, { cardId: card.id, status: 'PENDING' })).body.data.guestbookEntries;
-    expect(pending.nodes.map((n: { name: string }) => n.name)).toEqual(['B']);
-    const SET = 'mutation($id: ID!, $status: EntryStatus!) { setGuestbookEntryStatus(id: $id, status: $status) { id status } }';
-    expect((await gql(owner.token, SET, { id: a.id, status: 'HIDDEN' })).body.data.setGuestbookEntryStatus.status).toBe('HIDDEN');
-    expect(code(await gql(owner.token, SET, { id: a.id, status: 'NOPE' }))).toBeDefined();
-    // Sổ công khai của khối cũ đã bị bỏ ở đợt form tuỳ biến; phần duyệt được kiểm lại ở bước sau.
-    await gql(owner.token, SET, { id: a.id, status: 'VISIBLE' });
-    await gql(owner.token, 'mutation($id: ID!) { deleteGuestbookEntry(id: $id) }', { id: a.id });
-    expect(await prisma.guestbookEntry.count({ where: { cardId: card.id } })).toBe(2);
+  it('hides, shows and approves an answer', async () => {
+    const { owner, card } = await seed({ blocks: [formBlock()] });
+    await fillForms(card.id);
+    const row = await prisma.formResponse.findFirstOrThrow({ where: { cardId: card.id, status: 'PENDING' } });
+    const SET = 'mutation($id: ID!, $status: EntryStatus!) { setFormResponseStatus(id: $id, status: $status) { id status } }';
+    expect((await gql(owner.token, SET, { id: row.id, status: 'VISIBLE' })).body.data.setFormResponseStatus.status).toBe('VISIBLE');
+    expect(code(await gql(owner.token, SET, { id: row.id, status: 'NOPE' }))).toBeDefined();
     const stranger = await createUserWithToken('stranger@example.com');
-    const b = await prisma.guestbookEntry.findFirstOrThrow({ where: { cardId: card.id, name: 'B' } });
-    expect(code(await gql(stranger.token, SET, { id: b.id, status: 'VISIBLE' }))).toBe('NOT_FOUND');
+    expect(code(await gql(stranger.token, SET, { id: row.id, status: 'HIDDEN' }))).toBe('NOT_FOUND');
   });
 });
 
 describe('CSV', () => {
   it('is only for a signed-in person who can see the answers', async () => {
-    const { card } = await seed();
-    expect((await request(app).get(`/api/v1/cards/${card.id}/rsvps.csv`)).status).toBe(401);
+    const { card } = await seed({ blocks: [formBlock()] });
+    expect((await request(app).get(`/api/v1/cards/${card.id}/forms/form1/responses.csv`)).status).toBe(401);
     const stranger = await createUserWithToken('stranger@example.com');
-    expect((await request(app).get(`/api/v1/cards/${card.id}/rsvps.csv`).set('Authorization', `Bearer ${stranger.token}`)).status).toBe(404);
-    expect((await request(app).get('/api/v1/cards/not-an-id/rsvps.csv').set('Authorization', `Bearer ${stranger.token}`)).status).toBe(404);
+    expect((await request(app).get(`/api/v1/cards/${card.id}/forms/form1/responses.csv`).set('Authorization', `Bearer ${stranger.token}`)).status).toBe(404);
+    expect((await request(app).get('/api/v1/cards/not-an-id/forms/form1/responses.csv').set('Authorization', `Bearer ${stranger.token}`)).status).toBe(404);
   });
 
-  it('downloads a UTF-8 file with a BOM, Vietnamese headers, oldest first, and no caching', async () => {
-    const { owner, card } = await seed();
-    await fill(card.id);
-    const res = await request(app).get(`/api/v1/cards/${card.id}/rsvps.csv`).set('Authorization', `Bearer ${owner.token}`);
+  it('downloads a UTF-8 file with a BOM, one column per question plus the removed ones, oldest first, and no caching', async () => {
+    const { owner, card } = await seed({
+      blocks: [
+        formBlock({
+          heading: 'Đăng ký / Khách mời',
+          fields: [
+            { id: 'name', type: 'text', label: 'Họ và tên', required: true },
+            { id: 'pick', type: 'multichoice', label: 'Buổi tham dự', options: ['Tiệc cưới', 'Lễ gia tiên'] },
+            { id: 'adult', type: 'yesno', label: 'Người lớn' },
+          ],
+        }),
+      ],
+    });
+    const base = Date.parse('2026-01-01T09:00:00Z');
+    const make = (name: string, at: number, extra: Record<string, unknown> = {}) =>
+      prisma.formResponse.create({
+        data: {
+          cardId: card.id,
+          blockId: 'form1',
+          answers: [
+            { id: 'name', label: 'Họ và tên', type: 'text', value: name },
+            { id: 'pick', label: 'Buổi tham dự', type: 'multichoice', value: ['Tiệc cưới', 'Lễ gia tiên'] },
+            { id: 'adult', label: 'Người lớn', type: 'yesno', value: true },
+            ...Object.entries(extra).map(([id, value]) => ({ id, label: 'Ô đã gỡ', type: 'text', value })),
+          ] as unknown as Prisma.InputJsonValue,
+          status: 'VISIBLE',
+          ipHash: 'x',
+          createdAt: new Date(at),
+        },
+      });
+    await make('An', base);
+    await make('=HYPERLINK("http://x")', base + 1000, { old: 'giữ lại' });
+
+    const res = await request(app).get(`/api/v1/cards/${card.id}/forms/form1/responses.csv`).set('Authorization', `Bearer ${owner.token}`);
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toContain('text/csv; charset=utf-8');
     expect(res.headers['content-disposition']).toContain('attachment');
@@ -369,36 +442,29 @@ describe('CSV', () => {
     const text = res.text;
     expect(text.charCodeAt(0)).toBe(0xfeff);
     const lines = text.slice(1).trimEnd().split('\r\n');
-    expect(lines[0]).toBe('Họ và tên,Đáp án,Số khách,Số điện thoại,Lời nhắn,Gửi lúc');
-    expect(lines.slice(1).map((l) => l.split(',').slice(0, 3).join(','))).toEqual(['An,Có,2', 'Bình,Có,3', 'Chi,Không đến,', 'Dũng,Chưa chắc,1']);
+    expect(lines[0]).toBe('Gửi lúc,Họ và tên,Buổi tham dự,Người lớn,Ô đã gỡ');
+    expect(lines[1]).toMatch(/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2},An,Tiệc cưới; Lễ gia tiên,Có,$/);
+    expect(lines[2]).toContain('"\'=HYPERLINK(""http://x"")"');
+    expect(lines[2]).toContain(',giữ lại');
   });
 
-  it('escapes quotes and commas, and defuses cells a spreadsheet would run as a formula', () => {
-    const row = (name: string, note: string | null): RsvpView => ({ id: '1', blockId: 'b', name, attending: 'YES', guests: 1, phone: null, note, createdAt: new Date('2026-01-01T00:00:00Z') });
-    const csv = buildRsvpsCsv([row('=HYPERLINK("http://x")', 'a, "b"\nc'), row('+84 Lan', null), row('-1', null), row('@sum', null), row('Bình', null)]);
-    expect(csv).toContain('"\'=HYPERLINK(""http://x"")",Có,1,,"a, ""b""\nc",');
-    expect(csv).toContain("'+84 Lan,");
-    expect(csv).toContain("'-1,");
-    expect(csv).toContain("'@sum,");
-    expect(csv).toContain('\r\nBình,Có,1,,,');
-  });
-
-  it('writes the time in Vietnam time', () => {
-    const csv = buildRsvpsCsv([{ id: '1', blockId: 'b', name: 'A', attending: 'NO', guests: null, phone: null, note: null, createdAt: new Date('2026-11-08T13:14:00Z') }]);
-    expect(csv).toMatch(/20:14/); // 13:14 UTC là 20:14 giờ Việt Nam
+  it('builds a file even when the block is gone from the published card', async () => {
+    const { owner, card } = await seed({ blocks: [block('t1', 'Text')] });
+    await prisma.formResponse.create({
+      data: { cardId: card.id, blockId: 'gone1', answers: [{ id: 'q', label: 'Câu hỏi cũ', type: 'text', value: 'A' }] as unknown as Prisma.InputJsonValue, status: 'VISIBLE', ipHash: 'x' },
+    });
+    const res = await request(app).get(`/api/v1/cards/${card.id}/forms/gone1/responses.csv`).set('Authorization', `Bearer ${owner.token}`);
+    expect(res.status).toBe(200);
+    expect(res.text.slice(1).split('\r\n')[0]).toBe('Gửi lúc,Câu hỏi cũ');
   });
 });
 
 describe('deleting a card', () => {
-  it('removes its answers and messages too', async () => {
-    const { owner, card } = await seed();
-    await fill(card.id);
-    await prisma.guestbookEntry.create({ data: { cardId: card.id, blockId: 'gb1', name: 'A', message: 'm', status: 'VISIBLE', ipHash: 'x' } });
-    await prisma.formResponse.create({ data: { cardId: card.id, blockId: 'f1', answers: [], ipHash: 'x' } });
+  it('removes its answers too', async () => {
+    const { owner, card } = await seed({ blocks: [formBlock()] });
+    await fillForms(card.id);
     const res = await gql(owner.token, 'mutation($id: ID!) { deleteCard(id: $id) }', { id: card.id });
     expect(res.body.errors).toBeUndefined();
-    expect(await prisma.rsvp.count()).toBe(0);
-    expect(await prisma.guestbookEntry.count()).toBe(0);
     expect(await prisma.formResponse.count()).toBe(0);
   });
 });

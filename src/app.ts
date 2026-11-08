@@ -19,7 +19,7 @@ import { createAuthRouter } from './modules/auth/auth.routes';
 import { cardsModule } from './modules/cards/cards.resolvers';
 import { galleryModule } from './modules/cards/gallery/gallery.resolvers';
 import { responsesModule } from './modules/cards/responses/responses.resolvers';
-import { createResponsesRouter, rsvpsCsv } from './modules/cards/responses/responses.routes';
+import { createResponsesRouter, formResponsesCsv } from './modules/cards/responses/responses.routes';
 import { publishingModule } from './modules/cards/publishing/publishing.resolvers';
 import { createPublicationsRouter } from './modules/publications/publications.routes';
 import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
@@ -87,8 +87,8 @@ export function createApp(options: AppOptions = {}): express.Express {
     publicRateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT,
     formsHourlyLimit: options.formsHourlyLimit ?? env.FORMS_HOURLY_LIMIT,
   }));
-  // Tải xác nhận tham dự của một thiệp thành CSV: cần đăng nhập; quyền xem được kiểm trong service.
-  api.get('/cards/:id/rsvps.csv', requireAuth, rsvpsCsv);
+  // Tải câu trả lời của một form thành CSV: cần đăng nhập; quyền xem được kiểm trong service.
+  api.get('/cards/:id/forms/:blockId/responses.csv', requireAuth, formResponsesCsv);
   app.use('/api/v1', api);
 
   const graphql = (options.graphql ??= defaultGraphql());

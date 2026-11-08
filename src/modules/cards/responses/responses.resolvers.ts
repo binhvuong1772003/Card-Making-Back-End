@@ -3,33 +3,25 @@ import { join } from 'node:path';
 import type { GraphqlContext } from '../../../graphql/context';
 import { requireUser } from '../../../graphql/guards';
 import { parseCardId } from '../cards.schema';
-import { entryStatus, listEntriesArgs, listRsvpsArgs, parseRowId } from './responses.schema';
+import { entryStatus, formResponsesArgs, parseRowId } from './responses.schema';
 import * as responses from './responses.service';
 
 const resolvers = {
   Query: {
-    rsvps: (_parent: unknown, args: Record<string, unknown>, ctx: GraphqlContext) => {
+    cardForms: (_parent: unknown, args: { cardId: unknown }, ctx: GraphqlContext) => responses.listCardForms(requireUser(ctx), parseCardId(args.cardId)),
+    formResponses: (_parent: unknown, args: Record<string, unknown>, ctx: GraphqlContext) => {
       const actor = requireUser(ctx);
       const { cardId, ...rest } = args;
-      return responses.listRsvps(actor, parseCardId(cardId), listRsvpsArgs.parse(dropNulls(rest)));
-    },
-    guestbookEntries: (_parent: unknown, args: Record<string, unknown>, ctx: GraphqlContext) => {
-      const actor = requireUser(ctx);
-      const { cardId, ...rest } = args;
-      return responses.listEntries(actor, parseCardId(cardId), listEntriesArgs.parse(dropNulls(rest)));
+      return responses.listFormResponses(actor, parseCardId(cardId), formResponsesArgs.parse(dropNulls(rest)));
     },
   },
   Mutation: {
-    deleteRsvp: async (_parent: unknown, args: { id: unknown }, ctx: GraphqlContext) => {
-      await responses.deleteRsvp(requireUser(ctx), parseRowId(args.id));
+    deleteFormResponse: async (_parent: unknown, args: { id: unknown }, ctx: GraphqlContext) => {
+      await responses.deleteFormResponse(requireUser(ctx), parseRowId(args.id));
       return true;
     },
-    deleteGuestbookEntry: async (_parent: unknown, args: { id: unknown }, ctx: GraphqlContext) => {
-      await responses.deleteEntry(requireUser(ctx), parseRowId(args.id));
-      return true;
-    },
-    setGuestbookEntryStatus: (_parent: unknown, args: { id: unknown; status: unknown }, ctx: GraphqlContext) =>
-      responses.setEntryStatus(requireUser(ctx), parseRowId(args.id), entryStatus.parse(args.status)),
+    setFormResponseStatus: (_parent: unknown, args: { id: unknown; status: unknown }, ctx: GraphqlContext) =>
+      responses.setFormResponseStatus(requireUser(ctx), parseRowId(args.id), entryStatus.parse(args.status)),
   },
 };
 

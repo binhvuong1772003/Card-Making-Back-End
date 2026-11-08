@@ -4,9 +4,9 @@ import { env } from '../../../config/env';
 import { prisma } from '../../../infra/prisma';
 import { AppError } from '../../../shared/errors';
 import { can, roleOf } from '../cards.access';
-import { findBlock, FORM_BLOCK } from './responses.config';
-import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type FormInput, type ListEntriesArgs, type ListRsvpsArgs, type RsvpAnswerValue } from './responses.schema';
-import { isClosed, parseFormBlock, publicView, validateAnswers, type StoredAnswer } from './form-fields';
+import { collectFormBlocks, findBlock, FORM_BLOCK } from './responses.config';
+import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type FormInput, type FormResponsesArgs } from './responses.schema';
+import { isClosed, parseFormBlock, publicView, validateAnswers, type Field, type FieldType, type StoredAnswer } from './form-fields';
 
 // Câu trả lời của khách cho khối `Form` trên trang công khai. Khách ghi không cần đăng nhập; chỉ chủ thiệp và người sửa thiệp
 // đọc câu trả lời, còn dòng VISIBLE của form bật sổ công khai thì ai xem thiệp cũng thấy. Cấu hình form lấy từ bản đã xuất bản.
@@ -151,148 +151,226 @@ async function requireResponsesAccess(actor: string, cardId: string): Promise<vo
   if (!can(role, 'responses')) throw new AppError('FORBIDDEN', 'You do not have permission to do that');
 }
 
-export interface RsvpView {
+const publishedRoot = async (cardId: string): Promise<unknown> => {
+  const publication = await prisma.publication.findUnique({ where: { cardId }, select: { document: true } });
+  return (publication?.document as { root?: unknown } | undefined)?.root;
+};
+
+export interface FormFieldInfo {
   id: string;
+  label: string;
+  type: FieldType;
+  options: string[];
+}
+
+export interface CardFormView {
   blockId: string;
-  name: string;
-  attending: RsvpAnswerValue;
-  guests: number | null;
-  phone: string | null;
-  note: string | null;
-  createdAt: Date;
+  heading: string;
+  fields: FormFieldInfo[];
+  publicList: boolean;
+  moderation: boolean;
+  /** Khối không còn trong bản xuất bản nhưng vẫn còn câu trả lời. */
+  removed: boolean;
+  total: number;
+  pending: number;
 }
 
-const rsvpView = (row: { id: string; blockId: string; name: string; attending: RsvpAnswerValue; guests: number | null; phone: string | null; note: string | null; createdAt: Date }): RsvpView => ({
-  id: row.id,
-  blockId: row.blockId,
-  name: row.name,
-  attending: row.attending,
-  guests: row.guests ?? null,
-  phone: row.phone ?? null,
-  note: row.note ?? null,
-  createdAt: row.createdAt,
-});
-
-export interface RsvpSummary {
-  yes: number;
-  no: number;
-  maybe: number;
-  /** Tổng số khách của các xác nhận Có. */
-  guests: number;
+interface Counts {
+  total: number;
+  pending: number;
 }
 
-export interface RsvpPage {
-  nodes: RsvpView[];
+const fieldInfo = (field: Field): FormFieldInfo => ({ id: field.id, label: field.label, type: field.type, options: field.options ?? [] });
+
+// Tất cả khối `Form` của thiệp, theo thứ tự trong bản xuất bản; khối đã bị gỡ nhưng còn câu trả lời xếp sau, nhờ vậy chủ thiệp
+// không mất dữ liệu cũ khi sửa thiệp.
+export async function listCardForms(actor: string, cardId: string): Promise<CardFormView[]> {
+  await requireResponsesAccess(actor, cardId);
+  const blocks = collectFormBlocks(await publishedRoot(cardId));
+  const rows = await prisma.formResponse.findMany({ where: { cardId }, select: { blockId: true, status: true } });
+  const counts = new Map<string, Counts>();
+  for (const row of rows) {
+    const current = counts.get(row.blockId) ?? { total: 0, pending: 0 };
+    current.total += 1;
+    if (row.status === 'PENDING') current.pending += 1;
+    counts.set(row.blockId, current);
+  }
+
+  const forms: CardFormView[] = blocks.map((block) => {
+    const config = parseFormBlock(block.props);
+    const count = counts.get(block.id) ?? { total: 0, pending: 0 };
+    return {
+      blockId: block.id,
+      heading: typeof block.props.heading === 'string' ? block.props.heading : '',
+      fields: config.fields.map(fieldInfo),
+      publicList: config.publicList.enabled,
+      moderation: config.moderation,
+      removed: false,
+      ...count,
+    };
+  });
+  const known = new Set(forms.map((form) => form.blockId));
+  for (const [blockId, count] of counts) {
+    if (known.has(blockId)) continue;
+    forms.push({ blockId, heading: '', fields: [], publicList: false, moderation: false, removed: true, ...count });
+  }
+  return forms;
+}
+
+export interface FormSummaryView {
+  fieldId: string;
+  label: string;
+  type: FieldType;
+  answered: number;
+  counts: { option: string; count: number }[];
+  /** Tổng giá trị của ô `number`; null với loại khác. */
+  total: number | null;
+}
+
+export interface FormResponsesPage {
+  nodes: { id: string; blockId: string; answers: StoredAnswer[]; status: EntryStatusValue; createdAt: Date }[];
   pageInfo: { hasNextPage: boolean; endCursor: string | null };
-  summary: RsvpSummary;
+  summary: FormSummaryView[];
+  counts: { visible: number; hidden: number; pending: number };
 }
 
 const newestFirst = (a: { createdAt: Date; id: string }, b: { createdAt: Date; id: string }) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1);
 
-// Danh sách xác nhận của một thiệp, mới nhất trước, kèm tổng theo đáp án (tính trên mọi xác nhận của thiệp, không theo bộ lọc đáp án hay tìm kiếm).
-// Mỗi thiệp có tối đa LIMITS.maxRsvps dòng nên lọc theo tên và chia trang ngay trong bộ nhớ: tránh bộ lọc `contains` của Prisma trên Mongo, vốn
-// hiểu ký tự đặc biệt của chuỗi tìm kiếm như biểu thức chính quy.
-export async function listRsvps(actor: string, cardId: string, args: ListRsvpsArgs): Promise<RsvpPage> {
-  await requireResponsesAccess(actor, cardId);
-  const all = (await prisma.rsvp.findMany({ where: { cardId, ...(args.blockId ? { blockId: args.blockId } : {}) }, select: { id: true, blockId: true, name: true, attending: true, guests: true, phone: true, note: true, createdAt: true } })).sort(newestFirst);
-  const summary: RsvpSummary = { yes: 0, no: 0, maybe: 0, guests: 0 };
-  for (const row of all) {
-    if (row.attending === 'YES') {
-      summary.yes += 1;
-      summary.guests += row.guests ?? 1;
-    } else if (row.attending === 'NO') summary.no += 1;
-    else summary.maybe += 1;
+// Ô của khối đã bị gỡ: lấy lại từ chính câu trả lời đã lưu, đủ để hiện nhãn và đếm.
+function fieldsFromAnswers(answers: StoredAnswer[]): Field[] {
+  const seen = new Map<string, Field>();
+  for (const answer of answers) {
+    if (seen.has(answer.id)) continue;
+    const options = answer.type === 'choice' || answer.type === 'multichoice' ? [...new Set(answers.filter((item) => item.id === answer.id).flatMap((item) => (Array.isArray(item.value) ? item.value : [item.value])))].filter((item): item is string => typeof item === 'string') : undefined;
+    seen.set(answer.id, { id: answer.id, label: answer.label, type: answer.type, required: false, ...(options && options.length >= 2 ? { options } : {}) });
   }
+  return [...seen.values()];
+}
+
+// Tóm tắt tính trên MỌI dòng của khối (không theo bộ lọc trạng thái hay tìm kiếm), ở JS: trần dòng của thiệp đủ nhỏ.
+function summarize(fields: Field[], rows: { answers: unknown }[]): FormSummaryView[] {
+  return fields.map((field) => {
+    const values = rows.flatMap((row) => storedAnswers(row.answers).filter((answer) => answer.id === field.id).map((answer) => answer.value));
+    const summary: FormSummaryView = { fieldId: field.id, label: field.label, type: field.type, answered: values.length, counts: [], total: null };
+    if (field.type === 'number') {
+      summary.total = values.reduce<number>((sum, value) => sum + (typeof value === 'number' ? value : 0), 0);
+    } else if (field.type === 'yesno') {
+      summary.counts = [
+        { option: 'Có', count: values.filter((value) => value === true).length },
+        { option: 'Không', count: values.filter((value) => value === false).length },
+      ];
+    } else if (field.type === 'choice' || field.type === 'multichoice') {
+      summary.counts = (field.options ?? []).map((option) => ({
+        option,
+        count: values.filter((value) => (Array.isArray(value) ? value.includes(option) : value === option)).length,
+      }));
+    }
+    return summary;
+  });
+}
+
+const stringValues = (answers: StoredAnswer[]): string[] => answers.flatMap((answer) => (Array.isArray(answer.value) ? answer.value : [answer.value])).filter((value): value is string => typeof value === 'string');
+
+export async function listFormResponses(actor: string, cardId: string, args: FormResponsesArgs): Promise<FormResponsesPage> {
+  await requireResponsesAccess(actor, cardId);
+  const all = (await prisma.formResponse.findMany({ where: { cardId, ...(args.blockId ? { blockId: args.blockId } : {}) }, select: { id: true, blockId: true, answers: true, status: true, createdAt: true } })).sort(newestFirst);
+
+  const counts = { visible: 0, hidden: 0, pending: 0 };
+  for (const row of all) {
+    if (row.status === 'VISIBLE') counts.visible += 1;
+    else if (row.status === 'HIDDEN') counts.hidden += 1;
+    else counts.pending += 1;
+  }
+
+  let summary: FormSummaryView[] = [];
+  if (args.blockId) {
+    const block = findBlock(await publishedRoot(cardId), args.blockId);
+    const fields = block && block.type === FORM_BLOCK ? parseFormBlock(block.props).fields : fieldsFromAnswers(all.flatMap((row) => storedAnswers(row.answers)));
+    summary = summarize(fields, all);
+  }
+
   const needle = args.search?.toLowerCase();
-  let rows = all.filter((row) => (!args.answer || row.attending === args.answer) && (!needle || row.name.toLowerCase().includes(needle)));
+  let nodes = all.filter((row) => (!args.status || row.status === args.status) && (!needle || stringValues(storedAnswers(row.answers)).some((value) => value.toLowerCase().includes(needle))));
   if (args.after) {
     const cursor = decodeRowCursor(args.after);
-    rows = rows.filter((row) => row.createdAt.getTime() < cursor.createdAt.getTime() || (row.createdAt.getTime() === cursor.createdAt.getTime() && row.id < cursor.id));
+    nodes = nodes.filter((row) => row.createdAt.getTime() < cursor.createdAt.getTime() || (row.createdAt.getTime() === cursor.createdAt.getTime() && row.id < cursor.id));
   }
-  const page = rows.slice(0, args.first);
+  const page = nodes.slice(0, args.first);
   const last = page.at(-1);
-  return { nodes: page.map(rsvpView), pageInfo: { hasNextPage: rows.length > args.first, endCursor: last ? encodeRowCursor(last) : null }, summary };
+  return {
+    nodes: page.map((row) => ({ id: row.id, blockId: row.blockId, answers: storedAnswers(row.answers), status: row.status, createdAt: row.createdAt })),
+    pageInfo: { hasNextPage: nodes.length > args.first, endCursor: last ? encodeRowCursor(last) : null },
+    summary,
+    counts,
+  };
 }
 
-export interface EntryView {
-  id: string;
-  blockId: string;
-  name: string;
-  message: string;
-  status: EntryStatusValue;
-  createdAt: Date;
-}
-
-export interface EntryPage {
-  nodes: EntryView[];
-  pageInfo: { hasNextPage: boolean; endCursor: string | null };
-  counts: { visible: number; hidden: number; pending: number };
-}
-
-export async function listEntries(actor: string, cardId: string, args: ListEntriesArgs): Promise<EntryPage> {
-  await requireResponsesAccess(actor, cardId);
-  const block = args.blockId ? { blockId: args.blockId } : {};
-  const cursor = args.after ? decodeRowCursor(args.after) : undefined;
-  const where = { cardId, ...block, ...(args.status ? { status: args.status } : {}) };
-  const [rows, visible, hidden, pending] = await Promise.all([
-    prisma.guestbookEntry.findMany({
-      where: cursor ? { ...where, OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }] } : where,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: args.first + 1,
-      select: { id: true, blockId: true, name: true, message: true, status: true, createdAt: true },
-    }),
-    prisma.guestbookEntry.count({ where: { cardId, ...block, status: 'VISIBLE' } }),
-    prisma.guestbookEntry.count({ where: { cardId, ...block, status: 'HIDDEN' } }),
-    prisma.guestbookEntry.count({ where: { cardId, ...block, status: 'PENDING' } }),
-  ]);
-  const page = rows.slice(0, args.first);
-  const last = page.at(-1);
-  return { nodes: page, pageInfo: { hasNextPage: rows.length > args.first, endCursor: last ? encodeRowCursor(last) : null }, counts: { visible, hidden, pending } };
-}
-
-export async function deleteRsvp(actor: string, id: string): Promise<void> {
-  const row = await prisma.rsvp.findUnique({ where: { id }, select: { cardId: true } });
+export async function deleteFormResponse(actor: string, id: string): Promise<void> {
+  const row = await prisma.formResponse.findUnique({ where: { id }, select: { cardId: true } });
   if (!row) throw new AppError('NOT_FOUND', 'Not found');
   await requireResponsesAccess(actor, row.cardId);
-  await prisma.rsvp.deleteMany({ where: { id } });
+  await prisma.formResponse.deleteMany({ where: { id } });
 }
 
-export async function deleteEntry(actor: string, id: string): Promise<void> {
-  const row = await prisma.guestbookEntry.findUnique({ where: { id }, select: { cardId: true } });
+export async function setFormResponseStatus(actor: string, id: string, status: EntryStatusValue) {
+  const row = await prisma.formResponse.findUnique({ where: { id }, select: { cardId: true } });
   if (!row) throw new AppError('NOT_FOUND', 'Not found');
   await requireResponsesAccess(actor, row.cardId);
-  await prisma.guestbookEntry.deleteMany({ where: { id } });
-}
-
-export async function setEntryStatus(actor: string, id: string, status: EntryStatusValue): Promise<EntryView> {
-  const row = await prisma.guestbookEntry.findUnique({ where: { id }, select: { cardId: true } });
-  if (!row) throw new AppError('NOT_FOUND', 'Not found');
-  await requireResponsesAccess(actor, row.cardId);
-  return prisma.guestbookEntry.update({ where: { id }, data: { status }, select: { id: true, blockId: true, name: true, message: true, status: true, createdAt: true } });
+  const updated = await prisma.formResponse.update({ where: { id }, data: { status }, select: { id: true, blockId: true, answers: true, status: true, createdAt: true } });
+  return { ...updated, answers: storedAnswers(updated.answers) };
 }
 
 // ---- CSV ----
 
-const ANSWER_TEXT: Record<RsvpAnswerValue, string> = { YES: 'Có', NO: 'Không đến', MAYBE: 'Chưa chắc' };
 const VN_TIME = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 
-// Ô đầu bằng = + - @ hoặc ký tự điều khiển bị bảng tính hiểu là công thức (khách gõ được vào tên và lời nhắn): chèn dấu nháy đơn phía trước.
+// Tự ghép `dd/mm/yyyy hh:mm`: thứ tự thành phần trong chuỗi của Intl khác nhau giữa các bản ICU, còn bảng tính thì đọc
+// theo thứ tự cột ngày giờ kiểu Việt Nam.
+const vnTime = (date: Date): string => {
+  const parts = Object.fromEntries(VN_TIME.formatToParts(date).map((piece) => [piece.type, piece.value]));
+  return `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}`;
+};
+
+// Ô đầu bằng = + - @ hoặc ký tự điều khiển bị bảng tính hiểu là công thức (khách gõ được vào câu trả lời): chèn dấu nháy đơn phía trước.
 const cell = (value: string | number | null | undefined): string => {
   const raw = value === null || value === undefined ? '' : String(value);
   const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
   return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 };
 
-export function buildRsvpsCsv(rows: RsvpView[]): string {
-  const header = ['Họ và tên', 'Đáp án', 'Số khách', 'Số điện thoại', 'Lời nhắn', 'Gửi lúc'];
-  const lines = rows.map((row) => [row.name, ANSWER_TEXT[row.attending], row.guests, row.phone, row.note, VN_TIME.format(row.createdAt)].map(cell).join(','));
-  // BOM để Excel mở tệp UTF-8 đúng tiếng Việt; xuống dòng CRLF theo chuẩn CSV.
-  return `﻿${[header.map(cell).join(','), ...lines].join('\r\n')}\r\n`;
-}
+const valueText = (value: StoredAnswer['value'] | undefined): string => {
+  if (value === undefined) return '';
+  if (Array.isArray(value)) return value.join('; ');
+  if (typeof value === 'boolean') return value ? 'Có' : 'Không';
+  return String(value);
+};
 
-export async function exportRsvpsCsv(actor: string, cardId: string): Promise<string> {
+// Tên tệp từ tiêu đề form, bỏ dấu để mọi trình duyệt và hệ tệp đều đọc được.
+const fileSlug = (heading: string): string =>
+  heading.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'phan-hoi';
+
+export async function exportFormCsv(actor: string, cardId: string, blockId: string): Promise<{ csv: string; filename: string }> {
   await requireResponsesAccess(actor, cardId);
-  const rows = await prisma.rsvp.findMany({ where: { cardId }, select: { id: true, blockId: true, name: true, attending: true, guests: true, phone: true, note: true, createdAt: true } });
-  // Cũ trước, mới sau: đọc như một danh sách theo thời gian.
-  return buildRsvpsCsv(rows.sort((a, b) => -newestFirst(a, b)).map(rsvpView));
+  const block = findBlock(await publishedRoot(cardId), blockId);
+  const config = block && block.type === FORM_BLOCK ? parseFormBlock(block.props) : null;
+  const heading = config && typeof block?.props.heading === 'string' ? block.props.heading : '';
+
+  const rows = await prisma.formResponse.findMany({ where: { cardId, blockId }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  const current = config?.fields ?? [];
+  // Câu trả lời cho ô đã bị gỡ vẫn phải có cột, nếu không dữ liệu cũ biến mất khỏi tệp.
+  const removed = new Map<string, string>();
+  for (const row of rows) {
+    for (const answer of storedAnswers(row.answers)) {
+      if (!current.some((field) => field.id === answer.id)) removed.set(answer.id, answer.label);
+    }
+  }
+  const columns = [...current.map((field) => ({ id: field.id, label: field.label })), ...[...removed].map(([id, label]) => ({ id, label }))];
+
+  const header = ['Gửi lúc', ...columns.map((column) => cell(column.label))].join(',');
+  const lines = rows.map((row) => {
+    const answers = storedAnswers(row.answers);
+    return [cell(vnTime(row.createdAt)), ...columns.map((column) => cell(valueText(answers.find((answer) => answer.id === column.id)?.value)))].join(',');
+  });
+  // BOM để Excel mở tệp UTF-8 đúng tiếng Việt; xuống dòng CRLF theo chuẩn CSV.
+  return { csv: `﻿${[header, ...lines].join('\r\n')}\r\n`, filename: `${fileSlug(heading)}.csv` };
 }

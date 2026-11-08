@@ -1,8 +1,5 @@
-// Cấu hình của khối form lấy từ BẢN ĐÃ XUẤT BẢN của thiệp (Publication.document), không từ khách: khách không giả được hạn, số khách tối đa hay
-// việc có duyệt trước. Tên loại khối và tên thuộc tính là hợp đồng với frontend (`CMFE/lib/cards/blocks`): đổi bên nào phải đổi bên kia.
-export const RSVP_BLOCK = 'Rsvp';
-export const GUESTBOOK_BLOCK = 'Guestbook';
-// Khối form tuỳ biến thay hai khối cứng trên; chỉ nó nhận câu trả lời mới.
+// Cấu hình của khối form lấy từ BẢN ĐÃ XUẤT BẢN của thiệp (Publication.document), không từ khách: khách không giả được hạn hay việc có
+// duyệt trước. Tên loại khối và tên thuộc tính là hợp đồng với frontend (`CMFE/lib/cards/blocks`): đổi bên nào phải đổi bên kia.
 export const FORM_BLOCK = 'Form';
 
 export interface BlockNode {
@@ -24,44 +21,17 @@ export function findBlock(root: unknown, blockId: string): BlockNode | undefined
   return undefined;
 }
 
-export const MAX_GUESTS_LIMIT = 20;
-
-export interface RsvpConfig {
-  /** Hạn xác nhận, "YYYY-MM-DD" (hết ngày đó theo giờ Việt Nam); null là không hạn. */
-  deadline: string | null;
-  maxGuests: number;
-  askGuests: boolean;
-  askNote: boolean;
-  askPhone: boolean;
-  askMaybe: boolean;
-}
-
-const flag = (value: unknown, fallback: boolean): boolean => (typeof value === 'boolean' ? value : fallback);
-
-export function rsvpConfig(props: Record<string, unknown>): RsvpConfig {
-  const max = typeof props.maxGuests === 'number' && Number.isFinite(props.maxGuests) ? Math.floor(props.maxGuests) : 4;
-  return {
-    deadline: typeof props.deadline === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(props.deadline) ? props.deadline : null,
-    maxGuests: Math.min(MAX_GUESTS_LIMIT, Math.max(1, max)),
-    askGuests: flag(props.askGuests, true),
-    askNote: flag(props.askNote, true),
-    askPhone: flag(props.askPhone, false),
-    askMaybe: flag(props.askMaybe, true),
+// Các khối `Form` của trang, theo đúng thứ tự chúng nằm trong cây (thứ tự này là thứ tự tab trong trang Phản hồi).
+export function collectFormBlocks(root: unknown): BlockNode[] {
+  const found: BlockNode[] = [];
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    const block = node as Partial<BlockNode>;
+    if (typeof block.id === 'string' && typeof block.type === 'string' && block.type === FORM_BLOCK) {
+      found.push({ id: block.id, type: block.type, props: (block.props as Record<string, unknown>) ?? {}, children: block.children });
+    }
+    if (Array.isArray(block.children)) for (const child of block.children) walk(child);
   };
-}
-
-export interface GuestbookConfig {
-  /** Bật thì lời chúc mới ở trạng thái PENDING cho đến khi chủ thiệp duyệt. */
-  moderation: boolean;
-}
-
-export const guestbookConfig = (props: Record<string, unknown>): GuestbookConfig => ({ moderation: flag(props.moderation, false) });
-
-// Hết ngày hạn theo giờ Việt Nam (UTC+7): 23:59:59.999 ngày đó là 16:59:59.999 UTC. Ngày không có thật (30 tháng 2) coi như không có hạn.
-export function isClosed(deadline: string | null, now: Date): boolean {
-  if (!deadline) return false;
-  const [year, month, day] = deadline.split('-').map(Number) as [number, number, number];
-  const probe = new Date(Date.UTC(year, month - 1, day));
-  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) return false;
-  return now.getTime() > Date.UTC(year, month - 1, day, 16, 59, 59, 999);
+  walk(root);
+  return found;
 }

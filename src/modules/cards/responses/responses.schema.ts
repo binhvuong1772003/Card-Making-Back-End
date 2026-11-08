@@ -4,15 +4,6 @@ import { AppError } from '../../../shared/errors';
 // Luật đầu vào của form công khai và của các truy vấn của chủ thiệp. GraphQL chỉ kiểm kiểu; luật về nội dung nằm ở đây.
 const blockId = z.string().min(1).max(100);
 
-// Không nhận ký tự điều khiển (trừ xuống dòng và tab trong lời nhắn), vì chúng làm hỏng bảng tính và nhật ký.
-const noControl = (value: string) => !/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(value);
-const text = (min: number, max: number) => z.string().trim().min(min).max(max).refine(noControl, 'Control characters are not allowed');
-// Ô tuỳ chọn: chuỗi rỗng hoặc toàn khoảng trắng coi như không điền.
-const optional = <T extends z.ZodType>(schema: T) => z.preprocess((value) => (typeof value === 'string' && value.trim() === '' ? undefined : value), schema.optional());
-
-export const rsvpAnswer = z.enum(['YES', 'NO', 'MAYBE']);
-export type RsvpAnswerValue = z.infer<typeof rsvpAnswer>;
-
 // Khách gửi câu trả lời theo bản đồ mã ô → giá trị; luật nội dung của từng ô nằm ở `form-fields.ts` vì phải đọc cấu hình form.
 export const formInput = z.object({
   blockId,
@@ -31,26 +22,14 @@ export const entriesQuery = z.object({
 export const entryStatus = z.enum(['VISIBLE', 'HIDDEN', 'PENDING']);
 export type EntryStatusValue = z.infer<typeof entryStatus>;
 
-export const guestbookQuery = z.object({
-  blockId,
-  first: z.coerce.number().int().min(1).max(50).default(10),
-  after: z.string().min(1).max(200).optional(),
-});export const listRsvpsArgs = z.object({
+export const formResponsesArgs = z.object({
   blockId: blockId.optional(),
-  answer: rsvpAnswer.optional(),
+  status: entryStatus.optional(),
   search: z.string().trim().max(100).optional(),
   first: z.number().int().min(1).max(100).default(20),
   after: z.string().min(1).max(200).optional(),
 });
-export type ListRsvpsArgs = z.infer<typeof listRsvpsArgs>;
-
-export const listEntriesArgs = z.object({
-  blockId: blockId.optional(),
-  status: entryStatus.optional(),
-  first: z.number().int().min(1).max(100).default(20),
-  after: z.string().min(1).max(200).optional(),
-});
-export type ListEntriesArgs = z.infer<typeof listEntriesArgs>;
+export type FormResponsesArgs = z.infer<typeof formResponsesArgs>;
 
 const OBJECT_ID = /^[0-9a-f]{24}$/i;
 

@@ -6,7 +6,7 @@ import { validateBody, validateQuery } from '../../../http/validate';
 import { AppError } from '../../../shared/errors';
 import { parseCardId } from '../cards.schema';
 import { entriesQuery, formInput, type FormInput } from './responses.schema';
-import { exportRsvpsCsv, listPublicEntries, submitForm } from './responses.service';
+import { exportFormCsv, listPublicEntries, submitForm } from './responses.service';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -45,10 +45,10 @@ export function createResponsesRouter(options: { publicRateLimit: number; formsH
 }
 
 // Chạy SAU requireAuth (app.ts gắn): res.locals.auth.userId do nó đặt. Tệp CSV UTF-8 có BOM, không cho lưu tạm vì có câu trả lời của khách.
-export const rsvpsCsv: RequestHandler = async (req: Request, res: Response) => {
+export const formResponsesCsv: RequestHandler = async (req: Request, res: Response) => {
   const userId = res.locals.auth?.userId;
   if (typeof userId !== 'string') throw new AppError('UNAUTHENTICATED', 'Authentication required');
-  const csv = await exportRsvpsCsv(userId, parseCardId(req.params.id));
-  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="xac-nhan-tham-du.csv"', 'Cache-Control': 'no-store' });
+  const { csv, filename } = await exportFormCsv(userId, parseCardId(req.params.id), String(req.params.blockId));
+  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store' });
   res.send(csv);
 };

@@ -1,54 +1,68 @@
-"""Đáp án của khách ở form xác nhận tham dự."""
-enum RsvpAnswer {
-  YES
-  NO
-  MAYBE
-}
-
-"""Trạng thái một lời chúc: VISIBLE hiện cho mọi người xem thiệp, PENDING chờ chủ thiệp duyệt, HIDDEN đã ẩn."""
+"""Trạng thái một câu trả lời: VISIBLE hiện cho mọi người xem thiệp (khi form bật sổ công khai), PENDING chờ chủ thiệp duyệt, HIDDEN đã ẩn."""
 enum EntryStatus {
   VISIBLE
   HIDDEN
   PENDING
 }
 
-"""Một xác nhận tham dự do khách gửi."""
-type Rsvp {
+"""Một ô của form, đọc từ bản đã xuất bản của thiệp."""
+type FormFieldInfo {
   id: ID!
+  label: String!
+  """text | longtext | choice | multichoice | number | yesno | date | phone"""
+  type: String!
+  """Các phương án của ô chọn; rỗng với loại khác."""
+  options: [String!]!
+}
+
+"""Một form của thiệp, kèm số câu trả lời."""
+type CardForm {
   """Mã của khối form trong thiệp."""
-  blockId: String!
-  name: String!
-  attending: RsvpAnswer!
-  """Số khách đi cùng (tính cả người gửi); null khi không đến."""
-  guests: Int
-  phone: String
-  note: String
-  createdAt: DateTime!
+  blockId: ID!
+  heading: String!
+  fields: [FormFieldInfo!]!
+  """Bật thì câu trả lời hiện công khai dưới form (sổ lưu bút)."""
+  publicList: Boolean!
+  moderation: Boolean!
+  """Khối không còn trong bản xuất bản nhưng vẫn còn câu trả lời."""
+  removed: Boolean!
+  total: Int!
+  pending: Int!
 }
 
-"""Tổng các xác nhận của thiệp, không theo bộ lọc đáp án hay tìm kiếm."""
-type RsvpSummary {
-  yes: Int!
-  no: Int!
-  maybe: Int!
-  """Tổng số khách của các xác nhận Có."""
-  guests: Int!
+"""Một câu trả lời đã lưu, kèm nhãn câu hỏi lúc trả lời."""
+type FormAnswer {
+  id: String!
+  label: String!
+  type: String!
+  """string | number | boolean | string[]"""
+  value: JSON!
 }
 
-type RsvpConnection {
-  nodes: [Rsvp!]!
-  pageInfo: PageInfo!
-  summary: RsvpSummary!
-}
-
-"""Một lời chúc trong sổ lưu bút."""
-type GuestbookEntry {
+"""Một lượt khách gửi form."""
+type FormResponse {
   id: ID!
   blockId: String!
-  name: String!
-  message: String!
+  answers: [FormAnswer!]!
   status: EntryStatus!
   createdAt: DateTime!
+}
+
+type OptionCount {
+  option: String!
+  count: Int!
+}
+
+"""Tóm tắt một ô, tính trên mọi câu trả lời của khối."""
+type FormSummary {
+  fieldId: String!
+  label: String!
+  type: String!
+  """Số câu trả lời có trả lời ô này."""
+  answered: Int!
+  counts: [OptionCount!]!
+  """Tổng giá trị của ô số; null với loại khác."""
+  total: Float
 }
 
 type EntryCounts {
@@ -57,27 +71,25 @@ type EntryCounts {
   pending: Int!
 }
 
-type GuestbookConnection {
-  nodes: [GuestbookEntry!]!
+type FormResponseConnection {
+  nodes: [FormResponse!]!
   pageInfo: PageInfo!
+  summary: [FormSummary!]!
   counts: EntryCounts!
 }
 
 extend type Query {
-  """Xác nhận tham dự của thiệp, mới nhất trước (chủ thiệp và người sửa thiệp). `first` từ 1 đến 100. `search` tìm theo tên."""
-  rsvps(cardId: ID!, blockId: String, answer: RsvpAnswer, search: String, first: Int = 20, after: String): RsvpConnection!
+  """Các form của thiệp theo bản xuất bản, cộng các khối đã gỡ còn câu trả lời (chủ thiệp và người sửa thiệp)."""
+  cardForms(cardId: ID!): [CardForm!]!
 
-  """Lời chúc của thiệp, mới nhất trước, mọi trạng thái (chủ thiệp và người sửa thiệp)."""
-  guestbookEntries(cardId: ID!, blockId: String, status: EntryStatus, first: Int = 20, after: String): GuestbookConnection!
+  """Câu trả lời của một thiệp, mới nhất trước, mọi trạng thái (chủ thiệp và người sửa thiệp). `first` từ 1 đến 100. `search` tìm trong các giá trị chữ."""
+  formResponses(cardId: ID!, blockId: String, status: EntryStatus, search: String, first: Int = 20, after: String): FormResponseConnection!
 }
 
 extend type Mutation {
-  """Xoá một xác nhận (chủ thiệp và người sửa thiệp)."""
-  deleteRsvp(id: ID!): Boolean!
+  """Xoá một câu trả lời (chủ thiệp và người sửa thiệp)."""
+  deleteFormResponse(id: ID!): Boolean!
 
-  """Xoá một lời chúc (chủ thiệp và người sửa thiệp)."""
-  deleteGuestbookEntry(id: ID!): Boolean!
-
-  """Ẩn, hiện hoặc duyệt một lời chúc (chủ thiệp và người sửa thiệp)."""
-  setGuestbookEntryStatus(id: ID!, status: EntryStatus!): GuestbookEntry!
+  """Ẩn, hiện hoặc duyệt một câu trả lời (chủ thiệp và người sửa thiệp)."""
+  setFormResponseStatus(id: ID!, status: EntryStatus!): FormResponse!
 }
