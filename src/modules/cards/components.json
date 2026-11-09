@@ -646,12 +646,12 @@
       },
       "eventMinutes": {
         "type": "number",
-        "label": "Kéo dài",
+        "label": "Dài",
         "min": 15,
         "max": 1440,
         "unit": "phút",
         "group": "Thêm vào lịch",
-        "help": "Chỉ dùng khi có giờ bắt đầu."
+        "help": "Sự kiện kéo dài bao nhiêu phút. Chỉ dùng khi có giờ bắt đầu."
       },
       "eventPlace": {
         "type": "text",
@@ -829,12 +829,12 @@
       },
       "eventMinutes": {
         "type": "number",
-        "label": "Kéo dài",
+        "label": "Dài",
         "min": 15,
         "max": 1440,
         "unit": "phút",
         "group": "Thêm vào lịch",
-        "help": "Chỉ dùng khi có giờ bắt đầu."
+        "help": "Sự kiện kéo dài bao nhiêu phút. Chỉ dùng khi có giờ bắt đầu."
       },
       "eventPlace": {
         "type": "text",
@@ -1012,12 +1012,12 @@
       },
       "eventMinutes": {
         "type": "number",
-        "label": "Kéo dài",
+        "label": "Dài",
         "min": 15,
         "max": 1440,
         "unit": "phút",
         "group": "Thêm vào lịch",
-        "help": "Chỉ dùng khi có giờ bắt đầu."
+        "help": "Sự kiện kéo dài bao nhiêu phút. Chỉ dùng khi có giờ bắt đầu."
       },
       "eventPlace": {
         "type": "text",
@@ -1200,12 +1200,12 @@
       },
       "eventMinutes": {
         "type": "number",
-        "label": "Kéo dài",
+        "label": "Dài",
         "min": 15,
         "max": 1440,
         "unit": "phút",
         "group": "Thêm vào lịch",
-        "help": "Chỉ dùng khi có giờ bắt đầu."
+        "help": "Sự kiện kéo dài bao nhiêu phút. Chỉ dùng khi có giờ bắt đầu."
       },
       "eventPlace": {
         "type": "text",
@@ -1387,12 +1387,12 @@
       },
       "eventMinutes": {
         "type": "number",
-        "label": "Kéo dài",
+        "label": "Dài",
         "min": 15,
         "max": 1440,
         "unit": "phút",
         "group": "Thêm vào lịch",
-        "help": "Chỉ dùng khi có giờ bắt đầu."
+        "help": "Sự kiện kéo dài bao nhiêu phút. Chỉ dùng khi có giờ bắt đầu."
       },
       "eventPlace": {
         "type": "text",
