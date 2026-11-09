@@ -49,6 +49,19 @@ const ANSWERS = { name: 'Nguyễn Minh Anh', attending: 'Có, tôi sẽ đến',
 const postForm = (slug: string, body: Record<string, unknown> = {}) => request(app).post(`/api/v1/publications/${slug}/forms`).send({ blockId: 'form1', answers: ANSWERS, ...body });
 
 describe('POST /publications/:slug/forms', () => {
+  it('routes forms on separate pages into separate response keys', async () => {
+    const owner = await createUserWithToken('multipage-forms@example.com');
+    const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'T', document: {}, members: [] } });
+    const envelope = { kind: 'card', version: 1, startPageId: 'p1', pages: [
+      { id: 'p1', name: 'One', data: pageWith(formBlock({ formId: 'form-a' })), interactions: {} },
+      { id: 'p2', name: 'Two', data: pageWith(formBlock({ formId: 'form-b' })), interactions: {} },
+    ] };
+    await prisma.publication.create({ data: { cardId: card.id, slug: 'two-forms', document: envelope, publishedAt: new Date() } });
+    expect((await postForm('two-forms', { blockId: 'form-a' })).status).toBe(201);
+    expect((await postForm('two-forms', { blockId: 'form-b' })).status).toBe(201);
+    expect((await prisma.formResponse.findMany({ where: { cardId: card.id }, select: { blockId: true } })).map((row) => row.blockId).sort()).toEqual(['form-a', 'form-b']);
+  });
+
   it('stores the answers in field order with their labels, and returns the id', async () => {
     const { card, slug } = await seed({ blocks: [formBlock()] });
     const res = await postForm(slug);

@@ -5,10 +5,11 @@ import { env } from '../../../config/env';
 import { prisma } from '../../../infra/prisma';
 import { AppError } from '../../../shared/errors';
 import { can, roleOf } from '../cards.access';
-import { collectFormBlocks, findFormBlock, FORM_BLOCK } from './responses.config';
+import { collectFormBlocks, FORM_BLOCK } from './responses.config';
 import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type FormInput, type FormResponsesArgs } from './responses.schema';
 import { isClosed, parseFormBlock, publicView, validateAnswers, type Field, type FieldType, type StoredAnswer } from './form-fields';
 import { upgradeLegacyForms } from './legacy';
+import { isCardDocument } from '../card-document';
 
 // Câu trả lời của khách cho khối `Form` trên trang công khai. Khách ghi không cần đăng nhập; chỉ chủ thiệp và người sửa thiệp
 // đọc câu trả lời, còn dòng VISIBLE của form bật sổ công khai thì ai xem thiệp cũng thấy. Cấu hình form lấy từ bản đã xuất bản.
@@ -33,6 +34,7 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // Bản xuất bản lưu từ trước khi có khối `Form` có thể còn `Rsvp` / `Guestbook`: đổi sang `Form` ngay lúc đọc để mọi đường đọc
 // (khách gửi, sổ công khai, trang chủ thiệp, CSV) thấy cùng một hình dạng.
 function upgradedDocument<T>(document: T): T {
+  if (isCardDocument(document)) return { ...document, pages: document.pages.map((page) => ({ ...page, data: upgradedDocument(page.data) })) } as T;
   const root = (document as { root?: TreeNode } | null | undefined)?.root;
   if (!root || typeof root !== 'object') return document;
   return { ...(document as object), root: upgradeLegacyForms(root) } as T;
@@ -50,9 +52,16 @@ async function findPublished(slug: string): Promise<{ publicationId: string; car
 }
 
 function formBlock(document: unknown, blockId: string) {
-  const block = findFormBlock((document as { root?: unknown } | null)?.root, blockId);
+  const matches = documentRoots(document).flatMap((root) => collectFormBlocks(root).filter((block) => block.key === blockId));
+  if (matches.length > 1) throw new AppError('NOT_FOUND', 'Form not found');
+  const block = matches[0];
   if (!block || block.type !== FORM_BLOCK) throw new AppError('NOT_FOUND', 'Form not found');
   return block;
+}
+
+function documentRoots(document: unknown): unknown[] {
+  if (isCardDocument(document)) return document.pages.map((page) => page.data.root);
+  return [(document as { root?: unknown } | null)?.root];
 }
 
 export interface SubmitContext {
@@ -166,7 +175,7 @@ async function requireResponsesAccess(actor: string, cardId: string): Promise<vo
 interface LiveRoot {
   id: string;
   publishedAt: Date;
-  root: unknown;
+  roots: unknown[];
 }
 
 const liveRootsOf = async (cardId: string): Promise<LiveRoot[]> => {
@@ -175,16 +184,18 @@ const liveRootsOf = async (cardId: string): Promise<LiveRoot[]> => {
     select: { id: true, publishedAt: true, document: true },
     orderBy: { id: 'asc' },
   });
-  return rows.map((row) => ({ id: row.id, publishedAt: row.publishedAt, root: (upgradedDocument(row.document) as { root?: unknown } | undefined)?.root }));
+  return rows.map((row) => ({ id: row.id, publishedAt: row.publishedAt, roots: documentRoots(upgradedDocument(row.document)) }));
 };
+
+const formsOf = (live: LiveRoot) => live.roots.flatMap((root) => collectFormBlocks(root));
 
 function mergeForms(roots: LiveRoot[]): ReturnType<typeof collectFormBlocks> {
   const chosen = new Map<string, ReturnType<typeof collectFormBlocks>[number]>();
   for (const live of [...roots].sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())) {
-    for (const block of collectFormBlocks(live.root)) if (!chosen.has(block.key)) chosen.set(block.key, block);
+    for (const block of formsOf(live)) if (!chosen.has(block.key)) chosen.set(block.key, block);
   }
   const order: string[] = [];
-  for (const live of roots) for (const block of collectFormBlocks(live.root)) if (!order.includes(block.key)) order.push(block.key);
+  for (const live of roots) for (const block of formsOf(live)) if (!order.includes(block.key)) order.push(block.key);
   return order.map((key) => chosen.get(key)!);
 }
 

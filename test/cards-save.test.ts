@@ -49,6 +49,29 @@ describe('saveCardDocument', () => {
     expect(after.revision).toBe(3);
   });
 
+  it('saves every page with the current revision', async () => {
+    const owner = await createUserWithToken('pages@example.com');
+    const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'T', document: {}, revision: 4, members: [] } });
+    const envelope = { kind: 'card', version: 1, startPageId: 'p2', pages: [
+      { id: 'p1', name: 'One', data: samplePage('one'), interactions: { n1: { type: 'go-to-page', targetPageId: 'p2', transition: 'fade', durationMs: 450 } } },
+      { id: 'p2', name: 'Two', data: samplePage('two'), interactions: {} },
+    ] };
+    const res = await save(owner.token, card.id, 4, envelope);
+    expect(res.body.data.saveCardDocument.revision).toBe(5);
+    expect((await prisma.card.findUniqueOrThrow({ where: { id: card.id } })).document).toEqual(envelope);
+    expect(code(await save(owner.token, card.id, 4, envelope))).toBe('CONFLICT');
+  });
+
+  it('rejects a legacy page write over an existing multipage document', async () => {
+    const owner = await createUserWithToken('legacy@example.com');
+    const envelope = { kind: 'card', version: 1, startPageId: 'p1', pages: [{ id: 'p1', name: 'One', data: samplePage('one'), interactions: {} }, { id: 'p2', name: 'Two', data: samplePage('two'), interactions: {} }] };
+    const card = await prisma.card.create({ data: { ownerId: owner.id, title: 'T', document: envelope, revision: 2, members: [] } });
+    const res = await save(owner.token, card.id, 2, samplePage('flattened'));
+    expect(code(res)).toBe('CONFLICT');
+    expect(res.body.errors[0].extensions.details).toMatchObject({ reason: 'MULTIPAGE_RELOAD_REQUIRED' });
+    expect((await prisma.card.findUniqueOrThrow({ where: { id: card.id } })).document).toEqual(envelope);
+  });
+
   it('does not let a viewer or a stranger write', async () => {
     const owner = await createUserWithToken('owner@example.com');
     const viewer = await createUserWithToken('viewer@example.com');

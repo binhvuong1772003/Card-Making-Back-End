@@ -70,6 +70,26 @@ const publishToGallery = async (token: string, cardId: string) => {
 };
 
 describe('sending a card to the gallery', () => {
+  it('keeps every page when publishing, approving and copying a template', async () => {
+    const owner = await createUserWithToken('multipage-template@example.com');
+    const image = 'https://res.cloudinary.com/test/image/upload/v1/a.png';
+    const envelope = { kind: 'card', version: 1, startPageId: 'p2', pages: [
+      { id: 'p1', name: 'Cover', data: page('cover'), interactions: {} },
+      { id: 'p2', name: 'Message', data: page('message', image), interactions: {} },
+    ] };
+    const card = await seed(owner.id, 'Many pages', 'WEDDING', envelope);
+    const pending = await publishToGallery(owner.token, card.id);
+    expect(pending.snapshot).toEqual(envelope);
+    const boss = await admin();
+    const approved = await gql(boss.token, APPROVE, { id: pending.id });
+    expect(approved.body.errors).toBeUndefined();
+    expect(approved.body.data.approveTemplate.snapshot.pages[1].data.root.children[1].props.src).toBe(`https://res.cloudinary.com/test/image/upload/cardmaking/templates/${pending.id}/a.png`);
+    const used = await gql(owner.token, USE, { id: pending.id });
+    expect(used.body.errors).toBeUndefined();
+    const copied = (await prisma.card.findUniqueOrThrow({ where: { id: used.body.data.createCardFromTemplate.id } })).document;
+    expect(copied).toEqual(approved.body.data.approveTemplate.snapshot);
+  });
+
   it('queues a pending template with the published snapshot, category and author', async () => {
     const owner = await createUserWithToken('o@example.com');
     await prisma.user.update({ where: { id: owner.id }, data: { name: 'Thu Hà' } });

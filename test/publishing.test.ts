@@ -239,6 +239,21 @@ describe('several publications of one card', () => {
     expect((await request(app).get('/api/v1/publications/ban-cu')).body.document).toEqual(page('Xin chào'));
   });
 
+  it('restores the selected start page and navigation links from a multipage publication', async () => {
+    const owner = await createUserWithToken('restore-multipage@example.com');
+    const original = { kind: 'card', version: 1, startPageId: 'p2', pages: [
+      { id: 'p1', name: 'Cover', data: page('cover'), interactions: { n1: { type: 'go-to-page', targetPageId: 'p2', transition: 'slide-left', durationMs: 600 } } },
+      { id: 'p2', name: 'Message', data: page('message'), interactions: {} },
+    ] };
+    const card = await seed(owner.id, 'Thiệp', original);
+    const publication = (await gql(owner.token, PUBLISH, { id: card.id })).body.data.publishCard;
+    const changed = { ...original, startPageId: 'p1' };
+    await gql(owner.token, SAVE, { id: card.id, revision: 0, document: changed });
+    const revision = (await gql(owner.token, RESTORE, { cardId: card.id, publicationId: publication.id })).body.data.restoreDraftFromPublication;
+    expect(revision).toBe(2);
+    expect((await gql(owner.token, DRAFT, { id: card.id })).body.data.card.document).toEqual(original);
+  });
+
   it('keeps the name when a version is republished without one, and clears it with an empty one', async () => {
     const owner = await createUserWithToken('o@example.com');
     const card = await seed(owner.id, 'Thiệp');

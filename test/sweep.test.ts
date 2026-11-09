@@ -38,6 +38,11 @@ describe('collectReferencedPublicIds', () => {
     ];
     expect([...collectReferencedPublicIds(docs, CLOUD)].sort()).toEqual(['cardmaking/templates/t1/c', 'cardmaking/u1/a', 'cardmaking/u1/b']);
   });
+
+  it('keeps an image referenced only by a later card page', () => {
+    const docs = [{ kind: 'card', pages: [{ id: 'page-1', data: { root: { children: [] } } }, { id: 'page-2', data: { root: { children: [{ props: { src: url('cardmaking/u1/second-page') } }] } } }] }];
+    expect([...collectReferencedPublicIds(docs, CLOUD)]).toEqual(['cardmaking/u1/second-page']);
+  });
 });
 
 describe('findOrphans', () => {

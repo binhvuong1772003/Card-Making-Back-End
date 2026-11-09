@@ -36,12 +36,14 @@ export const MAX_DOCUMENT_BYTES = 800 * 1024; // dưới giới hạn 1 MB của
 
 // Trả trang đã đưa về phiên bản hiện tại (trang cũ được nâng cấp), hoặc ném VALIDATION. Thông điệp lỗi chỉ nói lý do chung,
 // không chép lại dữ liệu người dùng gửi.
-export function parsePageDocument(input: unknown): PageData {
+export function parsePageDocument(input: unknown, options: { normalizeDuplicateForms?: boolean } = {}): PageData {
   const size = Buffer.byteLength(JSON.stringify(input) ?? '', 'utf8');
   if (size > MAX_DOCUMENT_BYTES) throw new AppError('VALIDATION', 'The page is too large');
   const opened = migratePage(input);
   if (!opened.ok) throw new AppError('VALIDATION', `The page is not valid (${opened.reason})`);
-  const page = { ...opened.page, root: normalizeFormIds(withoutRetiredProps(upgradeLegacyForms(opened.page.root))) };
+  let root = withoutRetiredProps(upgradeLegacyForms(opened.page.root));
+  if (options.normalizeDuplicateForms !== false) root = normalizeFormIds(root);
+  const page = { ...opened.page, root };
   const problems = validatePage(registry, page).length + badSingleImages(page.root);
   if (problems > 0) throw new AppError('VALIDATION', `The page is not valid (${problems} problem${problems === 1 ? '' : 's'})`);
   return page;

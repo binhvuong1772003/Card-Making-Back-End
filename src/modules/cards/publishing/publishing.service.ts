@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../infra/prisma';
 import { AppError } from '../../../shared/errors';
 import { can, roleOf } from '../cards.access';
-import { parsePageDocument } from '../page-document';
+import { parseCardDocumentForStorage } from '../card-document';
 import { galleryStateOf, hideFromGallery, submitToGallery, type GalleryStatus } from '../gallery/gallery.service';
 
 export interface PublicationView {
@@ -83,7 +83,7 @@ export interface PublishInput {
 // Xuất bản lại giữ slug cũ nếu không truyền slug mới.
 export async function publishCard(actor: string, cardId: string, input: PublishInput = {}): Promise<PublicationView> {
   const card = await requireOwner(actor, cardId);
-  const page = parsePageDocument(card.document); // thiệp mới (document rỗng) hoặc dữ liệu hỏng thì không xuất bản được
+  const page = parseCardDocumentForStorage(card.document); // kiểm tra toàn bộ document trước khi xuất bản
   const lives = await liveOf(cardId);
   const existing = input.publicationId ? await prisma.publication.findFirst({ where: { id: input.publicationId, cardId }, select: ROW }) : null;
   if (input.publicationId && !existing) throw new AppError('NOT_FOUND', 'Publication not found');
@@ -161,7 +161,7 @@ export async function restoreDraftFromPublication(actor: string, cardId: string,
   await requireOwner(actor, cardId);
   const publication = await prisma.publication.findFirst({ where: { id: publicationId, cardId }, select: { document: true } });
   if (!publication) throw new AppError('NOT_FOUND', 'Publication not found');
-  const page = parsePageDocument(publication.document) as unknown as Prisma.InputJsonObject;
+  const page = parseCardDocumentForStorage(publication.document) as unknown as Prisma.InputJsonObject;
   const updated = await prisma.card.update({ where: { id: cardId }, data: { document: page, revision: { increment: 1 } }, select: { revision: true } });
   return updated.revision;
 }
