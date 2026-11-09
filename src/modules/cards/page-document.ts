@@ -1,4 +1,4 @@
-import { builtInRegistry, migratePage, validatePage, type PageData, type TreeNode } from '@miditor/core';
+import { builtInRegistry, isImageUrl, migratePage, validatePage, type PageData, type TreeNode } from '@miditor/core';
 import { AppError } from '../../shared/errors';
 import { cardComponents, retiredProps } from './components';
 import { normalizeFormIds } from './responses/form-id';
@@ -19,6 +19,19 @@ function withoutRetiredProps(node: TreeNode): TreeNode {
   const children = node.children.map(withoutRetiredProps);
   return props === node.props && children.every((child, index) => child === node.children[index]) ? node : { ...node, props, children };
 }
+// Trường `custom` kiểu `single-image` (khối Khung ảnh) giữ một địa chỉ ảnh mà Miditor không kiểm: phải là địa chỉ ảnh hợp lệ hoặc rỗng.
+// Trả số giá trị sai trong cây.
+function badSingleImages(node: TreeNode): number {
+  const def = Object.hasOwn(registry, node.type) ? registry[node.type] : undefined;
+  let bad = 0;
+  for (const [name, field] of Object.entries(def?.fields ?? {})) {
+    if (field.type !== 'custom' || field.kind !== 'single-image') continue;
+    const value = node.props[name];
+    if (value !== undefined && value !== '' && !isImageUrl(value)) bad += 1;
+  }
+  return node.children.reduce((sum, child) => sum + badSingleImages(child), bad);
+}
+
 export const MAX_DOCUMENT_BYTES = 800 * 1024; // dưới giới hạn 1 MB của thân yêu cầu, chừa chỗ cho phần bao ngoài
 
 // Trả trang đã đưa về phiên bản hiện tại (trang cũ được nâng cấp), hoặc ném VALIDATION. Thông điệp lỗi chỉ nói lý do chung,
@@ -29,7 +42,7 @@ export function parsePageDocument(input: unknown): PageData {
   const opened = migratePage(input);
   if (!opened.ok) throw new AppError('VALIDATION', `The page is not valid (${opened.reason})`);
   const page = { ...opened.page, root: normalizeFormIds(withoutRetiredProps(upgradeLegacyForms(opened.page.root))) };
-  const issues = validatePage(registry, page);
-  if (issues.length > 0) throw new AppError('VALIDATION', `The page is not valid (${issues.length} problem${issues.length === 1 ? '' : 's'})`);
+  const problems = validatePage(registry, page).length + badSingleImages(page.root);
+  if (problems > 0) throw new AppError('VALIDATION', `The page is not valid (${problems} problem${problems === 1 ? '' : 's'})`);
   return page;
 }

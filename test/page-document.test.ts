@@ -137,6 +137,7 @@ describe('parsePageDocument', () => {
     expect(refusal(blockPage('PhotoFrameArch', { ...props, posX: 101 })).code).toBe('VALIDATION');
     expect(refusal(blockPage('PhotoFrameArch', { ...props, frameWidth: 25 })).code).toBe('VALIDATION');
     expect(refusal(blockPage('PhotoFrameArch', { ...props, src: 'javascript:alert(1)' })).code).toBe('VALIDATION');
+    expect(() => parsePageDocument(blockPage('PhotoFrameArch', { ...props, src: '' }))).not.toThrow(); // khung chưa có ảnh
   });
 
   it('refuses a picture address that is not safe to draw', () => {

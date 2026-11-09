@@ -1447,7 +1447,8 @@
     },
     "fields": {
       "src": {
-        "type": "image",
+        "type": "custom",
+        "kind": "single-image",
         "label": "Ảnh",
         "group": "Ảnh"
       },
@@ -1539,7 +1540,8 @@
     },
     "fields": {
       "src": {
-        "type": "image",
+        "type": "custom",
+        "kind": "single-image",
         "label": "Ảnh",
         "group": "Ảnh"
       },
@@ -1631,7 +1633,8 @@
     },
     "fields": {
       "src": {
-        "type": "image",
+        "type": "custom",
+        "kind": "single-image",
         "label": "Ảnh",
         "group": "Ảnh"
       },
@@ -1723,7 +1726,8 @@
     },
     "fields": {
       "src": {
-        "type": "image",
+        "type": "custom",
+        "kind": "single-image",
         "label": "Ảnh",
         "group": "Ảnh"
       },
@@ -1815,7 +1819,8 @@
     },
     "fields": {
       "src": {
-        "type": "image",
+        "type": "custom",
+        "kind": "single-image",
         "label": "Ảnh",
         "group": "Ảnh"
       },
@@ -1907,7 +1912,8 @@
     },
     "fields": {
       "src": {
-        "type": "image",
+        "type": "custom",
+        "kind": "single-image",
         "label": "Ảnh",
         "group": "Ảnh"
       },
