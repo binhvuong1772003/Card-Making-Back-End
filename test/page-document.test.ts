@@ -121,6 +121,13 @@ describe('parsePageDocument', () => {
     expect(kids.find((child) => child.id === 'n10')!.props.formId).toBe('f_abc_n10');
   });
 
+  it('accepts a calendar with the add to calendar button filled in, and refuses a length out of range', () => {
+    const event = { eventButton: 'Thêm vào lịch', eventTitle: 'Tiệc cưới', eventTime: '18:00', eventMinutes: 180, eventPlace: 'Gala Center', eventNote: 'Khai tiệc 18:00' };
+    expect(() => parsePageDocument(calendarPage(event))).not.toThrow();
+    expect(refusal(calendarPage({ eventMinutes: 5 })).code).toBe('VALIDATION');
+    expect(refusal(calendarPage({ eventButton: 'x'.repeat(41) })).code).toBe('VALIDATION');
+  });
+
   it('refuses a picture address that is not safe to draw', () => {
     expect(refusal(samplePage('x', { metaImage: 'javascript:alert(1)' })).code).toBe('VALIDATION');
   });
