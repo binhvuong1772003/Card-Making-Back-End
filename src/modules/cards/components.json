@@ -12,8 +12,8 @@
       "xoay"
     ],
     "size": {
-      "w": 380,
-      "h": 360
+      "w": 680,
+      "h": 440
     },
     "canContain": false,
     "defaultProps": {
@@ -60,7 +60,7 @@
       },
       "dotColor": {
         "type": "color",
-        "label": "Màu chấm",
+        "label": "Màu chỉ số ảnh",
         "group": "Kiểu dáng"
       }
     },
