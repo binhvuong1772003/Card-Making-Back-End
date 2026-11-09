@@ -128,6 +128,17 @@ describe('parsePageDocument', () => {
     expect(refusal(calendarPage({ eventButton: 'x'.repeat(41) })).code).toBe('VALIDATION');
   });
 
+  it('accepts a photo frame of each kind with a crop and a ring, and refuses a crop or ring out of range', () => {
+    const props = { src: 'https://res.cloudinary.com/demo/image/upload/v1/a.png', alt: 'Ảnh cưới', shape: 'heart', zoom: 150, posX: 30, posY: 70, frameWidth: 6, frameColor: '#511419' };
+    for (const type of ['PhotoFrameArch', 'PhotoFrameCircle', 'PhotoFrameHeart', 'PhotoFrameScallop', 'PhotoFrameSeal', 'PhotoFrameRounded']) {
+      expect(() => parsePageDocument(blockPage(type, props)), type).not.toThrow();
+    }
+    expect(refusal(blockPage('PhotoFrameArch', { ...props, zoom: 50 })).code).toBe('VALIDATION');
+    expect(refusal(blockPage('PhotoFrameArch', { ...props, posX: 101 })).code).toBe('VALIDATION');
+    expect(refusal(blockPage('PhotoFrameArch', { ...props, frameWidth: 25 })).code).toBe('VALIDATION');
+    expect(refusal(blockPage('PhotoFrameArch', { ...props, src: 'javascript:alert(1)' })).code).toBe('VALIDATION');
+  });
+
   it('refuses a picture address that is not safe to draw', () => {
     expect(refusal(samplePage('x', { metaImage: 'javascript:alert(1)' })).code).toBe('VALIDATION');
   });
