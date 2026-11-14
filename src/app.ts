@@ -22,6 +22,7 @@ import { responsesModule } from './modules/cards/responses/responses.resolvers';
 import { createResponsesRouter, formResponsesCsv } from './modules/cards/responses/responses.routes';
 import { publishingModule } from './modules/cards/publishing/publishing.resolvers';
 import { createPublicationsRouter } from './modules/publications/publications.routes';
+import { catalogModule } from './modules/catalog/catalog.resolvers';
 import { defaultGoogleOAuth, type GoogleOAuth } from './modules/auth/google-oauth';
 
 export interface AppOptions {
@@ -41,7 +42,7 @@ export interface AppOptions {
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
-export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule, galleryModule, responsesModule], authenticate });
+export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule, galleryModule, responsesModule, catalogModule], authenticate });
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
 

@@ -1,0 +1,64 @@
+enum CatalogStatus { PUBLISHED RETIRED }
+
+type PhotoFrameShape {
+  id: ID!
+  label: String!
+  category: String!
+  geometry: String!
+  maskPath: String
+  width: Int!
+  height: Int!
+  sortOrder: Int!
+}
+
+type DecorativeAsset {
+  id: ID!
+  name: String!
+  category: String!
+  tags: [String!]!
+  publicId: String!
+  url: String!
+  width: Int!
+  height: Int!
+  sortOrder: Int!
+}
+
+type CatalogPageInfo { hasNextPage: Boolean!, endCursor: String }
+type PhotoFrameShapeConnection { nodes: [PhotoFrameShape!]!, pageInfo: CatalogPageInfo! }
+type DecorativeAssetConnection { nodes: [DecorativeAsset!]!, pageInfo: CatalogPageInfo! }
+
+input PhotoFrameShapeInput {
+  id: ID!
+  label: String!
+  category: String!
+  geometry: String!
+  maskPath: String
+  width: Int!
+  height: Int!
+  sortOrder: Int
+  legacyType: String
+}
+
+input DecorativeAssetInput {
+  name: String!
+  category: String!
+  tags: [String!]!
+  publicId: String!
+  url: String!
+  width: Int!
+  height: Int!
+  sortOrder: Int
+}
+
+extend type Query {
+  photoFrameShapes(first: Int = 20, after: String): PhotoFrameShapeConnection!
+  decorativeAssets(category: String, search: String, first: Int = 20, after: String): DecorativeAssetConnection!
+}
+
+extend type Mutation {
+  savePhotoFrameShape(input: PhotoFrameShapeInput!): PhotoFrameShape!
+  retirePhotoFrameShape(id: ID!): PhotoFrameShape!
+  createDecorativeAsset(input: DecorativeAssetInput!): DecorativeAsset!
+  updateDecorativeAsset(id: ID!, name: String, category: String, tags: [String!], sortOrder: Int): DecorativeAsset!
+  retireDecorativeAsset(id: ID!): DecorativeAsset!
+}

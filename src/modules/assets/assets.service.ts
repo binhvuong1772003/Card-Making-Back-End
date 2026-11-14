@@ -27,3 +27,13 @@ export function signUpload(actor: string, config: CloudinaryConfig | null, now: 
   const signature = signParams({ allowed_formats: ALLOWED_FORMATS, folder, timestamp, transformation: INCOMING_TRANSFORMATION }, config.apiSecret);
   return { cloudName: config.cloudName, apiKey: config.apiKey, timestamp, folder, allowedFormats: ALLOWED_FORMATS, transformation: INCOMING_TRANSFORMATION, signature };
 }
+
+export function signCatalogUpload(config: CloudinaryConfig | null, now: number = Date.now()): UploadSignature {
+  if (!config) throw new AppError('PROVIDER_UNAVAILABLE', 'Image storage is not configured');
+  const timestamp = Math.floor(now / 1000);
+  const folder = 'cardmaking/decorations';
+  const allowedFormats = 'png,jpg,jpeg,webp,svg';
+  const transformation = 'c_limit,h_3000,w_3000';
+  const signature = signParams({ allowed_formats: allowedFormats, folder, timestamp, transformation }, config.apiSecret);
+  return { cloudName: config.cloudName, apiKey: config.apiKey, timestamp, folder, allowedFormats, transformation, signature };
+}

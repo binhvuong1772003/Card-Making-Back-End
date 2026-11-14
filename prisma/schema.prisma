@@ -47,6 +47,47 @@ enum TemplateStatus {
   REMOVED
 }
 
+enum CatalogStatus {
+  PUBLISHED
+  RETIRED
+}
+
+// Hình học của khung được đóng dấu vào props của khối lúc thêm, nên thiệp cũ vẫn vẽ đúng khi catalog đổi.
+model PhotoFrameShape {
+  id        String        @id @map("_id") // slug ổn định như "arch"; hình học đã dùng không sửa tại chỗ
+  label     String
+  category  String
+  geometry  String        // tên hình Miditor hoặc "custom"
+  maskPath  String?
+  width     Int
+  height    Int
+  legacyType String?
+  sortOrder Int           @default(0)
+  status    CatalogStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, sortOrder, id])
+}
+
+// File trang trí nằm ở Cloudinary; Mongo chỉ giữ metadata và đường dẫn ổn định.
+model DecorativeAsset {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  category  String
+  tags      String[]
+  publicId  String        @unique
+  url       String
+  width     Int
+  height    Int
+  sortOrder Int           @default(0)
+  status    CatalogStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, category, sortOrder])
+}
+
 model User {
   id              String    @id @default(auto()) @map("_id") @db.ObjectId
   email           String    @unique // luôn lưu chữ thường (chuẩn hóa ở service)

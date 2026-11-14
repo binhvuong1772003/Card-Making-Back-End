@@ -1,0 +1,133 @@
+[
+  {
+    "id": "rectangle",
+    "label": "Khung chữ nhật",
+    "geometry": "rectangle",
+    "legacyType": "PhotoFrameRectangle",
+    "size": {
+      "w": 240,
+      "h": 300
+    }
+  },
+  {
+    "id": "rounded",
+    "label": "Bo góc",
+    "geometry": "rounded",
+    "legacyType": "PhotoFrameRounded",
+    "size": {
+      "w": 240,
+      "h": 300
+    }
+  },
+  {
+    "id": "ellipse",
+    "label": "Khung tròn",
+    "geometry": "ellipse",
+    "legacyType": "PhotoFrameCircle",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "pill",
+    "label": "Viên thuốc",
+    "geometry": "pill",
+    "legacyType": "PhotoFramePill",
+    "size": {
+      "w": 240,
+      "h": 140
+    }
+  },
+  {
+    "id": "arch",
+    "label": "Khung vòm",
+    "geometry": "arch",
+    "legacyType": "PhotoFrameArch",
+    "size": {
+      "w": 240,
+      "h": 300
+    }
+  },
+  {
+    "id": "semicircle",
+    "label": "Bán nguyệt",
+    "geometry": "semicircle",
+    "legacyType": "PhotoFrameSemicircle",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "triangle",
+    "label": "Tam giác",
+    "geometry": "triangle",
+    "legacyType": "PhotoFrameTriangle",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "diamond",
+    "label": "Thoi",
+    "geometry": "diamond",
+    "legacyType": "PhotoFrameDiamond",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "pentagon",
+    "label": "Ngũ giác",
+    "geometry": "pentagon",
+    "legacyType": "PhotoFramePentagon",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "hexagon",
+    "label": "Lục giác",
+    "geometry": "hexagon",
+    "legacyType": "PhotoFrameHexagon",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "scallop",
+    "label": "Viền sóng",
+    "geometry": "scallop",
+    "legacyType": "PhotoFrameScallop",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "seal",
+    "label": "Tem răng cưa",
+    "geometry": "seal",
+    "legacyType": "PhotoFrameSeal",
+    "size": {
+      "w": 240,
+      "h": 240
+    }
+  },
+  {
+    "id": "heart",
+    "label": "Khung tim",
+    "geometry": "rectangle",
+    "legacyType": "PhotoFrameHeart",
+    "maskPath": "M50 92C12 62 0 40 0 24C0 9 12 0 26 0C37 0 46 6 50 14C54 6 63 0 74 0C88 0 100 9 100 24C100 40 88 62 50 92Z",
+    "size": {
+      "w": 240,
+      "h": 220
+    }
+  }
+]
