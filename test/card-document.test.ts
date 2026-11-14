@@ -27,6 +27,23 @@ describe('parseCardDocument', () => {
     expect(parseCardDocument(document([a, b], 'b')).pages).toHaveLength(2);
     expect(parseCardDocument(document([page('a', { interactions: { n1: { type: 'go-to-page', targetPageId: 'a', transition: 'zoom', durationMs: 1200 } } })], 'a')).pages).toHaveLength(1);
   });
+  it('accepts valid popup pages and rejects out-of-range popup widths', () => {
+    const configured = page('popup', { popup: { width: 640, effect: 'fade', backdropColor: '#17251e', backdropOpacity: 56 } });
+    expect(parseCardDocument(document([configured], 'popup')).pages[0]?.popup).toEqual(configured.popup);
+    rejects(document([page('popup', { popup: { width: 200, effect: 'fade', backdropColor: '#17251e', backdropOpacity: 56 } })], 'popup'));
+  });
+  it('keeps a full-width page, drops the default column layout and rejects unknown layouts', () => {
+    const parsed = parseCardDocument(document([page('page-1', { layout: 'full' }), page('page-2', { layout: 'column' }), page('page-3')]));
+    expect(parsed.pages[0]).toMatchObject({ layout: 'full' });
+    expect(parsed.pages[1]).not.toHaveProperty('layout');
+    expect(parsed.pages[2]).not.toHaveProperty('layout');
+    rejects(document([page('page-1', { layout: 'wide' })]));
+  });
+  it('accepts open-popup actions without changing legacy navigation actions', () => {
+    const opened = page('a', { interactions: { n1: { type: 'open-popup', targetPageId: 'b', transition: 'fade', durationMs: 450 } } });
+    expect(parseCardDocument(document([opened, page('b')], 'a')).pages[0]?.interactions.n1?.type).toBe('open-popup');
+    rejects(document([page('a', { interactions: { n1: { type: 'open-popup', targetPageId: 'missing', transition: 'fade', durationMs: 450 } } })]));
+  });
 
   it('rejects page-count, ID, start, target, source, and version errors', () => {
     rejects(document([], 'page-1'));

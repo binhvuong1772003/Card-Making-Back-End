@@ -10,6 +10,11 @@
     "tilt",
     "tape"
   ],
+  "DressCode": [
+    "swatch1",
+    "swatch2",
+    "swatch3"
+  ],
   "Calendar": [
     "filled",
     "fill",

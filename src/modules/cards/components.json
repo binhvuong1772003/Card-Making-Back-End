@@ -1,4 +1,954 @@
 {
+  "Shape": {
+    "category": "Basic",
+    "icon": "shape",
+    "keywords": [
+      "rectangle",
+      "ellipse",
+      "circle",
+      "triangle",
+      "rounded",
+      "pill",
+      "diamond",
+      "pentagon",
+      "hexagon",
+      "arch",
+      "semicircle",
+      "scallop",
+      "seal",
+      "crescent"
+    ],
+    "label": "Shape",
+    "size": {
+      "w": 160,
+      "h": 160
+    },
+    "canContain": true,
+    "defaultProps": {
+      "shape": "rectangle",
+      "fill": "#cbd5e1",
+      "motionTarget": "",
+      "openEffect": "Giữ nguyên",
+      "openTime": 1,
+      "openDelay": 0
+    },
+    "shapes": {
+      "prop": "shape",
+      "choices": [
+        "rectangle",
+        "ellipse",
+        "triangle",
+        "rounded",
+        "pill",
+        "diamond",
+        "pentagon",
+        "hexagon",
+        "arch",
+        "semicircle",
+        "scallop",
+        "seal",
+        "crescent"
+      ]
+    },
+    "fields": {
+      "shape": {
+        "type": "select",
+        "label": "Shape",
+        "options": [
+          "rectangle",
+          "ellipse",
+          "triangle",
+          "rounded",
+          "pill",
+          "diamond",
+          "pentagon",
+          "hexagon",
+          "arch",
+          "semicircle",
+          "scallop",
+          "seal",
+          "crescent"
+        ],
+        "hidden": true
+      },
+      "fill": {
+        "type": "color",
+        "label": "Fill"
+      },
+      "motionTarget": {
+        "type": "text",
+        "label": "Mục tiêu chuyển động",
+        "maxLength": 40,
+        "hidden": true,
+        "group": "Hiệu ứng"
+      },
+      "openEffect": {
+        "type": "select",
+        "label": "Hiệu ứng",
+        "options": [
+          "Giữ nguyên",
+          "Mờ dần",
+          "Thu nhỏ rồi biến mất",
+          "Phóng ra rồi mờ dần",
+          "Phóng to rồi nhoè",
+          "Bay lên rồi biến mất",
+          "Gợn sóng lan ra"
+        ],
+        "group": "Khi mở thiệp",
+        "help": "Chạy khi khách bấm nút mở thiệp, rồi thiệp chuyển sang trang kế."
+      },
+      "openTime": {
+        "type": "number",
+        "label": "Thời gian",
+        "min": 0.2,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp"
+      },
+      "openDelay": {
+        "type": "number",
+        "label": "Trễ",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp",
+        "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      }
+    }
+  },
+  "Text": {
+    "category": "Basic",
+    "inlineText": {
+      "prop": "text",
+      "multiline": true
+    },
+    "icon": "text",
+    "keywords": [
+      "heading",
+      "title",
+      "paragraph",
+      "words"
+    ],
+    "label": "Text",
+    "size": {
+      "w": 240,
+      "h": 60
+    },
+    "canContain": false,
+    "defaultProps": {
+      "text": "Your text",
+      "size": 24,
+      "color": "#111111",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "align": "center",
+      "font": "",
+      "effects": [],
+      "motionTarget": "",
+      "openEffect": "Giữ nguyên",
+      "openTime": 1,
+      "openDelay": 0
+    },
+    "fields": {
+      "text": {
+        "type": "text",
+        "label": "Text",
+        "maxLength": 2000,
+        "multiline": true,
+        "group": "Text"
+      },
+      "font": {
+        "type": "font",
+        "label": "Font",
+        "group": "Typography"
+      },
+      "size": {
+        "type": "number",
+        "label": "Size",
+        "min": 1,
+        "max": 400,
+        "unit": "px",
+        "perDevice": true,
+        "group": "Typography"
+      },
+      "color": {
+        "type": "color",
+        "label": "Colour",
+        "group": "Typography"
+      },
+      "bold": {
+        "type": "boolean",
+        "label": "Bold",
+        "group": "Typography"
+      },
+      "italic": {
+        "type": "boolean",
+        "label": "Italic",
+        "group": "Typography"
+      },
+      "underline": {
+        "type": "boolean",
+        "label": "Underline",
+        "group": "Typography"
+      },
+      "align": {
+        "type": "select",
+        "label": "Align",
+        "options": [
+          "left",
+          "center",
+          "right"
+        ],
+        "group": "Typography"
+      },
+      "effects": {
+        "type": "custom",
+        "kind": "text-effects",
+        "label": "Hiệu ứng",
+        "group": "Hiệu ứng"
+      },
+      "motionTarget": {
+        "type": "text",
+        "label": "Mục tiêu chuyển động",
+        "maxLength": 40,
+        "hidden": true,
+        "group": "Hiệu ứng"
+      },
+      "openEffect": {
+        "type": "select",
+        "label": "Hiệu ứng",
+        "options": [
+          "Giữ nguyên",
+          "Mờ dần",
+          "Thu nhỏ rồi biến mất",
+          "Phóng ra rồi mờ dần",
+          "Phóng to rồi nhoè",
+          "Bay lên rồi biến mất",
+          "Gợn sóng lan ra"
+        ],
+        "group": "Khi mở thiệp",
+        "help": "Chạy khi khách bấm nút mở thiệp, rồi thiệp chuyển sang trang kế."
+      },
+      "openTime": {
+        "type": "number",
+        "label": "Thời gian",
+        "min": 0.2,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp"
+      },
+      "openDelay": {
+        "type": "number",
+        "label": "Trễ",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp",
+        "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      }
+    }
+  },
+  "DressCode": {
+    "label": "Dress code",
+    "category": "Dress code",
+    "icon": "palette",
+    "keywords": [
+      "dress code",
+      "trang phục",
+      "màu sắc",
+      "swatch",
+      "màu cưới"
+    ],
+    "size": {
+      "w": 340,
+      "h": 220
+    },
+    "canContain": false,
+    "defaultProps": {
+      "heading": "DRESS CODE",
+      "subtitle": "Trang phục dự tiệc",
+      "headingColor": "#203b29",
+      "subtitleColor": "#6d705f",
+      "swatchShape": "circle",
+      "swatchSize": 48,
+      "swatchGap": 24,
+      "colors": [
+        "#8d9d70",
+        "#e7e8e9",
+        "#e8dec6"
+      ]
+    },
+    "fields": {
+      "heading": {
+        "type": "text",
+        "label": "Tiêu đề",
+        "maxLength": 60,
+        "group": "Chữ"
+      },
+      "subtitle": {
+        "type": "text",
+        "label": "Mô tả",
+        "maxLength": 120,
+        "group": "Chữ"
+      },
+      "headingColor": {
+        "type": "color",
+        "label": "Màu tiêu đề",
+        "group": "Chữ"
+      },
+      "subtitleColor": {
+        "type": "color",
+        "label": "Màu mô tả",
+        "group": "Chữ"
+      },
+      "swatchShape": {
+        "type": "select",
+        "label": "Hình mẫu màu",
+        "options": [
+          "circle",
+          "square",
+          "diamond"
+        ],
+        "group": "Mẫu màu"
+      },
+      "swatchSize": {
+        "type": "number",
+        "label": "Kích thước",
+        "min": 24,
+        "max": 88,
+        "unit": "px",
+        "group": "Mẫu màu"
+      },
+      "swatchGap": {
+        "type": "number",
+        "label": "Khoảng cách",
+        "min": 0,
+        "max": 48,
+        "unit": "px",
+        "group": "Mẫu màu"
+      },
+      "colors": {
+        "type": "array",
+        "label": "Màu trang phục",
+        "item": {
+          "type": "color",
+          "label": "Màu"
+        },
+        "maxItems": 8,
+        "group": "Mẫu màu"
+      }
+    },
+    "hidden": true
+  },
+  "Decoration": {
+    "label": "Trang trí",
+    "category": "Trang trí",
+    "icon": "img",
+    "keywords": [
+      "trang trí",
+      "hoa",
+      "lá",
+      "chi tiết"
+    ],
+    "size": {
+      "w": 180,
+      "h": 180
+    },
+    "lockRatio": true,
+    "hidden": true,
+    "canContain": false,
+    "defaultProps": {
+      "src": "",
+      "alt": "",
+      "fit": "contain",
+      "motion": false,
+      "motionStyle": "Hộp quà",
+      "floatMotion": false,
+      "motionTarget": "",
+      "openEffect": "Giữ nguyên",
+      "openTime": 1,
+      "openDelay": 0
+    },
+    "fields": {
+      "src": {
+        "type": "custom",
+        "kind": "fixed-image",
+        "label": "Hình trang trí",
+        "group": "Nội dung"
+      },
+      "alt": {
+        "type": "text",
+        "label": "Mô tả",
+        "maxLength": 500,
+        "group": "Nội dung"
+      },
+      "fit": {
+        "type": "select",
+        "label": "Cách hiển thị",
+        "options": [
+          "contain",
+          "cover"
+        ],
+        "group": "Nội dung"
+      },
+      "motion": {
+        "type": "boolean",
+        "label": "Hiệu ứng hộp quà",
+        "group": "Hiệu ứng"
+      },
+      "motionStyle": {
+        "type": "select",
+        "label": "Kiểu quà",
+        "options": [
+          "Hộp quà",
+          "Bao lì xì"
+        ],
+        "group": "Hiệu ứng"
+      },
+      "floatMotion": {
+        "type": "boolean",
+        "label": "Trôi nhẹ",
+        "help": "Tắt để giữ trang trí đứng yên.",
+        "group": "Hiệu ứng"
+      },
+      "motionTarget": {
+        "type": "text",
+        "label": "Mục tiêu chuyển động",
+        "maxLength": 40,
+        "hidden": true,
+        "group": "Hiệu ứng"
+      },
+      "openEffect": {
+        "type": "select",
+        "label": "Hiệu ứng",
+        "options": [
+          "Giữ nguyên",
+          "Mờ dần",
+          "Thu nhỏ rồi biến mất",
+          "Phóng ra rồi mờ dần",
+          "Phóng to rồi nhoè",
+          "Bay lên rồi biến mất",
+          "Gợn sóng lan ra"
+        ],
+        "group": "Khi mở thiệp",
+        "help": "Chạy khi khách bấm nút mở thiệp, rồi thiệp chuyển sang trang kế."
+      },
+      "openTime": {
+        "type": "number",
+        "label": "Thời gian",
+        "min": 0.2,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp"
+      },
+      "openDelay": {
+        "type": "number",
+        "label": "Trễ",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp",
+        "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      }
+    }
+  },
+  "Image": {
+    "category": "Basic",
+    "hidden": true,
+    "icon": "img",
+    "keywords": [
+      "picture",
+      "photo",
+      "upload"
+    ],
+    "label": "Image",
+    "size": {
+      "w": 240,
+      "h": 160
+    },
+    "lockRatio": true,
+    "canContain": false,
+    "defaultProps": {
+      "src": "",
+      "alt": "",
+      "fit": "cover",
+      "openEffect": "Giữ nguyên",
+      "openTime": 1,
+      "openDelay": 0
+    },
+    "fields": {
+      "src": {
+        "type": "image",
+        "label": "Picture address"
+      },
+      "alt": {
+        "type": "text",
+        "label": "Description",
+        "maxLength": 500
+      },
+      "fit": {
+        "type": "select",
+        "label": "Fit",
+        "options": [
+          "cover",
+          "contain"
+        ]
+      },
+      "openEffect": {
+        "type": "select",
+        "label": "Hiệu ứng",
+        "options": [
+          "Giữ nguyên",
+          "Mờ dần",
+          "Thu nhỏ rồi biến mất",
+          "Phóng ra rồi mờ dần",
+          "Phóng to rồi nhoè",
+          "Bay lên rồi biến mất",
+          "Gợn sóng lan ra"
+        ],
+        "group": "Khi mở thiệp",
+        "help": "Chạy khi khách bấm nút mở thiệp, rồi thiệp chuyển sang trang kế."
+      },
+      "openTime": {
+        "type": "number",
+        "label": "Thời gian",
+        "min": 0.2,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp"
+      },
+      "openDelay": {
+        "type": "number",
+        "label": "Trễ",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp",
+        "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      }
+    }
+  },
+  "Particles": {
+    "label": "Hạt trôi",
+    "category": "Hiệu ứng nền",
+    "icon": "shape",
+    "keywords": [
+      "hạt",
+      "cánh hoa",
+      "bụi",
+      "lấp lánh",
+      "hiệu ứng",
+      "nền",
+      "bay"
+    ],
+    "size": {
+      "w": 360,
+      "h": 520
+    },
+    "hidden": true,
+    "canContain": false,
+    "defaultProps": {
+      "shape": "Vuông",
+      "direction": "Bay lên",
+      "color": "#e8f0e4",
+      "palette": "Một màu",
+      "char": "囍",
+      "count": 14,
+      "size": 8,
+      "speed": 100,
+      "opacity": 50,
+      "drift": 20,
+      "openEffect": "Giữ nguyên",
+      "openTime": 1,
+      "openDelay": 0
+    },
+    "fields": {
+      "shape": {
+        "type": "select",
+        "label": "Hình hạt",
+        "options": [
+          "Vuông",
+          "Tròn",
+          "Tim",
+          "Cánh hoa",
+          "Thoi",
+          "Sao",
+          "Chữ"
+        ],
+        "group": "Hạt"
+      },
+      "direction": {
+        "type": "select",
+        "label": "Hướng",
+        "options": [
+          "Bay lên",
+          "Rơi xuống"
+        ],
+        "group": "Chuyển động"
+      },
+      "char": {
+        "type": "text",
+        "label": "Chữ",
+        "maxLength": 2,
+        "group": "Hạt",
+        "help": "Ký tự dùng khi Hình hạt là Chữ, ví dụ 囍 hoặc ♥."
+      },
+      "palette": {
+        "type": "select",
+        "label": "Bảng màu",
+        "options": [
+          "Một màu",
+          "Xanh lá",
+          "Đỏ vàng",
+          "Vàng kim",
+          "Hồng phấn",
+          "Đỏ rượu"
+        ],
+        "group": "Hạt",
+        "help": "Một màu thì dùng ô Màu bên dưới; còn lại mỗi hạt một màu trong bảng."
+      },
+      "color": {
+        "type": "color",
+        "label": "Màu",
+        "group": "Hạt"
+      },
+      "count": {
+        "type": "number",
+        "label": "Số hạt",
+        "min": 1,
+        "max": 40,
+        "group": "Hạt",
+        "help": "Càng nhiều hạt càng nặng trên điện thoại yếu."
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ",
+        "min": 3,
+        "max": 24,
+        "unit": "px",
+        "group": "Hạt"
+      },
+      "opacity": {
+        "type": "number",
+        "label": "Độ đậm",
+        "min": 10,
+        "max": 100,
+        "unit": "%",
+        "group": "Hạt"
+      },
+      "speed": {
+        "type": "number",
+        "label": "Tốc độ",
+        "min": 40,
+        "max": 250,
+        "unit": "%",
+        "group": "Chuyển động",
+        "help": "100% là một vòng bay khoảng 24 giây."
+      },
+      "drift": {
+        "type": "number",
+        "label": "Lệch",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chuyển động",
+        "help": "Hạt lắc sang hai bên bao nhiêu khi bay lên."
+      },
+      "openEffect": {
+        "type": "select",
+        "label": "Hiệu ứng",
+        "options": [
+          "Giữ nguyên",
+          "Mờ dần",
+          "Thu nhỏ rồi biến mất",
+          "Phóng ra rồi mờ dần",
+          "Phóng to rồi nhoè",
+          "Bay lên rồi biến mất",
+          "Gợn sóng lan ra"
+        ],
+        "group": "Khi mở thiệp",
+        "help": "Chạy khi khách bấm nút mở thiệp, rồi thiệp chuyển sang trang kế."
+      },
+      "openTime": {
+        "type": "number",
+        "label": "Thời gian",
+        "min": 0.2,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp"
+      },
+      "openDelay": {
+        "type": "number",
+        "label": "Trễ",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp",
+        "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      }
+    }
+  },
+  "Burst": {
+    "label": "Pháo mở thiệp",
+    "category": "Hiệu ứng nền",
+    "icon": "shape",
+    "keywords": [
+      "pháo",
+      "nổ",
+      "mở thiệp",
+      "hỷ",
+      "pháo hoa",
+      "confetti"
+    ],
+    "size": {
+      "w": 96,
+      "h": 40
+    },
+    "hidden": true,
+    "canContain": false,
+    "defaultProps": {
+      "char": "囍",
+      "count": 32,
+      "spread": 420,
+      "delay": 0.5,
+      "palette": "Xanh lá"
+    },
+    "fields": {
+      "char": {
+        "type": "text",
+        "label": "Chữ",
+        "maxLength": 2,
+        "group": "Pháo",
+        "help": "Ký tự bắn ra, ví dụ 囍, ♥ hoặc ✦."
+      },
+      "count": {
+        "type": "number",
+        "label": "Số hạt",
+        "min": 4,
+        "max": 60,
+        "group": "Pháo"
+      },
+      "palette": {
+        "type": "select",
+        "label": "Màu",
+        "options": [
+          "Xanh lá",
+          "Đỏ vàng",
+          "Vàng kim",
+          "Hồng phấn",
+          "Đỏ rượu"
+        ],
+        "group": "Pháo"
+      },
+      "spread": {
+        "type": "number",
+        "label": "Bay xa",
+        "min": 120,
+        "max": 800,
+        "unit": "px",
+        "group": "Pháo",
+        "help": "Hạt bay xa nhất bao nhiêu px từ tâm màn hình."
+      },
+      "delay": {
+        "type": "number",
+        "label": "Nổ sau",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Pháo",
+        "help": "Chờ bao lâu sau khi bấm Mở thiệp thì pháo nổ."
+      }
+    }
+  },
+  "Gradient": {
+    "label": "Nền chuyển màu",
+    "category": "Hiệu ứng nền",
+    "icon": "shape",
+    "keywords": [
+      "nền",
+      "gradient",
+      "chuyển màu",
+      "bìa"
+    ],
+    "size": {
+      "w": 960,
+      "h": 900
+    },
+    "hidden": true,
+    "canContain": false,
+    "defaultProps": {
+      "from": "#5a0000",
+      "mid": "#400000",
+      "to": "#2a0000",
+      "direction": "Chéo xuống phải"
+    },
+    "fields": {
+      "from": {
+        "type": "color",
+        "label": "Màu đầu",
+        "group": "Nền chuyển màu"
+      },
+      "mid": {
+        "type": "color",
+        "label": "Màu giữa",
+        "group": "Nền chuyển màu"
+      },
+      "to": {
+        "type": "color",
+        "label": "Màu cuối",
+        "group": "Nền chuyển màu"
+      },
+      "direction": {
+        "type": "select",
+        "label": "Hướng",
+        "options": [
+          "Chéo xuống phải",
+          "Chéo xuống trái",
+          "Xuống",
+          "Sang phải",
+          "Toả tròn"
+        ],
+        "group": "Nền chuyển màu"
+      }
+    }
+  },
+  "CardPanel": {
+    "label": "Thẻ thiệp",
+    "category": "Khung",
+    "icon": "shape",
+    "keywords": [
+      "thẻ",
+      "khung",
+      "frame",
+      "cắt",
+      "hoa",
+      "nền thẻ",
+      "chứa"
+    ],
+    "size": {
+      "w": 600,
+      "h": 420
+    },
+    "canContain": true,
+    "defaultProps": {
+      "openEffect": "Giữ nguyên",
+      "openTime": 1,
+      "openDelay": 0
+    },
+    "fields": {
+      "openEffect": {
+        "type": "select",
+        "label": "Hiệu ứng",
+        "options": [
+          "Giữ nguyên",
+          "Mờ dần",
+          "Thu nhỏ rồi biến mất",
+          "Phóng ra rồi mờ dần",
+          "Phóng to rồi nhoè",
+          "Bay lên rồi biến mất",
+          "Gợn sóng lan ra"
+        ],
+        "group": "Khi mở thiệp",
+        "help": "Chạy khi khách bấm nút mở thiệp, rồi thiệp chuyển sang trang kế."
+      },
+      "openTime": {
+        "type": "number",
+        "label": "Thời gian",
+        "min": 0.2,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp"
+      },
+      "openDelay": {
+        "type": "number",
+        "label": "Trễ",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp",
+        "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      }
+    },
+    "defaultStyles": {
+      "background": "#fffaf3",
+      "borderRadius": 8,
+      "borderWidth": 1,
+      "borderColor": "#e8d9cc"
+    },
+    "hidden": true
+  },
+  "CurvedText": {
+    "label": "Chữ cong",
+    "category": "Chữ",
+    "icon": "text",
+    "keywords": [
+      "chữ cong",
+      "cung",
+      "vòm",
+      "uốn",
+      "love never fails"
+    ],
+    "size": {
+      "w": 320,
+      "h": 100
+    },
+    "hidden": true,
+    "canContain": false,
+    "defaultProps": {
+      "text": "LOVE NEVER FAILS",
+      "size": 18,
+      "color": "#511419",
+      "font": "",
+      "bold": false,
+      "italic": false,
+      "amount": 60
+    },
+    "fields": {
+      "text": {
+        "type": "text",
+        "label": "Chữ",
+        "maxLength": 80,
+        "group": "Chữ cong"
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ",
+        "min": 8,
+        "max": 120,
+        "unit": "px",
+        "group": "Chữ cong"
+      },
+      "amount": {
+        "type": "number",
+        "label": "Độ cong",
+        "min": -100,
+        "max": 100,
+        "group": "Chữ cong",
+        "help": "Dương: đỉnh cung hướng lên. Âm: hướng xuống."
+      },
+      "color": {
+        "type": "color",
+        "label": "Màu",
+        "group": "Chữ cong"
+      },
+      "font": {
+        "type": "font",
+        "label": "Font",
+        "group": "Typography"
+      },
+      "bold": {
+        "type": "boolean",
+        "label": "Đậm",
+        "group": "Chữ cong"
+      },
+      "italic": {
+        "type": "boolean",
+        "label": "Nghiêng",
+        "group": "Chữ cong"
+      }
+    }
+  },
   "Album": {
     "label": "Album xoay 3D",
     "category": "Album",
@@ -401,7 +1351,8 @@
       },
       "moderation": false,
       "color": "#511419",
-      "padding": 16
+      "padding": 16,
+      "compact": false
     },
     "defaultStyles": {
       "borderWidth": 1,
@@ -481,6 +1432,11 @@
         "min": 0,
         "max": 40,
         "unit": "px",
+        "group": "Giao diện"
+      },
+      "compact": {
+        "type": "boolean",
+        "label": "Bố cục gọn",
         "group": "Giao diện"
       }
     },
@@ -1414,8 +2370,8 @@
     },
     "hidden": true
   },
-  "PhotoFrameRectangle": {
-    "label": "Khung chữ nhật",
+  "PhotoFrame": {
+    "label": "Khung ảnh",
     "category": "Khung ảnh",
     "icon": "img",
     "keywords": [
@@ -1439,1122 +2395,6 @@
       "src": "",
       "alt": "",
       "shape": "rectangle",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameRounded": {
-    "label": "Bo góc",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 300
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "rounded",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameCircle": {
-    "label": "Khung tròn",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "ellipse",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFramePill": {
-    "label": "Khung viên thuốc",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 140
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "pill",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameArch": {
-    "label": "Khung vòm",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 300
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "arch",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameSemicircle": {
-    "label": "Khung bán nguyệt",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "semicircle",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameTriangle": {
-    "label": "Khung tam giác",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "triangle",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameDiamond": {
-    "label": "Khung thoi",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "diamond",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFramePentagon": {
-    "label": "Khung ngũ giác",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "pentagon",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameHexagon": {
-    "label": "Khung lục giác",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "hexagon",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameScallop": {
-    "label": "Viền sóng",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "scallop",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameSeal": {
-    "label": "Tem răng cưa",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 240
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "seal",
-      "zoom": 100,
-      "posX": 50,
-      "posY": 50,
-      "frameWidth": 0,
-      "frameColor": "#511419"
-    },
-    "fields": {
-      "src": {
-        "type": "custom",
-        "kind": "single-image",
-        "label": "Ảnh",
-        "group": "Ảnh"
-      },
-      "alt": {
-        "type": "text",
-        "label": "Mô tả ảnh",
-        "maxLength": 500,
-        "group": "Ảnh",
-        "help": "Cho người đọc màn hình và khi ảnh không tải được."
-      },
-      "shape": {
-        "type": "custom",
-        "kind": "frame-shape",
-        "label": "Hình dạng",
-        "group": "Hình dạng"
-      },
-      "zoom": {
-        "type": "number",
-        "label": "Phóng",
-        "min": 100,
-        "max": 300,
-        "unit": "%",
-        "group": "Cắt ảnh",
-        "help": "Phóng to ảnh trong khung, từ 100% đến 300%."
-      },
-      "posX": {
-        "type": "number",
-        "label": "Ngang",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều ngang: 0 là mép trái, 100 là mép phải."
-      },
-      "posY": {
-        "type": "number",
-        "label": "Dọc",
-        "min": 0,
-        "max": 100,
-        "group": "Cắt ảnh",
-        "help": "Phần ảnh nằm trong khung theo chiều dọc: 0 là mép trên, 100 là mép dưới."
-      },
-      "frameWidth": {
-        "type": "number",
-        "label": "Dày",
-        "min": 0,
-        "max": 24,
-        "unit": "px",
-        "group": "Viền khung",
-        "help": "Viền vẽ đúng theo hình dạng. 0 là không viền. Không dùng nhóm Viền chung: nó chỉ viền hình chữ nhật."
-      },
-      "frameColor": {
-        "type": "color",
-        "label": "Màu viền",
-        "group": "Viền khung"
-      }
-    },
-    "hidden": true
-  },
-  "PhotoFrameHeart": {
-    "label": "Khung tim",
-    "category": "Khung ảnh",
-    "icon": "img",
-    "keywords": [
-      "khung ảnh",
-      "ảnh",
-      "hình",
-      "vòm",
-      "tròn",
-      "tim",
-      "viền sóng",
-      "tem",
-      "photo",
-      "frame"
-    ],
-    "size": {
-      "w": 240,
-      "h": 220
-    },
-    "canContain": false,
-    "defaultProps": {
-      "src": "",
-      "alt": "",
-      "shape": "heart",
       "zoom": 100,
       "posX": 50,
       "posY": 50,

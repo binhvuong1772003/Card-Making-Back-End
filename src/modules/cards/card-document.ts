@@ -4,8 +4,9 @@ import { MAX_DOCUMENT_BYTES, parsePageDocument } from './page-document';
 import { formKeyOf, FORM_TYPE } from './responses/form-id';
 
 export type PageTransition = 'none' | 'fade' | 'slide-left' | 'slide-right' | 'slide-up' | 'zoom';
+export interface PopupSettings { width: number; effect: 'none' | 'fade' | 'slide-up' | 'zoom'; backdropColor: string; backdropOpacity: number }
 export interface PageNavigation {
-  type: 'go-to-page';
+  type: 'go-to-page' | 'open-popup';
   targetPageId: string;
   transition: PageTransition;
   durationMs: number;
@@ -15,6 +16,9 @@ export interface CardPage {
   name: string;
   data: PageData;
   interactions: Record<string, PageNavigation>;
+  popup?: PopupSettings;
+  /** Bố cục trang: 'full' trải hết bề ngang màn hình; vắng mặt là cột giữa (mặc định). */
+  layout?: 'full';
 }
 export interface CardDocument {
   kind: 'card';
@@ -27,9 +31,7 @@ export type ParsedCardDocument = CardDocument | PageData;
 const PAGE_ID = /^[A-Za-z0-9_-]{1,40}$/;
 const TRANSITIONS = new Set<PageTransition>(['none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'zoom']);
 const NAVIGABLE_TYPES = new Set([
-  'Text', 'Image', 'Shape', 'Button', 'PhotoFrame', 'PhotoFrameRectangle', 'PhotoFrameRounded', 'PhotoFrameCircle', 'PhotoFramePill',
-  'PhotoFrameArch', 'PhotoFrameSemicircle', 'PhotoFrameTriangle', 'PhotoFrameDiamond', 'PhotoFramePentagon', 'PhotoFrameHexagon',
-  'PhotoFrameScallop', 'PhotoFrameSeal', 'PhotoFrameHeart',
+  'Text', 'Image', 'Shape', 'Button', 'PhotoFrame', 'Decoration',
 ]);
 const invalid = (reason: string): never => { throw new AppError('VALIDATION', `The card document is not valid (${reason})`, { reason: 'DOCUMENT' }); };
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -73,6 +75,10 @@ function parseEnvelope(input: Record<string, unknown>): CardDocument {
     pageIds.add(id);
     if (typeof pageInput.name !== 'string' || pageInput.name.trim().length < 1 || pageInput.name.trim().length > 80) invalid('invalid page name');
     const name = pageInput.name as string;
+    const popup = pageInput.popup;
+    if (popup !== undefined && (!isRecord(popup) || !Number.isInteger(popup.width) || (popup.width as number) < 280 || (popup.width as number) > 1200 || !['none', 'fade', 'slide-up', 'zoom'].includes(popup.effect as string) || typeof popup.backdropColor !== 'string' || !/^#[0-9a-f]{6}$/i.test(popup.backdropColor) || !Number.isInteger(popup.backdropOpacity) || (popup.backdropOpacity as number) < 0 || (popup.backdropOpacity as number) > 80)) invalid('invalid popup settings');
+    const layout = pageInput.layout;
+    if (layout !== undefined && layout !== 'column' && layout !== 'full') invalid('invalid page layout');
     const data = parsePageForCard(pageInput.data, false);
     for (const key of formKeys(data.root)) {
       if (formIds.has(key)) invalid('duplicate form ID');
@@ -84,14 +90,15 @@ function parseEnvelope(input: Record<string, unknown>): CardDocument {
     for (const [source, value] of Object.entries(rawInteractions)) {
       if (!source || !isRecord(value)) invalid('invalid page navigation');
       const rawNavigation = value as Record<string, unknown>;
-      if (rawNavigation.type !== 'go-to-page' || typeof rawNavigation.targetPageId !== 'string' || !PAGE_ID.test(rawNavigation.targetPageId) || !TRANSITIONS.has(rawNavigation.transition as PageTransition) || !Number.isInteger(rawNavigation.durationMs)) invalid('invalid page navigation');
+      if (!['go-to-page', 'open-popup'].includes(rawNavigation.type as string) || typeof rawNavigation.targetPageId !== 'string' || !PAGE_ID.test(rawNavigation.targetPageId) || !TRANSITIONS.has(rawNavigation.transition as PageTransition) || !Number.isInteger(rawNavigation.durationMs)) invalid('invalid page navigation');
       const transition = rawNavigation.transition as PageTransition;
       const durationMs = rawNavigation.durationMs as number;
       const targetPageId = rawNavigation.targetPageId as string;
       if ((transition === 'none' && durationMs !== 0) || (transition !== 'none' && (durationMs < 100 || durationMs > 1200))) invalid('invalid transition duration');
-      interactions[source] = { type: 'go-to-page', targetPageId, transition, durationMs };
+      interactions[source] = { type: rawNavigation.type as PageNavigation['type'], targetPageId, transition, durationMs };
     }
-    return { id, name: name.trim(), data, interactions };
+    // 'column' là mặc định nên không lưu; chỉ giữ 'full'.
+    return { id, name: name.trim(), data, interactions, ...(popup === undefined ? {} : { popup: popup as unknown as PopupSettings }), ...(layout === 'full' ? { layout: 'full' as const } : {}) };
   });
   if (typeof input.startPageId !== 'string' || !pageIds.has(input.startPageId)) invalid('missing start page');
   const startPageId = input.startPageId as string;
