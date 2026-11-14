@@ -365,6 +365,8 @@
       "motion": false,
       "motionStyle": "Hộp quà",
       "floatMotion": false,
+      "idleEffect": "Không",
+      "shineRadius": 24,
       "motionTarget": "",
       "openEffect": "Giữ nguyên",
       "openTime": 1,
@@ -411,6 +413,26 @@
         "label": "Trôi nhẹ",
         "help": "Tắt để giữ trang trí đứng yên.",
         "group": "Hiệu ứng"
+      },
+      "idleEffect": {
+        "type": "select",
+        "label": "Hiệu ứng lặp",
+        "options": [
+          "Không",
+          "Đập",
+          "Ánh sáng quét"
+        ],
+        "group": "Hiệu ứng",
+        "help": "Đập: nhịp tim, hợp con dấu hoặc trái tim. Ánh sáng quét: vệt sáng chạy ngang, đặt lên nút."
+      },
+      "shineRadius": {
+        "type": "number",
+        "label": "Bo góc vệt sáng",
+        "min": 0,
+        "max": 200,
+        "unit": "px",
+        "group": "Hiệu ứng",
+        "help": "Vệt sáng chỉ hiện trong khung này; đặt bằng nửa chiều cao nút để bo tròn."
       },
       "motionTarget": {
         "type": "text",
