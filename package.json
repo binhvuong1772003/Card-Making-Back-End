@@ -11,6 +11,9 @@
     "dev:worker": "tsx watch src/worker.ts",
     "start:worker": "node dist/worker.js",
     "grant-admin": "tsx scripts/grant-admin.ts",
+    "catalog:seed-frames": "tsx scripts/seed-photo-frame-catalog.ts",
+    "catalog:seed-decorations": "tsx scripts/seed-decoration-catalog.ts",
+    "templates:seed-reference": "tsx scripts/seed-reference-templates.ts",
     "sweep-images": "tsx scripts/sweep-images.ts"
   },
   "keywords": [],
@@ -20,7 +23,7 @@
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
     "@graphql-tools/schema": "^10.1.5",
-    "@miditor/core": "file:/Users/doubleb/miditor-packs/miditor-core-0.0.0.tgz",
+    "@miditor/core": "file:vendor/miditor-core-0.0.0-flip-20261113.tgz",
     "@prisma/client": "^6.19.3",
     "argon2": "^0.45.1",
     "bullmq": "^6.3.19",
