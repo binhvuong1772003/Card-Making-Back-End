@@ -1725,6 +1725,8 @@
       "weekWeight": "600",
       "weekGap": 0,
       "dayWeight": "400",
+      "markWeight": "600",
+      "markSize": 0,
       "eventGap": 0,
       "padding": 0,
       "font": "",
@@ -1781,7 +1783,8 @@
           "Tim",
           "Vuông",
           "Vòng",
-          "Sao"
+          "Sao",
+          "Tim đầy"
         ],
         "group": "Hình đánh dấu",
         "help": "Hình bao quanh ngày được chọn."
@@ -1904,6 +1907,26 @@
           "700"
         ],
         "group": "Chữ"
+      },
+      "markWeight": {
+        "type": "select",
+        "label": "Độ đậm ngày chọn",
+        "options": [
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Hình đánh dấu"
+      },
+      "markSize": {
+        "type": "number",
+        "label": "Cỡ số ngày chọn",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Hình đánh dấu",
+        "help": "0 thì bằng Cỡ."
       },
       "eventGap": {
         "type": "number",
@@ -2006,6 +2029,8 @@
       "weekWeight": "600",
       "weekGap": 0,
       "dayWeight": "400",
+      "markWeight": "600",
+      "markSize": 0,
       "eventGap": 0,
       "padding": 0,
       "font": "'Cormorant Garamond', serif",
@@ -2062,7 +2087,8 @@
           "Tim",
           "Vuông",
           "Vòng",
-          "Sao"
+          "Sao",
+          "Tim đầy"
         ],
         "group": "Hình đánh dấu",
         "help": "Hình bao quanh ngày được chọn."
@@ -2185,6 +2211,26 @@
           "700"
         ],
         "group": "Chữ"
+      },
+      "markWeight": {
+        "type": "select",
+        "label": "Độ đậm ngày chọn",
+        "options": [
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Hình đánh dấu"
+      },
+      "markSize": {
+        "type": "number",
+        "label": "Cỡ số ngày chọn",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Hình đánh dấu",
+        "help": "0 thì bằng Cỡ."
       },
       "eventGap": {
         "type": "number",
@@ -2287,6 +2333,8 @@
       "weekWeight": "600",
       "weekGap": 0,
       "dayWeight": "400",
+      "markWeight": "600",
+      "markSize": 0,
       "eventGap": 0,
       "padding": 14,
       "font": "'Playfair Display', serif",
@@ -2343,7 +2391,8 @@
           "Tim",
           "Vuông",
           "Vòng",
-          "Sao"
+          "Sao",
+          "Tim đầy"
         ],
         "group": "Hình đánh dấu",
         "help": "Hình bao quanh ngày được chọn."
@@ -2466,6 +2515,26 @@
           "700"
         ],
         "group": "Chữ"
+      },
+      "markWeight": {
+        "type": "select",
+        "label": "Độ đậm ngày chọn",
+        "options": [
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Hình đánh dấu"
+      },
+      "markSize": {
+        "type": "number",
+        "label": "Cỡ số ngày chọn",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Hình đánh dấu",
+        "help": "0 thì bằng Cỡ."
       },
       "eventGap": {
         "type": "number",
@@ -2573,6 +2642,8 @@
       "weekWeight": "600",
       "weekGap": 0,
       "dayWeight": "400",
+      "markWeight": "600",
+      "markSize": 0,
       "eventGap": 0,
       "padding": 16,
       "font": "'Montserrat', sans-serif",
@@ -2629,7 +2700,8 @@
           "Tim",
           "Vuông",
           "Vòng",
-          "Sao"
+          "Sao",
+          "Tim đầy"
         ],
         "group": "Hình đánh dấu",
         "help": "Hình bao quanh ngày được chọn."
@@ -2752,6 +2824,26 @@
           "700"
         ],
         "group": "Chữ"
+      },
+      "markWeight": {
+        "type": "select",
+        "label": "Độ đậm ngày chọn",
+        "options": [
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Hình đánh dấu"
+      },
+      "markSize": {
+        "type": "number",
+        "label": "Cỡ số ngày chọn",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Hình đánh dấu",
+        "help": "0 thì bằng Cỡ."
       },
       "eventGap": {
         "type": "number",
@@ -2858,6 +2950,8 @@
       "weekWeight": "600",
       "weekGap": 0,
       "dayWeight": "400",
+      "markWeight": "600",
+      "markSize": 0,
       "eventGap": 0,
       "padding": 12,
       "font": "'Nunito', sans-serif",
@@ -2914,7 +3008,8 @@
           "Tim",
           "Vuông",
           "Vòng",
-          "Sao"
+          "Sao",
+          "Tim đầy"
         ],
         "group": "Hình đánh dấu",
         "help": "Hình bao quanh ngày được chọn."
@@ -3037,6 +3132,26 @@
           "700"
         ],
         "group": "Chữ"
+      },
+      "markWeight": {
+        "type": "select",
+        "label": "Độ đậm ngày chọn",
+        "options": [
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Hình đánh dấu"
+      },
+      "markSize": {
+        "type": "number",
+        "label": "Cỡ số ngày chọn",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Hình đánh dấu",
+        "help": "0 thì bằng Cỡ."
       },
       "eventGap": {
         "type": "number",
