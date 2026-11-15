@@ -416,6 +416,7 @@
       "src": "",
       "alt": "",
       "fit": "contain",
+      "flipX": false,
       "motion": false,
       "motionStyle": "Hộp quà",
       "floatMotion": false,
@@ -465,6 +466,11 @@
           "contain",
           "cover"
         ],
+        "group": "Nội dung"
+      },
+      "flipX": {
+        "type": "boolean",
+        "label": "Lật ngang",
         "group": "Nội dung"
       },
       "motion": {
@@ -725,6 +731,7 @@
           "Cánh hoa",
           "Thoi",
           "Sao",
+          "Lá",
           "Chữ"
         ],
         "group": "Hạt"
@@ -1152,7 +1159,8 @@
       "interval": 1.5,
       "lightbox": true,
       "radius": 16,
-      "dotColor": "#511419"
+      "dotColor": "#511419",
+      "startAt": 1
     },
     "fields": {
       "images": {
@@ -1172,6 +1180,13 @@
         "min": 0.5,
         "max": 10,
         "unit": "s",
+        "group": "Chuyển ảnh"
+      },
+      "startAt": {
+        "type": "number",
+        "label": "Ảnh bắt đầu",
+        "min": 1,
+        "max": 30,
         "group": "Chuyển ảnh"
       },
       "lightbox": {
@@ -1533,8 +1548,10 @@
       "color": "#511419",
       "fieldColor": "#666666",
       "fieldBorderColor": "#d1d5db",
+      "font": "'Be Vietnam Pro', system-ui, sans-serif",
       "padding": 16,
-      "compact": false
+      "compact": false,
+      "previewSampleCount": 2
     },
     "defaultStyles": {
       "borderWidth": 1,
@@ -1618,6 +1635,11 @@
         "label": "Màu viền ô nhập",
         "group": "Giao diện"
       },
+      "font": {
+        "type": "font",
+        "label": "Phông chữ",
+        "group": "Giao diện"
+      },
       "padding": {
         "type": "number",
         "label": "Đệm",
@@ -1630,6 +1652,14 @@
         "type": "boolean",
         "label": "Bố cục gọn",
         "group": "Giao diện"
+      },
+      "previewSampleCount": {
+        "type": "number",
+        "label": "Lời mẫu khi xem trước",
+        "min": 0,
+        "max": 10,
+        "group": "Sổ công khai",
+        "help": "Chỉ hiện trong bản xem trước; thiệp đã xuất bản hiển thị lời chúc thật."
       }
     },
     "hidden": true
