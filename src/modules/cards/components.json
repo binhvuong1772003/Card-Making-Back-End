@@ -839,7 +839,8 @@
           "Vàng kim",
           "Hồng phấn",
           "Đỏ rượu",
-          "Lá xanh"
+          "Lá xanh",
+          "Nâu be"
         ],
         "group": "Hạt",
         "help": "Một màu thì dùng ô Màu bên dưới; còn lại mỗi hạt một màu trong bảng."
@@ -994,7 +995,8 @@
           "Vàng kim",
           "Hồng phấn",
           "Đỏ rượu",
-          "Lá xanh"
+          "Lá xanh",
+          "Nâu be"
         ],
         "group": "Pháo"
       },
@@ -1295,6 +1297,7 @@
       "radius": 16,
       "dotColor": "#511419",
       "startAt": 1,
+      "spread": false,
       "layerName": ""
     },
     "fields": {
@@ -1337,6 +1340,12 @@
         "max": 48,
         "unit": "px",
         "group": "Kiểu dáng"
+      },
+      "spread": {
+        "type": "boolean",
+        "label": "Ảnh bên tràn ra ngoài",
+        "group": "Kiểu dáng",
+        "help": "Bật thì các ảnh hai bên được thấy hết, kể cả phần ngoài khung khối (đến mép trang), như băng ảnh của mẫu Minimalism Nâu."
       },
       "dotColor": {
         "type": "color",
