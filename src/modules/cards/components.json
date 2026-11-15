@@ -30,7 +30,8 @@
       "motionTarget": "",
       "openEffect": "Giữ nguyên",
       "openTime": 1,
-      "openDelay": 0
+      "openDelay": 0,
+      "layerName": ""
     },
     "shapes": {
       "prop": "shape",
@@ -113,8 +114,16 @@
         "unit": "s",
         "group": "Khi mở thiệp",
         "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "Text": {
     "category": "Basic",
@@ -153,7 +162,8 @@
       "textShadowColor": "#000000",
       "openEffect": "Giữ nguyên",
       "openTime": 1,
-      "openDelay": 0
+      "openDelay": 0,
+      "layerName": ""
     },
     "fields": {
       "text": {
@@ -300,8 +310,16 @@
         "unit": "s",
         "group": "Khi mở thiệp",
         "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "DressCode": {
     "label": "Dress code",
@@ -331,7 +349,8 @@
         "#8d9d70",
         "#e7e8e9",
         "#e8dec6"
-      ]
+      ],
+      "layerName": ""
     },
     "fields": {
       "heading": {
@@ -391,9 +410,17 @@
         },
         "maxItems": 8,
         "group": "Mẫu màu"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "Decoration": {
     "label": "Trang trí",
@@ -422,6 +449,8 @@
       "floatMotion": false,
       "idleEffect": "Không",
       "idleDelay": 0,
+      "parallaxX": 0,
+      "parallaxY": 0,
       "shineRadius": 24,
       "hoverEffect": "Không",
       "hoverGroup": "",
@@ -434,7 +463,8 @@
       "tintColor": "#e8f0e4",
       "openEffect": "Giữ nguyên",
       "openTime": 1,
-      "openDelay": 0
+      "openDelay": 0,
+      "layerName": ""
     },
     "fields": {
       "src": {
@@ -508,6 +538,24 @@
         ],
         "group": "Hiệu ứng",
         "help": "Đập: nhịp tim. Thở nhẹ: phóng to thu nhỏ chậm. Ánh sáng quét: vệt sáng chạy ngang, đặt lên nút. Chớp sáng: mờ rồi sáng lặp lại 2 giây, như ngôi sao quanh hộp quà."
+      },
+      "parallaxX": {
+        "type": "number",
+        "label": "Trôi theo cuộn ngang",
+        "min": -300,
+        "max": 300,
+        "unit": "‰",
+        "group": "Hiệu ứng",
+        "help": "Khối dịch ngang thêm bấy nhiêu phần nghìn quãng khách đã cuộn. 0 là đứng yên cùng trang."
+      },
+      "parallaxY": {
+        "type": "number",
+        "label": "Trôi theo cuộn dọc",
+        "min": -300,
+        "max": 300,
+        "unit": "‰",
+        "group": "Hiệu ứng",
+        "help": "Dương thì khối cuộn chậm hơn trang (hoa nền phía trên), âm thì nhanh hơn."
       },
       "idleDelay": {
         "type": "number",
@@ -618,8 +666,16 @@
         "unit": "s",
         "group": "Khi mở thiệp",
         "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "Image": {
     "category": "Basic",
@@ -643,7 +699,8 @@
       "fit": "cover",
       "openEffect": "Giữ nguyên",
       "openTime": 1,
-      "openDelay": 0
+      "openDelay": 0,
+      "layerName": ""
     },
     "fields": {
       "src": {
@@ -694,8 +751,16 @@
         "unit": "s",
         "group": "Khi mở thiệp",
         "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "Particles": {
     "label": "Hạt trôi",
@@ -729,7 +794,8 @@
       "drift": 20,
       "openEffect": "Giữ nguyên",
       "openTime": 1,
-      "openDelay": 0
+      "openDelay": 0,
+      "layerName": ""
     },
     "fields": {
       "shape": {
@@ -856,8 +922,16 @@
         "unit": "s",
         "group": "Khi mở thiệp",
         "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "Burst": {
     "label": "Pháo mở thiệp",
@@ -883,7 +957,8 @@
       "count": 32,
       "spread": 420,
       "delay": 0.5,
-      "palette": "Xanh lá"
+      "palette": "Xanh lá",
+      "layerName": ""
     },
     "fields": {
       "shape": {
@@ -940,8 +1015,16 @@
         "unit": "s",
         "group": "Pháo",
         "help": "Chờ bao lâu sau khi bấm Mở thiệp thì pháo nổ."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "Gradient": {
     "label": "Nền chuyển màu",
@@ -963,7 +1046,8 @@
       "from": "#5a0000",
       "mid": "#400000",
       "to": "#2a0000",
-      "direction": "Chéo xuống phải"
+      "direction": "Chéo xuống phải",
+      "layerName": ""
     },
     "fields": {
       "from": {
@@ -992,8 +1076,16 @@
           "Toả tròn"
         ],
         "group": "Nền chuyển màu"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "CardPanel": {
     "label": "Thẻ thiệp",
@@ -1016,7 +1108,8 @@
     "defaultProps": {
       "openEffect": "Giữ nguyên",
       "openTime": 1,
-      "openDelay": 0
+      "openDelay": 0,
+      "layerName": ""
     },
     "fields": {
       "openEffect": {
@@ -1050,6 +1143,13 @@
         "unit": "s",
         "group": "Khi mở thiệp",
         "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
     "defaultStyles": {
@@ -1058,7 +1158,8 @@
       "borderWidth": 1,
       "borderColor": "#e8d9cc"
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "CurvedText": {
     "label": "Chữ cong",
@@ -1087,7 +1188,8 @@
       "amount": 60,
       "layout": "Tự do",
       "radius": 105,
-      "letterSpacing": 0
+      "letterSpacing": 0,
+      "layerName": ""
     },
     "fields": {
       "text": {
@@ -1157,8 +1259,16 @@
         "type": "boolean",
         "label": "Nghiêng",
         "group": "Chữ cong"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
-    }
+    },
+    "nameProp": "layerName"
   },
   "Album": {
     "label": "Album xoay 3D",
@@ -1184,7 +1294,8 @@
       "lightbox": true,
       "radius": 16,
       "dotColor": "#511419",
-      "startAt": 1
+      "startAt": 1,
+      "layerName": ""
     },
     "fields": {
       "images": {
@@ -1231,9 +1342,17 @@
         "type": "color",
         "label": "Màu chỉ số ảnh",
         "group": "Kiểu dáng"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "AlbumGrid": {
     "label": "Album lưới",
@@ -1256,7 +1375,8 @@
       "columns": 3,
       "gap": 8,
       "radius": 8,
-      "lightbox": true
+      "lightbox": true,
+      "layerName": ""
     },
     "fields": {
       "images": {
@@ -1295,9 +1415,17 @@
         "label": "Phóng to ảnh",
         "group": "Chuyển ảnh",
         "help": "Bấm vào ảnh để xem lớn."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "AlbumStrip": {
     "label": "Album băng ngang",
@@ -1320,7 +1448,8 @@
       "images": [],
       "gap": 10,
       "radius": 10,
-      "lightbox": true
+      "lightbox": true,
+      "layerName": ""
     },
     "fields": {
       "images": {
@@ -1351,9 +1480,17 @@
         "label": "Phóng to ảnh",
         "group": "Chuyển ảnh",
         "help": "Bấm vào ảnh để xem lớn."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "AlbumPolaroid": {
     "label": "Album ảnh dán",
@@ -1377,7 +1514,8 @@
       "tilt": 5,
       "frameColor": "#ffffff",
       "radius": 2,
-      "lightbox": true
+      "lightbox": true,
+      "layerName": ""
     },
     "fields": {
       "images": {
@@ -1421,9 +1559,17 @@
         "label": "Phóng to ảnh",
         "group": "Chuyển ảnh",
         "help": "Bấm vào ảnh để xem lớn."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "Map": {
     "label": "Bản đồ",
@@ -1451,7 +1597,8 @@
       "button": "Chỉ đường",
       "color": "#511419",
       "innerFrame": true,
-      "padding": 14
+      "padding": 14,
+      "layerName": ""
     },
     "defaultStyles": {
       "borderWidth": 1,
@@ -1525,9 +1672,17 @@
         "unit": "px",
         "group": "Chữ và nút",
         "help": "Khoảng đệm giữa mép khối và bản đồ."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "Form": {
     "label": "Biểu mẫu",
@@ -1575,7 +1730,8 @@
       "font": "'Be Vietnam Pro', system-ui, sans-serif",
       "padding": 16,
       "compact": false,
-      "previewSampleCount": 2
+      "previewSampleCount": 2,
+      "layerName": ""
     },
     "defaultStyles": {
       "borderWidth": 1,
@@ -1684,9 +1840,17 @@
         "max": 10,
         "group": "Sổ công khai",
         "help": "Chỉ hiện trong bản xem trước; thiệp đã xuất bản hiển thị lời chúc thật."
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "Calendar": {
     "label": "Lịch tháng",
@@ -1736,7 +1900,8 @@
       "eventTime": "",
       "eventMinutes": 180,
       "eventPlace": "",
-      "eventNote": ""
+      "eventNote": "",
+      "layerName": ""
     },
     "fields": {
       "date": {
@@ -1988,9 +2153,17 @@
         "maxLength": 500,
         "multiline": true,
         "group": "Thêm vào lịch"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "CalendarHeart": {
     "label": "Lịch trái tim",
@@ -2040,7 +2213,8 @@
       "eventTime": "",
       "eventMinutes": 180,
       "eventPlace": "",
-      "eventNote": ""
+      "eventNote": "",
+      "layerName": ""
     },
     "fields": {
       "date": {
@@ -2292,9 +2466,17 @@
         "maxLength": 500,
         "multiline": true,
         "group": "Thêm vào lịch"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "CalendarFrame": {
     "label": "Lịch khung viền",
@@ -2344,7 +2526,8 @@
       "eventTime": "",
       "eventMinutes": 180,
       "eventPlace": "",
-      "eventNote": ""
+      "eventNote": "",
+      "layerName": ""
     },
     "fields": {
       "date": {
@@ -2596,6 +2779,13 @@
         "maxLength": 500,
         "multiline": true,
         "group": "Thêm vào lịch"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
     "defaultStyles": {
@@ -2603,7 +2793,8 @@
       "borderColor": "#511419",
       "borderRadius": 4
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "CalendarDark": {
     "label": "Lịch nền đỏ đô",
@@ -2653,7 +2844,8 @@
       "eventTime": "",
       "eventMinutes": 180,
       "eventPlace": "",
-      "eventNote": ""
+      "eventNote": "",
+      "layerName": ""
     },
     "fields": {
       "date": {
@@ -2905,13 +3097,21 @@
         "maxLength": 500,
         "multiline": true,
         "group": "Thêm vào lịch"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
     "defaultStyles": {
       "background": "#511419",
       "borderRadius": 16
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "CalendarWeek": {
     "label": "Lịch một tuần",
@@ -2961,7 +3161,8 @@
       "eventTime": "",
       "eventMinutes": 180,
       "eventPlace": "",
-      "eventNote": ""
+      "eventNote": "",
+      "layerName": ""
     },
     "fields": {
       "date": {
@@ -3213,13 +3414,21 @@
         "maxLength": 500,
         "multiline": true,
         "group": "Thêm vào lịch"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
     "defaultStyles": {
       "background": "#f6efe6",
       "borderRadius": 16
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   },
   "PhotoFrame": {
     "label": "Khung ảnh",
@@ -3250,7 +3459,8 @@
       "posX": 50,
       "posY": 50,
       "frameWidth": 0,
-      "frameColor": "#511419"
+      "frameColor": "#511419",
+      "layerName": ""
     },
     "fields": {
       "src": {
@@ -3310,8 +3520,16 @@
         "type": "color",
         "label": "Màu viền",
         "group": "Viền khung"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
       }
     },
-    "hidden": true
+    "hidden": true,
+    "nameProp": "layerName"
   }
 }

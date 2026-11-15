@@ -23,7 +23,7 @@
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
     "@graphql-tools/schema": "^10.1.5",
-    "@miditor/core": "file:vendor/miditor-core-0.0.0-flip-20261113.tgz",
+    "@miditor/core": "file:vendor/miditor-core-0.0.0-layers-20261115.tgz",
     "@prisma/client": "^6.19.3",
     "argon2": "^0.45.1",
     "bullmq": "^6.3.19",
