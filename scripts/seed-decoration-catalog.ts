@@ -8,17 +8,19 @@ const FOLDER = 'cardmaking/decorations';
 const ALLOWED_FORMATS = 'png,webp';
 const TRANSFORMATION = 'c_limit,h_3000,w_3000';
 const ASSETS = [
-  { id: 'starter-olive-branch', file: 'olive-branch.png', name: 'Cành olive', category: 'Hoa & lá', tags: ['lá', 'cành', 'olive', 'đổi màu'] },
-  { id: 'starter-botanical-corners', file: 'botanical-corners.png', name: 'Lá góc', category: 'Hoa & lá', tags: ['lá', 'góc', 'hoa', 'đổi màu'] },
+  { id: 'starter-olive-branch', file: 'olive-branch.png', name: 'Cành olive', category: 'Hoa lá', tags: ['lá', 'cành', 'olive', 'đổi màu'] },
+  { id: 'starter-botanical-corners', file: 'botanical-corners.png', name: 'Lá góc', category: 'Hoa lá', tags: ['lá', 'góc', 'hoa', 'đổi màu'] },
   { id: 'starter-song-hy-emblem', file: 'song-hy-emblem.png', name: 'Song Hỷ', category: 'Biểu tượng', tags: ['song hỷ', 'đám cưới', 'đổi màu'] },
-  { id: 'starter-sparkle-cluster', file: 'sparkle-cluster.png', name: 'Lấp lánh', category: 'Điểm nhấn', tags: ['lấp lánh', 'sao', 'đổi màu'] },
-  { id: 'starter-floral-divider', file: 'floral-divider.png', name: 'Ngăn cách hoa lá', category: 'Đường viền', tags: ['hoa', 'ngăn cách', 'đổi màu'] },
-  { id: 'starter-faint-leaf-pattern', file: 'faint-leaf-pattern.png', name: 'Lá nền mờ', category: 'Nền & họa tiết', tags: ['lá', 'nền', 'họa tiết'] },
-  { id: 'starter-wedding-gift-box', file: 'gift-box.webp', name: 'Hộp quà', category: 'Điểm nhấn', tags: ['quà cưới', 'hộp quà', 'hiệu ứng hộp quà'] },
-  { id: 'ref-min-red-paper-texture', file: 'minimalism-red-paper.webp', name: 'Giấy kem Minimalism đỏ', category: 'Nền & họa tiết', tags: ['giấy', 'nền', 'minimalism', 'đỏ đậm'] },
-  { id: 'ref-min-red-envelope-open', file: 'minimalism-red-envelope-open.webp', name: 'Phong bì đỏ mở', category: 'Phong bì', tags: ['phong bì', 'minimalism', 'đỏ đậm'] },
-  { id: 'ref-min-red-envelope-front', file: 'minimalism-red-envelope-front.webp', name: 'Mặt trước phong bì đỏ', category: 'Phong bì', tags: ['phong bì', 'minimalism', 'đỏ đậm'] },
-  { id: 'ref-min-red-envelope-pair', file: 'minimalism-red-envelope-pair.webp', name: 'Cặp bao lì xì hoa đỏ (bản hiện tại)', category: 'Phong bì', tags: ['bao lì xì', 'phong bì', 'hoa đỏ', 'minimalism', 'đỏ đậm'] },
+  { id: 'ref-songhy-green-star', file: 'song-hy-green-star.webp', name: 'Ngôi sao Song Hỷ xanh', category: 'Biểu tượng', tags: ['song hỷ', 'xanh', 'ngôi sao', 'chữ cong'] },
+  { id: 'ref-songhy-source-emblem', file: 'song-hy-source-emblem.webp', name: 'Chữ Hỷ Song Hỷ', category: 'Biểu tượng', tags: ['song hỷ', 'xanh', 'chữ hỷ', 'đổi màu'] },
+  { id: 'starter-sparkle-cluster', file: 'sparkle-cluster.png', name: 'Lấp lánh', category: 'Biểu tượng', tags: ['lấp lánh', 'sao', 'đổi màu'] },
+  { id: 'starter-floral-divider', file: 'floral-divider.png', name: 'Ngăn cách hoa lá', category: 'Viền & nền', tags: ['hoa', 'ngăn cách', 'đổi màu'] },
+  { id: 'starter-faint-leaf-pattern', file: 'faint-leaf-pattern.png', name: 'Lá nền mờ', category: 'Viền & nền', tags: ['lá', 'nền', 'họa tiết'] },
+  { id: 'starter-wedding-gift-box', file: 'gift-box.webp', name: 'Hộp quà', category: 'Phong bì & quà', tags: ['quà cưới', 'hộp quà', 'hiệu ứng hộp quà'] },
+  { id: 'ref-min-red-paper-texture', file: 'minimalism-red-paper.webp', name: 'Giấy kem Minimalism đỏ', category: 'Viền & nền', tags: ['giấy', 'nền', 'minimalism', 'đỏ đậm'] },
+  { id: 'ref-min-red-envelope-open', file: 'minimalism-red-envelope-open.webp', name: 'Phong bì đỏ mở', category: 'Phong bì & quà', tags: ['phong bì', 'minimalism', 'đỏ đậm'] },
+  { id: 'ref-min-red-envelope-front', file: 'minimalism-red-envelope-front.webp', name: 'Mặt trước phong bì đỏ', category: 'Phong bì & quà', tags: ['phong bì', 'minimalism', 'đỏ đậm'] },
+  { id: 'ref-min-red-envelope-pair', file: 'minimalism-red-envelope-pair.webp', name: 'Cặp bao lì xì hoa đỏ (bản hiện tại)', category: 'Phong bì & quà', tags: ['bao lì xì', 'phong bì', 'hoa đỏ', 'minimalism', 'đỏ đậm'] },
 ] as const;
 
 async function upload(file: string, publicId: string) {
