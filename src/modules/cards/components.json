@@ -146,6 +146,11 @@
       "font": "",
       "effects": [],
       "motionTarget": "",
+      "fontWeight": "Theo nút Đậm",
+      "letterSpacing": 0,
+      "lineHeight": 0,
+      "textShadow": "Không",
+      "textShadowColor": "#000000",
       "openEffect": "Giữ nguyên",
       "openTime": 1,
       "openDelay": 0
@@ -200,6 +205,55 @@
           "center",
           "right"
         ],
+        "group": "Typography"
+      },
+      "fontWeight": {
+        "type": "select",
+        "label": "Độ đậm",
+        "options": [
+          "Theo nút Đậm",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500",
+          "600",
+          "700",
+          "800",
+          "900"
+        ],
+        "group": "Typography",
+        "help": "Chọn độ đậm riêng khi mẫu cần chữ mảnh hoặc đậm vừa."
+      },
+      "letterSpacing": {
+        "type": "number",
+        "label": "Giãn chữ",
+        "min": -2,
+        "max": 20,
+        "unit": "px",
+        "group": "Typography"
+      },
+      "lineHeight": {
+        "type": "number",
+        "label": "Chiều cao dòng",
+        "min": 0,
+        "max": 400,
+        "unit": "px",
+        "group": "Typography",
+        "help": "Để 0 để dùng chiều cao dòng mặc định."
+      },
+      "textShadow": {
+        "type": "select",
+        "label": "Đổ bóng chữ",
+        "options": [
+          "Không",
+          "Nhẹ"
+        ],
+        "group": "Typography"
+      },
+      "textShadowColor": {
+        "type": "color",
+        "label": "Màu bóng chữ",
         "group": "Typography"
       },
       "effects": {
@@ -367,7 +421,15 @@
       "floatMotion": false,
       "idleEffect": "Không",
       "shineRadius": 24,
+      "hoverEffect": "Không",
+      "hoverGroup": "",
+      "hoverTime": 1.6,
+      "hoverDelay": 0,
+      "hoverRise": 55,
+      "hoverSway": 14,
       "motionTarget": "",
+      "tint": false,
+      "tintColor": "#e8f0e4",
       "openEffect": "Giữ nguyên",
       "openTime": 1,
       "openDelay": 0
@@ -383,6 +445,17 @@
         "type": "text",
         "label": "Mô tả",
         "maxLength": 500,
+        "group": "Nội dung"
+      },
+      "tint": {
+        "type": "boolean",
+        "label": "Tô màu đơn sắc",
+        "group": "Nội dung",
+        "help": "Dùng cho hình có nền trong suốt như biểu tượng, chữ Hỷ và ngôi sao."
+      },
+      "tintColor": {
+        "type": "color",
+        "label": "Màu trang trí",
         "group": "Nội dung"
       },
       "fit": {
@@ -420,10 +493,11 @@
         "options": [
           "Không",
           "Đập",
+          "Thở nhẹ",
           "Ánh sáng quét"
         ],
         "group": "Hiệu ứng",
-        "help": "Đập: nhịp tim, hợp con dấu hoặc trái tim. Ánh sáng quét: vệt sáng chạy ngang, đặt lên nút."
+        "help": "Đập: nhịp tim. Thở nhẹ: phóng to thu nhỏ chậm. Ánh sáng quét: vệt sáng chạy ngang, đặt lên nút."
       },
       "shineRadius": {
         "type": "number",
@@ -433,6 +507,59 @@
         "unit": "px",
         "group": "Hiệu ứng",
         "help": "Vệt sáng chỉ hiện trong khung này; đặt bằng nửa chiều cao nút để bo tròn."
+      },
+      "hoverEffect": {
+        "type": "select",
+        "label": "Khi rê chuột",
+        "options": [
+          "Không",
+          "Nảy lên",
+          "Bay lên rồi hiện lại",
+          "Pháo giấy"
+        ],
+        "group": "Hiệu ứng",
+        "help": "Nảy lên: như hộp quà. Bay lên rồi hiện lại: dùng cho vật nhỏ quanh hộp. Pháo giấy: đặt khối ở mép trên hộp."
+      },
+      "hoverGroup": {
+        "type": "text",
+        "label": "Nhóm rê chuột",
+        "maxLength": 30,
+        "group": "Hiệu ứng",
+        "help": "Các khối cùng tên (chữ thường, số, gạch nối) phản ứng cùng lúc khi rê vào một khối. Để trống thì chỉ phản ứng khi rê vào chính nó."
+      },
+      "hoverTime": {
+        "type": "number",
+        "label": "Thời gian rê",
+        "min": 0.3,
+        "max": 5,
+        "unit": "s",
+        "group": "Hiệu ứng"
+      },
+      "hoverDelay": {
+        "type": "number",
+        "label": "Trễ khi rê",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Hiệu ứng"
+      },
+      "hoverRise": {
+        "type": "number",
+        "label": "Độ bay lên",
+        "min": 10,
+        "max": 200,
+        "unit": "px",
+        "group": "Hiệu ứng",
+        "help": "Dùng cho Bay lên rồi hiện lại."
+      },
+      "hoverSway": {
+        "type": "number",
+        "label": "Lệch ngang",
+        "min": -60,
+        "max": 60,
+        "unit": "px",
+        "group": "Hiệu ứng",
+        "help": "Âm lệch trái, dương lệch phải."
       },
       "motionTarget": {
         "type": "text",
@@ -915,7 +1042,7 @@
       "w": 320,
       "h": 100
     },
-    "hidden": true,
+    "hidden": false,
     "canContain": false,
     "defaultProps": {
       "text": "LOVE NEVER FAILS",
@@ -924,7 +1051,10 @@
       "font": "",
       "bold": false,
       "italic": false,
-      "amount": 60
+      "amount": 60,
+      "layout": "Tự do",
+      "radius": 105,
+      "letterSpacing": 0
     },
     "fields": {
       "text": {
@@ -948,6 +1078,32 @@
         "max": 100,
         "group": "Chữ cong",
         "help": "Dương: đỉnh cung hướng lên. Âm: hướng xuống."
+      },
+      "layout": {
+        "type": "select",
+        "label": "Dạng cung",
+        "options": [
+          "Tự do",
+          "Nửa tròn"
+        ],
+        "group": "Chữ cong"
+      },
+      "radius": {
+        "type": "number",
+        "label": "Bán kính cung tròn",
+        "min": 100,
+        "max": 300,
+        "unit": "%",
+        "group": "Chữ cong",
+        "help": "100% là nửa hình tròn theo chiều rộng khung. Tăng để cung phẳng hơn."
+      },
+      "letterSpacing": {
+        "type": "number",
+        "label": "Giãn chữ",
+        "min": 0,
+        "max": 1,
+        "unit": "em",
+        "group": "Chữ cong"
       },
       "color": {
         "type": "color",
@@ -1373,6 +1529,8 @@
       },
       "moderation": false,
       "color": "#511419",
+      "fieldColor": "#666666",
+      "fieldBorderColor": "#d1d5db",
       "padding": 16,
       "compact": false
     },
@@ -1446,6 +1604,16 @@
       "color": {
         "type": "color",
         "label": "Màu chữ và nút",
+        "group": "Giao diện"
+      },
+      "fieldColor": {
+        "type": "color",
+        "label": "Màu chữ trong ô",
+        "group": "Giao diện"
+      },
+      "fieldBorderColor": {
+        "type": "color",
+        "label": "Màu viền ô nhập",
         "group": "Giao diện"
       },
       "padding": {
