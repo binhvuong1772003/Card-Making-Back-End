@@ -421,6 +421,7 @@
       "motionStyle": "Hộp quà",
       "floatMotion": false,
       "idleEffect": "Không",
+      "idleDelay": 0,
       "shineRadius": 24,
       "hoverEffect": "Không",
       "hoverGroup": "",
@@ -502,10 +503,20 @@
           "Không",
           "Đập",
           "Thở nhẹ",
-          "Ánh sáng quét"
+          "Ánh sáng quét",
+          "Chớp sáng"
         ],
         "group": "Hiệu ứng",
-        "help": "Đập: nhịp tim. Thở nhẹ: phóng to thu nhỏ chậm. Ánh sáng quét: vệt sáng chạy ngang, đặt lên nút."
+        "help": "Đập: nhịp tim. Thở nhẹ: phóng to thu nhỏ chậm. Ánh sáng quét: vệt sáng chạy ngang, đặt lên nút. Chớp sáng: mờ rồi sáng lặp lại 2 giây, như ngôi sao quanh hộp quà."
+      },
+      "idleDelay": {
+        "type": "number",
+        "label": "Trễ hiệu ứng lặp",
+        "min": 0,
+        "max": 5,
+        "unit": "s",
+        "group": "Hiệu ứng",
+        "help": "Dùng cho Chớp sáng: so le nhịp giữa nhiều ngôi sao."
       },
       "shineRadius": {
         "type": "number",
