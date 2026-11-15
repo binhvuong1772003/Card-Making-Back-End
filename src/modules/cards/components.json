@@ -475,9 +475,11 @@
       "motionStyle": {
         "type": "select",
         "label": "Kiểu quà",
+        "help": "Cặp bao lì xì: dùng một ảnh phong bì, vẽ hai lớp, rê chuột thì phóng to và lắc.",
         "options": [
           "Hộp quà",
-          "Bao lì xì"
+          "Bao lì xì",
+          "Cặp bao lì xì"
         ],
         "group": "Hiệu ứng"
       },
