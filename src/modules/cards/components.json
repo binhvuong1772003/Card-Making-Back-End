@@ -761,7 +761,8 @@
           "Đỏ vàng",
           "Vàng kim",
           "Hồng phấn",
-          "Đỏ rượu"
+          "Đỏ rượu",
+          "Lá xanh"
         ],
         "group": "Hạt",
         "help": "Một màu thì dùng ô Màu bên dưới; còn lại mỗi hạt một màu trong bảng."
@@ -867,12 +868,23 @@
     "canContain": false,
     "defaultProps": {
       "char": "囍",
+      "shape": "Chữ",
       "count": 32,
       "spread": 420,
       "delay": 0.5,
       "palette": "Xanh lá"
     },
     "fields": {
+      "shape": {
+        "type": "select",
+        "label": "Hình hạt",
+        "options": [
+          "Chữ",
+          "Lá"
+        ],
+        "group": "Pháo",
+        "help": "Chữ: bắn ký tự. Lá: bắn những chiếc lá."
+      },
       "char": {
         "type": "text",
         "label": "Chữ",
@@ -895,7 +907,8 @@
           "Đỏ vàng",
           "Vàng kim",
           "Hồng phấn",
-          "Đỏ rượu"
+          "Đỏ rượu",
+          "Lá xanh"
         ],
         "group": "Pháo"
       },
