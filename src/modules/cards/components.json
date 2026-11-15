@@ -1717,6 +1717,15 @@
       "color": "#511419",
       "weekColor": "#8a5a5e",
       "size": 16,
+      "titleSize": 0,
+      "titleWeight": "400",
+      "titleSpacing": 0,
+      "titleGap": 0,
+      "weekSize": 0,
+      "weekWeight": "600",
+      "weekGap": 0,
+      "dayWeight": "400",
+      "eventGap": 0,
       "padding": 0,
       "font": "",
       "titleFont": "",
@@ -1816,6 +1825,95 @@
         "group": "Chữ",
         "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
       },
+      "titleSize": {
+        "type": "number",
+        "label": "Cỡ tên tháng",
+        "min": 0,
+        "max": 60,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (1,5 lần)."
+      },
+      "titleWeight": {
+        "type": "select",
+        "label": "Độ đậm tên tháng",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "titleSpacing": {
+        "type": "number",
+        "label": "Giãn chữ tên tháng",
+        "min": 0,
+        "max": 8,
+        "unit": "px",
+        "group": "Chữ"
+      },
+      "titleGap": {
+        "type": "number",
+        "label": "Cách tên tháng",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới tên tháng; 0 thì tính theo Cỡ."
+      },
+      "weekSize": {
+        "type": "number",
+        "label": "Cỡ thứ",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (0,8 lần)."
+      },
+      "weekWeight": {
+        "type": "select",
+        "label": "Độ đậm thứ",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "weekGap": {
+        "type": "number",
+        "label": "Cách hàng thứ",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới hàng thứ; 0 thì tính theo Cỡ."
+      },
+      "dayWeight": {
+        "type": "select",
+        "label": "Độ đậm số ngày",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "eventGap": {
+        "type": "number",
+        "label": "Cách nút",
+        "min": 0,
+        "max": 160,
+        "unit": "px",
+        "group": "Thêm vào lịch",
+        "help": "Khoảng giữa lịch và nút; 0 thì tính theo Cỡ."
+      },
       "padding": {
         "type": "number",
         "label": "Đệm",
@@ -1900,6 +1998,15 @@
       "color": "#7a2f3f",
       "weekColor": "#c98a96",
       "size": 17,
+      "titleSize": 0,
+      "titleWeight": "400",
+      "titleSpacing": 0,
+      "titleGap": 0,
+      "weekSize": 0,
+      "weekWeight": "600",
+      "weekGap": 0,
+      "dayWeight": "400",
+      "eventGap": 0,
       "padding": 0,
       "font": "'Cormorant Garamond', serif",
       "titleFont": "'Great Vibes', cursive",
@@ -1999,6 +2106,95 @@
         "group": "Chữ",
         "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
       },
+      "titleSize": {
+        "type": "number",
+        "label": "Cỡ tên tháng",
+        "min": 0,
+        "max": 60,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (1,5 lần)."
+      },
+      "titleWeight": {
+        "type": "select",
+        "label": "Độ đậm tên tháng",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "titleSpacing": {
+        "type": "number",
+        "label": "Giãn chữ tên tháng",
+        "min": 0,
+        "max": 8,
+        "unit": "px",
+        "group": "Chữ"
+      },
+      "titleGap": {
+        "type": "number",
+        "label": "Cách tên tháng",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới tên tháng; 0 thì tính theo Cỡ."
+      },
+      "weekSize": {
+        "type": "number",
+        "label": "Cỡ thứ",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (0,8 lần)."
+      },
+      "weekWeight": {
+        "type": "select",
+        "label": "Độ đậm thứ",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "weekGap": {
+        "type": "number",
+        "label": "Cách hàng thứ",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới hàng thứ; 0 thì tính theo Cỡ."
+      },
+      "dayWeight": {
+        "type": "select",
+        "label": "Độ đậm số ngày",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "eventGap": {
+        "type": "number",
+        "label": "Cách nút",
+        "min": 0,
+        "max": 160,
+        "unit": "px",
+        "group": "Thêm vào lịch",
+        "help": "Khoảng giữa lịch và nút; 0 thì tính theo Cỡ."
+      },
       "padding": {
         "type": "number",
         "label": "Đệm",
@@ -2083,6 +2279,15 @@
       "color": "#511419",
       "weekColor": "#8a5a5e",
       "size": 16,
+      "titleSize": 0,
+      "titleWeight": "400",
+      "titleSpacing": 0,
+      "titleGap": 0,
+      "weekSize": 0,
+      "weekWeight": "600",
+      "weekGap": 0,
+      "dayWeight": "400",
+      "eventGap": 0,
       "padding": 14,
       "font": "'Playfair Display', serif",
       "titleFont": "'Playfair Display', serif",
@@ -2182,6 +2387,95 @@
         "group": "Chữ",
         "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
       },
+      "titleSize": {
+        "type": "number",
+        "label": "Cỡ tên tháng",
+        "min": 0,
+        "max": 60,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (1,5 lần)."
+      },
+      "titleWeight": {
+        "type": "select",
+        "label": "Độ đậm tên tháng",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "titleSpacing": {
+        "type": "number",
+        "label": "Giãn chữ tên tháng",
+        "min": 0,
+        "max": 8,
+        "unit": "px",
+        "group": "Chữ"
+      },
+      "titleGap": {
+        "type": "number",
+        "label": "Cách tên tháng",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới tên tháng; 0 thì tính theo Cỡ."
+      },
+      "weekSize": {
+        "type": "number",
+        "label": "Cỡ thứ",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (0,8 lần)."
+      },
+      "weekWeight": {
+        "type": "select",
+        "label": "Độ đậm thứ",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "weekGap": {
+        "type": "number",
+        "label": "Cách hàng thứ",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới hàng thứ; 0 thì tính theo Cỡ."
+      },
+      "dayWeight": {
+        "type": "select",
+        "label": "Độ đậm số ngày",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "eventGap": {
+        "type": "number",
+        "label": "Cách nút",
+        "min": 0,
+        "max": 160,
+        "unit": "px",
+        "group": "Thêm vào lịch",
+        "help": "Khoảng giữa lịch và nút; 0 thì tính theo Cỡ."
+      },
       "padding": {
         "type": "number",
         "label": "Đệm",
@@ -2271,6 +2565,15 @@
       "color": "#f4e6e9",
       "weekColor": "#d9a9b1",
       "size": 16,
+      "titleSize": 0,
+      "titleWeight": "400",
+      "titleSpacing": 0,
+      "titleGap": 0,
+      "weekSize": 0,
+      "weekWeight": "600",
+      "weekGap": 0,
+      "dayWeight": "400",
+      "eventGap": 0,
       "padding": 16,
       "font": "'Montserrat', sans-serif",
       "titleFont": "'Playfair Display', serif",
@@ -2370,6 +2673,95 @@
         "group": "Chữ",
         "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
       },
+      "titleSize": {
+        "type": "number",
+        "label": "Cỡ tên tháng",
+        "min": 0,
+        "max": 60,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (1,5 lần)."
+      },
+      "titleWeight": {
+        "type": "select",
+        "label": "Độ đậm tên tháng",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "titleSpacing": {
+        "type": "number",
+        "label": "Giãn chữ tên tháng",
+        "min": 0,
+        "max": 8,
+        "unit": "px",
+        "group": "Chữ"
+      },
+      "titleGap": {
+        "type": "number",
+        "label": "Cách tên tháng",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới tên tháng; 0 thì tính theo Cỡ."
+      },
+      "weekSize": {
+        "type": "number",
+        "label": "Cỡ thứ",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (0,8 lần)."
+      },
+      "weekWeight": {
+        "type": "select",
+        "label": "Độ đậm thứ",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "weekGap": {
+        "type": "number",
+        "label": "Cách hàng thứ",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới hàng thứ; 0 thì tính theo Cỡ."
+      },
+      "dayWeight": {
+        "type": "select",
+        "label": "Độ đậm số ngày",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "eventGap": {
+        "type": "number",
+        "label": "Cách nút",
+        "min": 0,
+        "max": 160,
+        "unit": "px",
+        "group": "Thêm vào lịch",
+        "help": "Khoảng giữa lịch và nút; 0 thì tính theo Cỡ."
+      },
       "padding": {
         "type": "number",
         "label": "Đệm",
@@ -2458,6 +2850,15 @@
       "color": "#511419",
       "weekColor": "#8a5a5e",
       "size": 18,
+      "titleSize": 0,
+      "titleWeight": "400",
+      "titleSpacing": 0,
+      "titleGap": 0,
+      "weekSize": 0,
+      "weekWeight": "600",
+      "weekGap": 0,
+      "dayWeight": "400",
+      "eventGap": 0,
       "padding": 12,
       "font": "'Nunito', sans-serif",
       "titleFont": "'Cormorant Garamond', serif",
@@ -2556,6 +2957,95 @@
         "unit": "px",
         "group": "Chữ",
         "help": "Cỡ chữ của số ngày; tên tháng và thứ tính theo đó."
+      },
+      "titleSize": {
+        "type": "number",
+        "label": "Cỡ tên tháng",
+        "min": 0,
+        "max": 60,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (1,5 lần)."
+      },
+      "titleWeight": {
+        "type": "select",
+        "label": "Độ đậm tên tháng",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "titleSpacing": {
+        "type": "number",
+        "label": "Giãn chữ tên tháng",
+        "min": 0,
+        "max": 8,
+        "unit": "px",
+        "group": "Chữ"
+      },
+      "titleGap": {
+        "type": "number",
+        "label": "Cách tên tháng",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới tên tháng; 0 thì tính theo Cỡ."
+      },
+      "weekSize": {
+        "type": "number",
+        "label": "Cỡ thứ",
+        "min": 0,
+        "max": 40,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "0 thì tính theo Cỡ (0,8 lần)."
+      },
+      "weekWeight": {
+        "type": "select",
+        "label": "Độ đậm thứ",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "weekGap": {
+        "type": "number",
+        "label": "Cách hàng thứ",
+        "min": 0,
+        "max": 80,
+        "unit": "px",
+        "group": "Chữ",
+        "help": "Khoảng dưới hàng thứ; 0 thì tính theo Cỡ."
+      },
+      "dayWeight": {
+        "type": "select",
+        "label": "Độ đậm số ngày",
+        "options": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "group": "Chữ"
+      },
+      "eventGap": {
+        "type": "number",
+        "label": "Cách nút",
+        "min": 0,
+        "max": 160,
+        "unit": "px",
+        "group": "Thêm vào lịch",
+        "help": "Khoảng giữa lịch và nút; 0 thì tính theo Cỡ."
       },
       "padding": {
         "type": "number",
