@@ -1297,7 +1297,7 @@
       "radius": 16,
       "dotColor": "#511419",
       "startAt": 1,
-      "spread": false,
+      "spread": 0,
       "layerName": ""
     },
     "fields": {
@@ -1342,10 +1342,13 @@
         "group": "Kiểu dáng"
       },
       "spread": {
-        "type": "boolean",
-        "label": "Ảnh bên tràn ra ngoài",
+        "type": "number",
+        "label": "Ảnh tràn ra hai bên",
+        "min": 0,
+        "max": 600,
+        "unit": "px",
         "group": "Kiểu dáng",
-        "help": "Bật thì các ảnh hai bên được thấy hết, kể cả phần ngoài khung khối (đến mép trang), như băng ảnh của mẫu Minimalism Nâu."
+        "help": "Các ảnh hai bên được thấy thêm bấy nhiêu px ngoài khung khối (đặt bằng quãng tới mép trang). 0 thì cắt đúng khung khối."
       },
       "dotColor": {
         "type": "color",
@@ -1901,6 +1904,9 @@
       "markWeight": "600",
       "markSize": 0,
       "eventGap": 0,
+      "eventStyle": "Nút",
+      "eventColor": "#7c6a60",
+      "weekLine": false,
       "padding": 0,
       "font": "",
       "titleFont": "",
@@ -2102,6 +2108,28 @@
         "group": "Hình đánh dấu",
         "help": "0 thì bằng Cỡ."
       },
+      "eventStyle": {
+        "type": "select",
+        "label": "Kiểu nút",
+        "options": [
+          "Nút",
+          "Liên kết"
+        ],
+        "group": "Thêm vào lịch",
+        "help": "Nút: viên thuốc nền màu hình đánh dấu. Liên kết: chữ gạch chân, không nền."
+      },
+      "eventColor": {
+        "type": "color",
+        "label": "Màu liên kết",
+        "group": "Thêm vào lịch",
+        "help": "Chỉ dùng khi Kiểu nút là Liên kết."
+      },
+      "weekLine": {
+        "type": "boolean",
+        "label": "Kẻ dưới hàng thứ",
+        "group": "Ngày",
+        "help": "Đường 2px cùng màu thứ nằm dưới hàng thứ trong tuần."
+      },
       "eventGap": {
         "type": "number",
         "label": "Cách nút",
@@ -2214,6 +2242,9 @@
       "markWeight": "600",
       "markSize": 0,
       "eventGap": 0,
+      "eventStyle": "Nút",
+      "eventColor": "#7c6a60",
+      "weekLine": false,
       "padding": 0,
       "font": "'Cormorant Garamond', serif",
       "titleFont": "'Great Vibes', cursive",
@@ -2415,6 +2446,28 @@
         "group": "Hình đánh dấu",
         "help": "0 thì bằng Cỡ."
       },
+      "eventStyle": {
+        "type": "select",
+        "label": "Kiểu nút",
+        "options": [
+          "Nút",
+          "Liên kết"
+        ],
+        "group": "Thêm vào lịch",
+        "help": "Nút: viên thuốc nền màu hình đánh dấu. Liên kết: chữ gạch chân, không nền."
+      },
+      "eventColor": {
+        "type": "color",
+        "label": "Màu liên kết",
+        "group": "Thêm vào lịch",
+        "help": "Chỉ dùng khi Kiểu nút là Liên kết."
+      },
+      "weekLine": {
+        "type": "boolean",
+        "label": "Kẻ dưới hàng thứ",
+        "group": "Ngày",
+        "help": "Đường 2px cùng màu thứ nằm dưới hàng thứ trong tuần."
+      },
       "eventGap": {
         "type": "number",
         "label": "Cách nút",
@@ -2527,6 +2580,9 @@
       "markWeight": "600",
       "markSize": 0,
       "eventGap": 0,
+      "eventStyle": "Nút",
+      "eventColor": "#7c6a60",
+      "weekLine": false,
       "padding": 14,
       "font": "'Playfair Display', serif",
       "titleFont": "'Playfair Display', serif",
@@ -2728,6 +2784,28 @@
         "group": "Hình đánh dấu",
         "help": "0 thì bằng Cỡ."
       },
+      "eventStyle": {
+        "type": "select",
+        "label": "Kiểu nút",
+        "options": [
+          "Nút",
+          "Liên kết"
+        ],
+        "group": "Thêm vào lịch",
+        "help": "Nút: viên thuốc nền màu hình đánh dấu. Liên kết: chữ gạch chân, không nền."
+      },
+      "eventColor": {
+        "type": "color",
+        "label": "Màu liên kết",
+        "group": "Thêm vào lịch",
+        "help": "Chỉ dùng khi Kiểu nút là Liên kết."
+      },
+      "weekLine": {
+        "type": "boolean",
+        "label": "Kẻ dưới hàng thứ",
+        "group": "Ngày",
+        "help": "Đường 2px cùng màu thứ nằm dưới hàng thứ trong tuần."
+      },
       "eventGap": {
         "type": "number",
         "label": "Cách nút",
@@ -2845,6 +2923,9 @@
       "markWeight": "600",
       "markSize": 0,
       "eventGap": 0,
+      "eventStyle": "Nút",
+      "eventColor": "#7c6a60",
+      "weekLine": false,
       "padding": 16,
       "font": "'Montserrat', sans-serif",
       "titleFont": "'Playfair Display', serif",
@@ -3046,6 +3127,28 @@
         "group": "Hình đánh dấu",
         "help": "0 thì bằng Cỡ."
       },
+      "eventStyle": {
+        "type": "select",
+        "label": "Kiểu nút",
+        "options": [
+          "Nút",
+          "Liên kết"
+        ],
+        "group": "Thêm vào lịch",
+        "help": "Nút: viên thuốc nền màu hình đánh dấu. Liên kết: chữ gạch chân, không nền."
+      },
+      "eventColor": {
+        "type": "color",
+        "label": "Màu liên kết",
+        "group": "Thêm vào lịch",
+        "help": "Chỉ dùng khi Kiểu nút là Liên kết."
+      },
+      "weekLine": {
+        "type": "boolean",
+        "label": "Kẻ dưới hàng thứ",
+        "group": "Ngày",
+        "help": "Đường 2px cùng màu thứ nằm dưới hàng thứ trong tuần."
+      },
       "eventGap": {
         "type": "number",
         "label": "Cách nút",
@@ -3162,6 +3265,9 @@
       "markWeight": "600",
       "markSize": 0,
       "eventGap": 0,
+      "eventStyle": "Nút",
+      "eventColor": "#7c6a60",
+      "weekLine": false,
       "padding": 12,
       "font": "'Nunito', sans-serif",
       "titleFont": "'Cormorant Garamond', serif",
@@ -3362,6 +3468,28 @@
         "unit": "px",
         "group": "Hình đánh dấu",
         "help": "0 thì bằng Cỡ."
+      },
+      "eventStyle": {
+        "type": "select",
+        "label": "Kiểu nút",
+        "options": [
+          "Nút",
+          "Liên kết"
+        ],
+        "group": "Thêm vào lịch",
+        "help": "Nút: viên thuốc nền màu hình đánh dấu. Liên kết: chữ gạch chân, không nền."
+      },
+      "eventColor": {
+        "type": "color",
+        "label": "Màu liên kết",
+        "group": "Thêm vào lịch",
+        "help": "Chỉ dùng khi Kiểu nút là Liên kết."
+      },
+      "weekLine": {
+        "type": "boolean",
+        "label": "Kẻ dưới hàng thứ",
+        "group": "Ngày",
+        "help": "Đường 2px cùng màu thứ nằm dưới hàng thứ trong tuần."
       },
       "eventGap": {
         "type": "number",
