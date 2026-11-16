@@ -1107,7 +1107,14 @@
           "Lá xanh",
           "Nâu be",
           "Hồng rượu",
-          "Xanh lụa"
+          "Xanh lụa",
+          "Xanh rêu",
+          "Liên hoa",
+          "Trắng",
+          "Cam vàng",
+          "Hồng phấn nhạt",
+          "Xanh nhạt",
+          "Đỏ son"
         ],
         "group": "Hạt",
         "help": "Một màu thì dùng ô Màu bên dưới; còn lại mỗi hạt một màu trong bảng."
@@ -1265,7 +1272,14 @@
           "Lá xanh",
           "Nâu be",
           "Hồng rượu",
-          "Xanh lụa"
+          "Xanh lụa",
+          "Xanh rêu",
+          "Liên hoa",
+          "Trắng",
+          "Cam vàng",
+          "Hồng phấn nhạt",
+          "Xanh nhạt",
+          "Đỏ son"
         ],
         "group": "Pháo"
       },
