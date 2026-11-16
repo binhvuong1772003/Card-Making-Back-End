@@ -707,10 +707,11 @@
           "Không",
           "Nảy lên",
           "Bay lên rồi hiện lại",
-          "Pháo giấy"
+          "Pháo giấy",
+          "Lắc"
         ],
         "group": "Hiệu ứng",
-        "help": "Nảy lên: như hộp quà. Bay lên rồi hiện lại: dùng cho vật nhỏ quanh hộp. Pháo giấy: đặt khối ở mép trên hộp."
+        "help": "Nảy lên: như hộp quà. Bay lên rồi hiện lại: dùng cho vật nhỏ quanh hộp. Pháo giấy: đặt khối ở mép trên hộp. Lắc: bao lì xì đung đưa tắt dần, lặp khi còn rê chuột."
       },
       "hoverGroup": {
         "type": "text",
