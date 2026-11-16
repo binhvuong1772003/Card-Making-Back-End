@@ -1978,6 +1978,7 @@
       "compact": false,
       "previewSampleCount": 2,
       "listMax": 420,
+      "fillGuestName": true,
       "layerName": ""
     },
     "defaultStyles": {
@@ -2079,6 +2080,12 @@
         "type": "boolean",
         "label": "Bố cục gọn",
         "group": "Giao diện"
+      },
+      "fillGuestName": {
+        "type": "boolean",
+        "label": "Điền sẵn tên khách mời",
+        "group": "Sổ công khai",
+        "help": "Khách mở link riêng thì ô tên (ô tên của sổ lưu bút, hoặc ô chữ ngắn đầu tiên) điền sẵn tên khách; khách vẫn sửa được."
       },
       "listMax": {
         "type": "number",
