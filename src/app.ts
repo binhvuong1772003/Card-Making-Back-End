@@ -20,6 +20,8 @@ import { cardsModule } from './modules/cards/cards.resolvers';
 import { galleryModule } from './modules/cards/gallery/gallery.resolvers';
 import { responsesModule } from './modules/cards/responses/responses.resolvers';
 import { createResponsesRouter, formResponsesCsv } from './modules/cards/responses/responses.routes';
+import { guestsModule } from './modules/cards/guests/guests.resolvers';
+import { createGuestsRouter } from './modules/cards/guests/guests.routes';
 import { publishingModule } from './modules/cards/publishing/publishing.resolvers';
 import { createPublicationsRouter } from './modules/publications/publications.routes';
 import { catalogModule } from './modules/catalog/catalog.resolvers';
@@ -42,7 +44,7 @@ export interface AppOptions {
 }
 
 // Nơi ghép các module GraphQL; thêm module mới vào mảng này.
-export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule, galleryModule, responsesModule, catalogModule], authenticate });
+export const defaultGraphql = (): Graphql => createGraphql({ modules: [cardsModule, publishingModule, galleryModule, responsesModule, guestsModule, catalogModule], authenticate });
 
 const REQUEST_ID = /^[\w.-]{1,100}$/;
 
@@ -88,6 +90,8 @@ export function createApp(options: AppOptions = {}): express.Express {
     publicRateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT,
     formsHourlyLimit: options.formsHourlyLimit ?? env.FORMS_HOURLY_LIMIT,
   }));
+  // Khách mở link riêng: đọc tên và lời chào của đúng khách, ghi lượt mở; công khai, cùng tiền tố.
+  api.use('/publications', createGuestsRouter({ publicRateLimit: options.publicRateLimit ?? env.PUBLIC_RATE_LIMIT }));
   // Tải câu trả lời của một form thành CSV: cần đăng nhập; quyền xem được kiểm trong service.
   api.get('/cards/:id/forms/:blockId/responses.csv', requireAuth, formResponsesCsv);
   app.use('/api/v1', api);

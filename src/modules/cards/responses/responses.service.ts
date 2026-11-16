@@ -10,6 +10,7 @@ import { decodeRowCursor, encodeRowCursor, type EntryStatusValue, type FormInput
 import { isClosed, parseFormBlock, publicView, validateAnswers, type Field, type FieldType, type StoredAnswer } from './form-fields';
 import { upgradeLegacyForms } from './legacy';
 import { isCardDocument } from '../card-document';
+import { guestIdFor } from '../guests/guests.service';
 
 // Câu trả lời của khách cho khối `Form` trên trang công khai. Khách ghi không cần đăng nhập; chỉ chủ thiệp và người sửa thiệp
 // đọc câu trả lời, còn dòng VISIBLE của form bật sổ công khai thì ai xem thiệp cũng thấy. Cấu hình form lấy từ bản đã xuất bản.
@@ -121,8 +122,9 @@ export async function submitForm(slug: string, input: FormInput, context: Submit
   if ((await prisma.formResponse.count({ where: { cardId } })) >= deps.limits.maxResponses) {
     throw new AppError('CONFLICT', 'This card cannot take more responses', { reason: 'FULL' });
   }
+  const guestId = await guestIdFor(cardId, input.guestCode);
   const row = await prisma.formResponse.create({
-    data: { cardId, blockId: input.blockId, publicationId, answers: answers as unknown as Prisma.InputJsonValue, status, ipHash, createdAt: now },
+    data: { cardId, blockId: input.blockId, publicationId, ...(guestId ? { guestId } : {}), answers: answers as unknown as Prisma.InputJsonValue, status, ipHash, createdAt: now },
     select: { id: true, answers: true, createdAt: true },
   });
   return { id: row.id, status, entry: status === 'VISIBLE' ? publicEntryOf(row, config.publicList) : null };

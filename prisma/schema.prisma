@@ -195,6 +195,7 @@ model Card {
   invites       CardInvite[]
   publications  Publication[]
   formResponses FormResponse[]
+  guests        Guest[]
 
   @@index([ownerId, updatedAt(sort: Desc)]) // "thiệp của tôi"
   @@index([members.userId]) // "thiệp được chia sẻ với tôi"
@@ -271,6 +272,7 @@ model FormResponse {
   id        String      @id @default(auto()) @map("_id") @db.ObjectId
   cardId    String      @db.ObjectId
   blockId   String // khoá của form trong thiệp (một thiệp có thể có nhiều form), xem responses/form-id.ts
+  guestId   String?     @db.ObjectId // khách mời (link riêng) đã điền; trống với khách vãng lai. Không là quan hệ: xoá khách không chặn và không xoá phản hồi
   publicationId String? @db.ObjectId // khách điền qua bản nào; trống với phản hồi từ trước khi có nhiều bản. Không là quan hệ: bản gỡ rồi vẫn giữ phản hồi
   answers   Json
   status    EntryStatus @default(VISIBLE)
@@ -281,4 +283,25 @@ model FormResponse {
 
   @@index([cardId, blockId, createdAt(sort: Desc)])
   @@index([cardId, blockId, status, createdAt(sort: Desc)])
+  @@index([cardId, guestId])
+}
+
+// Khách mời của một thiệp, mỗi khách một link riêng `?g=<code>`. Thuộc Card (không thuộc một bản xuất bản) nên một danh sách dùng cho mọi bản.
+// `code` là thứ duy nhất khách giữ: 8 ký tự không đoán được, chỉ trả đúng khách đó, không có API công khai nào liệt kê khách.
+model Guest {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  cardId        String    @db.ObjectId
+  code          String    @unique
+  name          String
+  greeting      String? // lời chào riêng
+  inviteMessage String? // lời mời riêng
+  openCount     Int       @default(0)
+  firstOpenedAt DateTime?
+  lastOpenedAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@index([cardId, createdAt])
 }

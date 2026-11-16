@@ -10,6 +10,8 @@ export const formInput = z.object({
   answers: z.record(z.string(), z.unknown()).default({}),
   // Ô ẩn chống thư rác: người điền thật không thấy nên để trống.
   website: z.string().max(200).optional(),
+  // Mã khách mời của link riêng (không bắt buộc): mã sai không làm hỏng câu trả lời, chỉ không gắn khách.
+  guestCode: z.string().max(20).optional(),
 });
 export type FormInput = z.infer<typeof formInput>;
 

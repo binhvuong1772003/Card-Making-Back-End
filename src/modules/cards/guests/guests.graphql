@@ -1,0 +1,33 @@
+"""Một khách mời của thiệp; `code` dựng link riêng `?g=<code>`."""
+type Guest {
+  id: ID!
+  name: String!
+  code: String!
+  greeting: String
+  inviteMessage: String
+  openCount: Int!
+  firstOpenedAt: DateTime
+  lastOpenedAt: DateTime
+  """Đã gửi câu trả lời form bằng link của khách này."""
+  responded: Boolean!
+  createdAt: DateTime!
+}
+
+input GuestInput {
+  name: String!
+  greeting: String
+  inviteMessage: String
+}
+
+extend type Query {
+  """Khách của thiệp (chủ thiệp và người sửa), cũ nhất trước; `search` lọc theo tên."""
+  cardGuests(cardId: ID!, search: String): [Guest!]!
+}
+
+extend type Mutation {
+  """Thêm một hoặc nhiều khách (tối đa 200 mỗi lần, 500 mỗi thiệp); mỗi khách nhận một mã mới."""
+  addGuests(cardId: ID!, entries: [GuestInput!]!): [Guest!]!
+  """Sửa tên, lời chào, lời mời; chuỗi rỗng xoá lời chào hoặc lời mời."""
+  updateGuest(id: ID!, name: String, greeting: String, inviteMessage: String): Guest!
+  deleteGuest(id: ID!): Boolean!
+}
