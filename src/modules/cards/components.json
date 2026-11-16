@@ -422,6 +422,131 @@
     "hidden": true,
     "nameProp": "layerName"
   },
+  "Countdown": {
+    "label": "Đếm ngược",
+    "category": "Thiệp cưới",
+    "icon": "timer",
+    "keywords": [
+      "đếm ngược",
+      "countdown",
+      "còn bao nhiêu ngày",
+      "ngày cưới",
+      "thời gian"
+    ],
+    "size": {
+      "w": 360,
+      "h": 44
+    },
+    "canContain": false,
+    "defaultProps": {
+      "date": "2027-01-04",
+      "time": "17:30",
+      "showSeconds": true,
+      "dayLabel": "ngày",
+      "hourLabel": "giờ",
+      "minuteLabel": "phút",
+      "secondLabel": "giây",
+      "doneText": "Đến ngày vui rồi!",
+      "size": 27,
+      "color": "#511419",
+      "font": "",
+      "bold": true,
+      "align": "center",
+      "layerName": ""
+    },
+    "fields": {
+      "date": {
+        "type": "custom",
+        "kind": "date",
+        "label": "Ngày",
+        "group": "Mốc đếm"
+      },
+      "time": {
+        "type": "custom",
+        "kind": "time",
+        "label": "Giờ",
+        "group": "Mốc đếm",
+        "help": "Giờ Việt Nam. Để trống thì đếm tới 0 giờ."
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "label": "Hiện giây",
+        "group": "Mốc đếm"
+      },
+      "dayLabel": {
+        "type": "text",
+        "label": "Chữ ngày",
+        "maxLength": 12,
+        "group": "Nhãn"
+      },
+      "hourLabel": {
+        "type": "text",
+        "label": "Chữ giờ",
+        "maxLength": 12,
+        "group": "Nhãn"
+      },
+      "minuteLabel": {
+        "type": "text",
+        "label": "Chữ phút",
+        "maxLength": 12,
+        "group": "Nhãn"
+      },
+      "secondLabel": {
+        "type": "text",
+        "label": "Chữ giây",
+        "maxLength": 12,
+        "group": "Nhãn"
+      },
+      "doneText": {
+        "type": "text",
+        "label": "Chữ khi tới ngày",
+        "maxLength": 60,
+        "group": "Nhãn"
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ chữ",
+        "min": 10,
+        "max": 96,
+        "unit": "px",
+        "group": "Chữ"
+      },
+      "color": {
+        "type": "color",
+        "label": "Màu chữ",
+        "group": "Chữ"
+      },
+      "font": {
+        "type": "font",
+        "label": "Font",
+        "group": "Typography"
+      },
+      "bold": {
+        "type": "boolean",
+        "label": "Chữ đậm",
+        "group": "Chữ"
+      },
+      "align": {
+        "type": "select",
+        "label": "Căn lề",
+        "options": [
+          "left",
+          "center",
+          "right"
+        ],
+        "group": "Chữ"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
+      }
+    },
+    "hidden": true,
+    "nameProp": "layerName"
+  },
   "Decoration": {
     "label": "Trang trí",
     "category": "Trang trí",
