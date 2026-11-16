@@ -574,6 +574,9 @@
       "bold": false,
       "italic": false,
       "align": "center",
+      "openEffect": "Giữ nguyên",
+      "openTime": 1,
+      "openDelay": 0,
       "layerName": ""
     },
     "fields": {
@@ -639,6 +642,38 @@
           "right"
         ],
         "group": "Chữ"
+      },
+      "openEffect": {
+        "type": "select",
+        "label": "Hiệu ứng",
+        "options": [
+          "Giữ nguyên",
+          "Mờ dần",
+          "Thu nhỏ rồi biến mất",
+          "Phóng ra rồi mờ dần",
+          "Phóng to rồi nhoè",
+          "Bay lên rồi biến mất",
+          "Gợn sóng lan ra"
+        ],
+        "group": "Khi mở thiệp",
+        "help": "Chạy khi khách bấm nút mở thiệp, rồi thiệp chuyển sang trang kế."
+      },
+      "openTime": {
+        "type": "number",
+        "label": "Thời gian",
+        "min": 0.2,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp"
+      },
+      "openDelay": {
+        "type": "number",
+        "label": "Trễ",
+        "min": 0,
+        "max": 3,
+        "unit": "s",
+        "group": "Khi mở thiệp",
+        "help": "Chờ bao lâu sau khi bấm thì hiệu ứng mới bắt đầu."
       },
       "layerName": {
         "type": "text",
