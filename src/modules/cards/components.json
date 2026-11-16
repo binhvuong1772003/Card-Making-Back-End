@@ -965,7 +965,8 @@
           "Hồng phấn",
           "Đỏ rượu",
           "Lá xanh",
-          "Nâu be"
+          "Nâu be",
+          "Hồng rượu"
         ],
         "group": "Hạt",
         "help": "Một màu thì dùng ô Màu bên dưới; còn lại mỗi hạt một màu trong bảng."
@@ -1121,7 +1122,8 @@
           "Hồng phấn",
           "Đỏ rượu",
           "Lá xanh",
-          "Nâu be"
+          "Nâu be",
+          "Hồng rượu"
         ],
         "group": "Pháo"
       },
@@ -1868,6 +1870,7 @@
       "padding": 16,
       "compact": false,
       "previewSampleCount": 2,
+      "listMax": 420,
       "layerName": ""
     },
     "defaultStyles": {
@@ -1969,6 +1972,15 @@
         "type": "boolean",
         "label": "Bố cục gọn",
         "group": "Giao diện"
+      },
+      "listMax": {
+        "type": "number",
+        "label": "Cao tối đa của danh sách",
+        "min": 120,
+        "max": 1600,
+        "unit": "px",
+        "group": "Sổ công khai",
+        "help": "Danh sách lời chúc cao hơn mức này thì cuộn trong khung."
       },
       "previewSampleCount": {
         "type": "number",
