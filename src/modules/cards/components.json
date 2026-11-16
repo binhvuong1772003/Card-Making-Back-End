@@ -547,6 +547,110 @@
     "hidden": true,
     "nameProp": "layerName"
   },
+  "GuestText": {
+    "label": "Khách mời",
+    "category": "Thiệp cưới",
+    "icon": "user",
+    "keywords": [
+      "khách mời",
+      "tên khách",
+      "thân mời",
+      "lời chào",
+      "lời mời",
+      "guest"
+    ],
+    "size": {
+      "w": 320,
+      "h": 36
+    },
+    "canContain": false,
+    "defaultProps": {
+      "field": "Tên khách",
+      "prefix": "Thân mời",
+      "fallback": "Thân mời",
+      "size": 18,
+      "color": "#511419",
+      "font": "",
+      "bold": false,
+      "italic": false,
+      "align": "center",
+      "layerName": ""
+    },
+    "fields": {
+      "field": {
+        "type": "select",
+        "label": "Hiện",
+        "options": [
+          "Tên khách",
+          "Lời chào riêng",
+          "Lời mời riêng"
+        ],
+        "group": "Khách mời",
+        "help": "Tên, lời chào hay lời mời của khách đang mở link riêng. Ở editor và xem thử hiện chữ mẫu."
+      },
+      "prefix": {
+        "type": "text",
+        "label": "Chữ đứng trước tên",
+        "maxLength": 30,
+        "group": "Khách mời",
+        "help": "Ví dụ \"Thân mời\" thành \"Thân mời Anh Nam\". Chỉ dùng khi hiện tên."
+      },
+      "fallback": {
+        "type": "text",
+        "label": "Chữ khi không có khách",
+        "maxLength": 200,
+        "group": "Khách mời",
+        "help": "Hiện khi thiệp mở bằng link chung (không phải link riêng). Để trống thì khối ẩn đi."
+      },
+      "size": {
+        "type": "number",
+        "label": "Cỡ chữ",
+        "min": 8,
+        "max": 96,
+        "unit": "px",
+        "group": "Chữ"
+      },
+      "color": {
+        "type": "color",
+        "label": "Màu chữ",
+        "group": "Chữ"
+      },
+      "font": {
+        "type": "font",
+        "label": "Font",
+        "group": "Typography"
+      },
+      "bold": {
+        "type": "boolean",
+        "label": "Chữ đậm",
+        "group": "Chữ"
+      },
+      "italic": {
+        "type": "boolean",
+        "label": "Chữ nghiêng",
+        "group": "Chữ"
+      },
+      "align": {
+        "type": "select",
+        "label": "Căn lề",
+        "options": [
+          "left",
+          "center",
+          "right"
+        ],
+        "group": "Chữ"
+      },
+      "layerName": {
+        "type": "text",
+        "label": "Tên lớp",
+        "maxLength": 60,
+        "group": "Lớp",
+        "help": "Tên hiện trong bảng Lớp thay cho tên loại khối, ví dụ \"Hoa góc trái\"."
+      }
+    },
+    "hidden": true,
+    "nameProp": "layerName"
+  },
   "Decoration": {
     "label": "Trang trí",
     "category": "Trang trí",
