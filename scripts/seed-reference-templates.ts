@@ -2,8 +2,36 @@ import { Prisma } from '@prisma/client';
 import { builtInRegistry, emptyPage, isPageData, newNode, validatePage, type FreeNode, type JsonValue, type NodeStyles, type PageData, type TreeNode } from '@miditor/core';
 import { cardDefinitions } from '../../CMFE/lib/cards/blocks/definitions';
 import { formPresets } from '../../CMFE/lib/cards/blocks/form-presets';
+import { hoaMocXanhDemoDocument } from '../../CMFE/lib/cards/demos/hoa-moc-xanh';
+import { minimalismNauDemoDocument } from '../../CMFE/lib/cards/demos/minimalism-nau';
+import { songHyV2DoDocument } from '../../CMFE/lib/cards/demos/song-hy-v2-do';
+import { toDuyenDoDamDocument } from '../../CMFE/lib/cards/demos/to-duyen-do-dam';
+import { minimalismNauDamDocument } from '../../CMFE/lib/cards/demos/minimalism-nau-dam';
+import { toDuyenXanhDocument } from '../../CMFE/lib/cards/demos/to-duyen-xanh';
+import { camThachVangDocument } from '../../CMFE/lib/cards/demos/cam-thach-vang';
+import { songLongXanhDocument } from '../../CMFE/lib/cards/demos/song-long-xanh';
+import { longPhungXanhDocument } from '../../CMFE/lib/cards/demos/long-phung-xanh';
+import { vuonXuanXanhDocument } from '../../CMFE/lib/cards/demos/vuon-xuan-xanh';
+import { renTheuTrangDocument } from '../../CMFE/lib/cards/demos/ren-theu-trang';
+import { minimalismDoDocument } from '../../CMFE/lib/cards/demos/minimalism-do';
+import { lauDaiXanhDocument } from '../../CMFE/lib/cards/demos/lau-dai-xanh';
+import { hoangKimDoDocument } from '../../CMFE/lib/cards/demos/hoang-kim-do';
+import { songHacDoDocument } from '../../CMFE/lib/cards/demos/song-hac-do';
+import { baroqueV2DoDamDocument } from '../../CMFE/lib/cards/demos/baroque-v2-do-dam';
+import { anhDaoHongDocument } from '../../CMFE/lib/cards/demos/anh-dao-hong';
+import { vuonkinhXanhDocument } from '../../CMFE/lib/cards/demos/vuonkinh-xanh';
+import { vuonkinhHongDocument } from '../../CMFE/lib/cards/demos/vuonkinh-hong';
+import { songLongDoDocument } from '../../CMFE/lib/cards/demos/song-long-do';
+import { longPhungDoDocument } from '../../CMFE/lib/cards/demos/long-phung-do';
+import { longPhungV3DoDocument } from '../../CMFE/lib/cards/demos/long-phung-v3-do';
+import { songPhungDoDocument } from '../../CMFE/lib/cards/demos/song-phung-do';
+import { longPhungV2DoDocument } from '../../CMFE/lib/cards/demos/long-phung-v2-do';
+import { maiLanTrangDocument } from '../../CMFE/lib/cards/demos/mai-lan-trang';
+import { lienHoaV2XanhDocument } from '../../CMFE/lib/cards/demos/lien-hoa-v2-xanh';
+import { minimalismXanhDocument } from '../../CMFE/lib/cards/demos/minimalism-xanh';
 import { normalizeCardDocument, type CardDocument, type CardPage } from '../../CMFE/lib/cards/document';
 import { prisma } from '../src/infra/prisma';
+import { filterPublishedSeedTargets, findMissingCatalogAssets, parseReferenceSeedArgs, selectContentHandoff, type ContentHandoffSlug } from './seed-reference-templates-mode';
 
 type Design = {
   title: string;
@@ -16,16 +44,44 @@ type Design = {
 
 const designs: Design[] = [
   { title: 'Minimalism - Đỏ Đậm', slug: 'minimalism-do-dam', family: 'minimal', palette: { primary: '#681b28', secondary: '#8e4547', paper: '#fbf3e8', ink: '#49151c', accent: '#c49b53' }, ornaments: ['ref-min-red-flower', 'ref-min-red-castle', 'ref-min-red-camera', 'ref-min-red-cake'], description: 'Phong bì đỏ burgundy lồng ảnh cưới, dấu sáp vàng hình tim, nền kem và bóng dinh thự cổ.' },
-  { title: 'Minimalism - Nâu', slug: 'minimalism-nau', family: 'minimal', palette: { primary: '#70543e', secondary: '#96775b', paper: '#fbf8f1', ink: '#534231', accent: '#b69a69' }, ornaments: ['ref-min-brown-flower', 'ref-min-brown-leaf', 'ref-min-brown-gate', 'ref-min-brown-cake'], description: 'Ảnh kiểu polaroid dán washi, dấu sáp, hoa khô ánh vàng và nền giấy kem.' },
+  { title: 'Minimalism - Nâu', slug: 'minimalism-nau', family: 'minimal', palette: { primary: '#563d35', secondary: '#7c6a60', paper: '#fff7f3', ink: '#563d35', accent: '#b89b71' }, ornaments: ['ref-min-brown-flower', 'ref-min-brown-leaf', 'ref-min-brown-house', 'ref-min-brown-avatar-frame', 'ref-min-brown-paper', 'ref-min-brown-paper-note', 'ref-min-brown-gate', 'ref-min-brown-cake', 'ref-min-brown-water', 'ref-min-brown-gift-main', 'ref-min-brown-gift-mini-minimalism-purple', 'ref-min-brown-gift-mini-song-hac-red', 'ref-min-brown-gift-mini-minimalism-darkred', 'ref-min-brown-gift-mini-spring-garden-blue', 'ref-min-brown-gift-mini-porcelain-brown', 'ref-min-brown-gift-mini-porcelain-v2-pink', 'ref-min-brown-gift-mini-double-dragon-red'], description: 'Thiệp cưới Minimalism Nâu với ảnh, nền giấy, hoa trang trí, lịch, sổ lưu bút và quà.' },
   { title: 'Song Hỷ - Xanh', slug: 'song-hy-xanh', family: 'songhy', palette: { primary: '#164d3c', secondary: '#2e6b54', paper: '#f8f1e3', ink: '#173d32', accent: '#d1b77b' }, ornaments: ['ref-songhy-green-emblem', 'ref-songhy-green-sunburst', 'starter-olive-branch'], description: 'Chữ 囍, phong bì xanh rừng, khung ảnh vòm và chữ cong LOVE NEVER FAILS.' },
   { title: 'Song Hỷ V2 - Đỏ', slug: 'song-hy-v2-do', family: 'songhy-v2', palette: { primary: '#a81420', secondary: '#c63739', paper: '#fff4df', ink: '#65141d', accent: '#d3ad67' }, ornaments: ['ref-songhy-red-emblem', 'ref-songhy-red-hero-shape', 'ref-songhy-red-flower', 'ref-songhy-red-ring', 'ref-songhy-red-toast', 'ref-songhy-red-cake'], description: 'Nền đỏ son, bảng giấy kem viền vàng, ảnh vòm, rèm lượn sóng và huy hiệu Song Hỷ.' },
-  { title: 'Hoa Mộc - Xanh', slug: 'hoa-moc-xanh', family: 'botanical', palette: { primary: '#31551c', secondary: '#6d805b', paper: '#fffcf8', ink: '#344527', accent: '#b4a17e' }, ornaments: ['starter-botanical-corners', 'starter-floral-divider', 'starter-faint-leaf-pattern'], description: 'Hoa watercolor boho trên nền kem, tông xanh lá và các cụm hoa đặt thoáng.' },
+  { title: 'Hoa Mộc - Xanh', slug: 'hoa-moc-xanh', family: 'botanical', palette: { primary: '#30530f', secondary: '#464646', paper: '#fffaf7', ink: '#30530f', accent: '#b4a17e' }, ornaments: ['starter-botanical-corners', 'starter-floral-divider', 'starter-faint-leaf-pattern'], description: 'Hoa watercolor boho trên nền kem, tông xanh lá và các cụm hoa đặt thoáng.' },
   { title: 'Tơ Duyên - Xanh', slug: 'to-duyen-xanh', family: 'silk', palette: { primary: '#53664d', secondary: '#87927a', paper: '#fffefa', ink: '#344333', accent: '#c5b78d' }, ornaments: ['starter-olive-branch', 'starter-botanical-corners', 'starter-floral-divider'], description: 'Hai ảnh nghiêng, bố cục so le, hoa rum trắng, dải lụa xanh và nét tơ mảnh.' },
   { title: 'Song Hỷ - Đỏ', slug: 'song-hy-do', family: 'songhy', palette: { primary: '#800000', secondary: '#a52a2a', paper: '#fff7eb', ink: '#800000', accent: '#fbbf24' }, ornaments: ['ref-songhy-red-emblem', 'ref-songhy-red-cloud', 'ref-songhy-red-heart', 'ref-songhy-red-ring', 'ref-songhy-red-toast', 'ref-songhy-red-cake'], description: 'Chữ Hỷ làm trung tâm, huy hiệu đỏ, phong bì Song Hỷ, khung ảnh vòm trên nền kem.' },
+  { title: 'Cẩm Thạch - Vàng', slug: 'cam-thach-vang', family: 'marble', palette: { primary: '#a78555', secondary: '#d7b681', paper: '#fffdf8', ink: '#1e1e1e', accent: '#a78555' }, ornaments: [], description: 'Nền đá cẩm thạch vân vàng, lá vàng kim hai góc và bìa thẻ kem.' },
+  { title: 'Liên Hoa V2 - Xanh', slug: 'lien-hoa-v2-xanh', family: 'lotus', palette: { primary: '#5e813c', secondary: '#a8c48a', paper: '#fffbed', ink: '#124d00', accent: '#f2b8c6' }, ornaments: [], description: 'Sen hồng lá xanh trên nền giấy kem.' },
+  { title: 'Mai Lan - Trắng', slug: 'mai-lan-trang', family: 'minimal', palette: { primary: '#404a1d', secondary: '#5a6628', paper: '#fffaf7', ink: '#404a1d', accent: '#ffffff' }, ornaments: [], description: 'Hoa mai lan trắng trên nền xanh rêu đậm và thẻ kem.' },
+  { title: 'Long Phụng V2 - Đỏ', slug: 'long-phung-v2-do', family: 'longphung', palette: { primary: '#680d0e', secondary: '#e9ce9e', paper: '#f5f0e8', ink: '#4a0808', accent: '#e9ce9e' }, ornaments: [], description: 'Thẻ đỏ sẫm có rồng phụng chìm, chữ vàng nhạt trên nền giấy trắng.' },
+  { title: 'Song Phụng - Đỏ', slug: 'song-phung-do', family: 'songphung', palette: { primary: '#710001', secondary: '#530000', paper: '#fff0e7', ink: '#710001', accent: '#710001' }, ornaments: [], description: 'Đôi phụng hoàng đỏ sẫm trên thẻ kem, hoa trang trí hai góc.' },
+  { title: 'Long Phụng V3 - Đỏ', slug: 'long-phung-v3-do', family: 'longphung', palette: { primary: '#710001', secondary: '#450001', paper: '#5a000e', ink: '#ffbe89', accent: '#ffbe89' }, ornaments: [], description: 'Nền đỏ thẫm, rồng phụng chìm và chữ cam vàng.' },
+  { title: 'Long Phụng - Đỏ', slug: 'long-phung-do', family: 'longphung', palette: { primary: '#680e0e', secondary: '#360202', paper: '#680e0e', ink: '#e9ce9e', accent: '#e9ce9e' }, ornaments: [], description: 'Rồng phụng vàng nhạt trên nền đỏ sẫm, song ngữ Việt - Hoa.' },
+  { title: 'Song Long - Đỏ', slug: 'song-long-do', family: 'songlong', palette: { primary: '#882925', secondary: '#a31d16', paper: '#ecdfd6', ink: '#464646', accent: '#f0d497' }, ornaments: [], description: 'Đôi rồng vàng chìm trên thẻ đỏ, nền hồng nhạt họa tiết rồng.' },
+  { title: 'Vườn Kính - Hồng', slug: 'vuonkinh-hong', family: 'glassgarden', palette: { primary: '#cb5d6c', secondary: '#ad3f4e', paper: '#fdf6f8', ink: '#933845', accent: '#f7e3e8' }, ornaments: [], description: 'Hoa lá hồng phấn nền kính mờ, tông hồng lãng mạn.' },
+  { title: 'Vườn Kính - Xanh', slug: 'vuonkinh-xanh', family: 'glassgarden', palette: { primary: '#47613e', secondary: '#294320', paper: '#fbfdf8', ink: '#35452f', accent: '#c4d4b3' }, ornaments: [], description: 'Hoa trắng và lá xanh nền kính mờ, tông xanh lãng mạn.' },
+  { title: 'Ánh Đào Hồng', slug: 'anh-dao-hong', family: 'blossom', palette: { primary: '#ba4a59', secondary: '#9c2c3b', paper: '#fff5f7', ink: '#8a3a45', accent: '#f9e3e8' }, ornaments: [], description: 'Hoa anh đào hồng trên nền hồng rượu, thẻ cao có ô tên khách.' },
+  { title: 'Baroque V2 - Đỏ Đậm', slug: 'baroque-v2-do-dam', family: 'baroque', palette: { primary: '#ffdfaf', secondary: '#511419', paper: '#2b0303', ink: '#ffefd6', accent: '#4a0b0e' }, ornaments: [], description: 'Khung mạ vàng nền damask đỏ đậm.' },
+  { title: 'Song Hạc - Đỏ', slug: 'song-hac-do', family: 'crane', palette: { primary: '#ffe8a4', secondary: '#920002', paper: '#5a0000', ink: '#ffe8a4', accent: '#97110e' }, ornaments: [], description: 'Đôi hạc trắng trên nền đỏ son, mây vàng.' },
+  { title: 'Hoàng Kim - Đỏ', slug: 'hoang-kim-do', family: 'royal', palette: { primary: '#e1bc7c', secondary: '#7a0003', paper: '#3e0001', ink: '#e1bc7c', accent: '#5a0002' }, ornaments: [], description: 'Đỏ đô và vàng đồng sang trọng, hoa văn mờ.' },
+  { title: 'Lâu Đài - Xanh', slug: 'lau-dai-xanh', family: 'garden', palette: { primary: '#3a5a2c', secondary: '#5a8040', paper: '#ffffff', ink: '#3a5a2c', accent: '#eaeee8' }, ornaments: [], description: 'Vườn châu Âu màu nước, xanh rêu và hoa dại.' },
+  { title: 'Minimalism - Đỏ', slug: 'minimalism-do', family: 'minimalism', palette: { primary: '#7c151a', secondary: '#5a0e12', paper: '#fffaf7', ink: '#7c151a', accent: '#f6e6e4' }, ornaments: [], description: 'Tối giản chữ thư pháp, đỏ đô và nét vẽ trái tim.' },
+  { title: 'Ren Thêu - Trắng', slug: 'ren-theu-trang', family: 'lace', palette: { primary: '#1a1a1a', secondary: '#8f7964', paper: '#ffffff', ink: '#1a1a1a', accent: '#ebebeb' }, ornaments: [], description: 'Ren thêu trắng và hoa trà trên nền lụa đen.' },
+  { title: 'Vườn Xuân - Xanh', slug: 'vuon-xuan-xanh', family: 'watercolor', palette: { primary: '#5d6a57', secondary: '#4a5645', paper: '#ffffff', ink: '#5d6a57', accent: '#eef0ed' }, ornaments: [], description: 'Màu nước xanh rêu nhẹ, chữ thư pháp mềm.' },
+  { title: 'Long Phụng - Xanh', slug: 'long-phung-xanh', family: 'dragon', palette: { primary: '#e9ce9e', secondary: '#162614', paper: '#162614', ink: '#e9ce9e', accent: '#27341f' }, ornaments: [], description: 'Rồng phượng vàng nhạt trên nền xanh rêu đậm (bản tiếng Anh).' },
+  { title: 'Song Long - Xanh', slug: 'song-long-xanh', family: 'dragon', palette: { primary: '#1f3a25', secondary: '#f0d497', paper: '#fffef7', ink: '#2c2416', accent: '#efece4' }, ornaments: [], description: 'Đôi rồng vàng trên nền xanh lục thẫm, song ngữ Việt - Hàn.' },
   { title: 'Minimalism - Nâu Đậm', slug: 'minimalism-nau-dam', family: 'minimal', palette: { primary: '#513a2c', secondary: '#755742', paper: '#f7f0e4', ink: '#3c2b23', accent: '#b89456' }, ornaments: ['ref-min-brown-flower', 'ref-min-brown-water', 'ref-min-brown-cake', 'ref-min-brown-leaf'], description: 'Phong bì nâu lồng ảnh ngang, ba panel nâu chữ kem và hoa màu nước.' },
   { title: 'Tơ Duyên - Đỏ Đậm', slug: 'to-duyen-do-dam', family: 'silk', palette: { primary: '#76232d', secondary: '#a14f54', paper: '#fffdfa', ink: '#501e26', accent: '#c9a676' }, ornaments: ['ref-min-red-flower', 'starter-floral-divider', 'starter-sparkle-cluster'], description: 'Bố cục so le trên nền trắng, hoa phong quỳ đỏ, dải lụa burgundy và nét tơ.' },
   { title: 'Minimalism - Xanh', slug: 'minimalism-xanh', family: 'minimal', palette: { primary: '#536b4c', secondary: '#7d8b70', paper: '#fafbf5', ink: '#394b38', accent: '#b6a87b' }, ornaments: ['starter-olive-branch', 'starter-botanical-corners', 'starter-faint-leaf-pattern'], description: 'Hai khung polaroid, lá bạch đàn và khung vòm xanh trên nền giấy trắng.' },
 ];
+
+// Only DOM-measured content exports may be added here. The generic makeDocument path is never a handoff fallback.
+const contentOnlyDocuments: Partial<Record<ContentHandoffSlug, CardDocument>> = {};
+
+function decorationSources(node: TreeNode): string[] {
+  const source = node.type === 'Decoration' && typeof node.props.src === 'string' ? node.props.src : '';
+  return [...(source ? [source] : []), ...node.children.flatMap(decorationSources)];
+}
 
 const registry = { ...builtInRegistry, ...cardDefinitions };
 const phoneScale = 0.82;
@@ -299,7 +355,53 @@ function makeDocument(item: Design, assets: Map<string, string>): CardDocument {
 }
 
 async function main() {
-  const slugFilter = process.argv.find((arg) => arg.startsWith('--slug='))?.slice('--slug='.length);
+  const options = parseReferenceSeedArgs(process.argv.slice(2));
+  if (options.mode === 'content-handoff') {
+    const item = designs.find(({ slug }) => slug === options.slug);
+    const document = contentOnlyDocuments[options.slug];
+    if (!item) throw new Error(`Unknown template slug: ${options.slug}`);
+    if (!document) throw new Error(`${options.slug} has no DOM-measured content-only export yet; refusing generic makeDocument fallback.`);
+    if (document.kind !== 'card' || document.startPageId !== 'invitation' || document.pages.length !== 1 || document.pages[0]?.id !== 'invitation') {
+      throw new Error(`${options.slug} must export exactly one start page named invitation.`);
+    }
+    const invitation = document.pages[0];
+    if (!invitation || Object.keys(invitation.interactions).length) throw new Error(`${options.slug} content handoff must not contain cover/popup page interactions.`);
+    if (!isPageData(invitation.data)) throw new Error(`${options.slug}/invitation is not valid page data.`);
+    const issues = validatePage(registry, invitation.data);
+    if (issues.length) throw new Error(`${options.slug}/invitation: ${JSON.stringify(issues)}`);
+    const decorationUrls = decorationSources(invitation.data.root);
+    if (decorationUrls.length) {
+      const catalog = await prisma.decorativeAsset.findMany({ where: { status: 'PUBLISHED' }, select: { url: true } });
+      const missingAssets = findMissingCatalogAssets(decorationUrls, catalog.map(({ url }) => url));
+      if (missingAssets.length) throw new Error(`${options.slug} has decorations missing from the published catalog: ${missingAssets.join(', ')}`);
+    }
+    const snapshot = normalizeCardDocument(document) as unknown as Prisma.InputJsonObject;
+    const existing = await prisma.template.findMany({
+      where: { status: 'UNLISTED', tags: { has: 'clone-content-draft' } },
+      select: { id: true, status: true, tags: true },
+    });
+    const targetId = selectContentHandoff(existing, options.slug);
+    const data = {
+      title: item.title,
+      description: `Nội dung thiệp đang chờ Claude hoàn thiện. Nguồn: https://chungdoi.com/vi/mau-thiep/${item.slug}/demo`,
+      category: 'WEDDING',
+      tags: [item.family, item.slug, 'clone-content-draft'],
+      snapshot,
+      version: 1,
+      status: 'UNLISTED' as const,
+      publishedAt: null,
+    };
+    if (options.dryRun) {
+      process.stdout.write(`${JSON.stringify({ mode: options.mode, slug: options.slug, status: 'UNLISTED', operation: targetId ? 'update' : 'create', targetId, pages: document.pages.map(({ id }) => id), catalogDecorations: decorationUrls.length }, null, 2)}\n`);
+      return;
+    }
+    if (targetId) await prisma.template.update({ where: { id: targetId }, data });
+    else await prisma.template.create({ data });
+    process.stdout.write(`Saved ${options.slug} as UNLISTED content handoff${targetId ? ` (${targetId})` : ''}. Published templates were not changed.\n`);
+    return;
+  }
+
+  const slugFilter = options.slug;
   const selectedDesigns = slugFilter ? designs.filter(({ slug }) => slug === slugFilter) : designs;
   if (!selectedDesigns.length) throw new Error(`Unknown template slug: ${slugFilter}`);
   const rows = await prisma.decorativeAsset.findMany({ where: { status: 'PUBLISHED' }, select: { publicId: true, url: true } });
@@ -307,7 +409,7 @@ async function main() {
   const snapshots = selectedDesigns.map((item) => {
     const missing = item.ornaments.filter((assetId) => !assets.has(assetId));
     if (missing.length) throw new Error(`${item.title} đang thiếu trang trí trong MongoDB: ${missing.join(', ')}`);
-    const document = makeDocument(item, assets);
+    const document = item.slug === 'hoa-moc-xanh' ? hoaMocXanhDemoDocument : item.slug === 'minimalism-nau' ? minimalismNauDemoDocument : item.slug === 'song-hy-v2-do' ? songHyV2DoDocument : item.slug === 'to-duyen-do-dam' ? toDuyenDoDamDocument : item.slug === 'minimalism-nau-dam' ? minimalismNauDamDocument : item.slug === 'to-duyen-xanh' ? toDuyenXanhDocument : item.slug === 'cam-thach-vang' ? camThachVangDocument : item.slug === 'song-long-xanh' ? songLongXanhDocument : item.slug === 'long-phung-xanh' ? longPhungXanhDocument : item.slug === 'vuon-xuan-xanh' ? vuonXuanXanhDocument : item.slug === 'ren-theu-trang' ? renTheuTrangDocument : item.slug === 'minimalism-do' ? minimalismDoDocument : item.slug === 'lau-dai-xanh' ? lauDaiXanhDocument : item.slug === 'hoang-kim-do' ? hoangKimDoDocument : item.slug === 'song-hac-do' ? songHacDoDocument : item.slug === 'baroque-v2-do-dam' ? baroqueV2DoDamDocument : item.slug === 'anh-dao-hong' ? anhDaoHongDocument : item.slug === 'vuonkinh-xanh' ? vuonkinhXanhDocument : item.slug === 'vuonkinh-hong' ? vuonkinhHongDocument : item.slug === 'song-long-do' ? songLongDoDocument : item.slug === 'long-phung-do' ? longPhungDoDocument : item.slug === 'long-phung-v3-do' ? longPhungV3DoDocument : item.slug === 'song-phung-do' ? songPhungDoDocument : item.slug === 'long-phung-v2-do' ? longPhungV2DoDocument : item.slug === 'mai-lan-trang' ? maiLanTrangDocument : item.slug === 'lien-hoa-v2-xanh' ? lienHoaV2XanhDocument : item.slug === 'minimalism-xanh' ? minimalismXanhDocument : makeDocument(item, assets);
     for (const page of document.pages) {
       if (!isPageData(page.data)) {
         const children = page.data.root.children;
@@ -323,7 +425,7 @@ async function main() {
   const now = Date.now();
   for (const [index, item] of selectedDesigns.entries()) {
     const description = `Bản dựng riêng theo mẫu Chung Đôi ${item.slug}. ${item.description}`;
-    const existing = await prisma.template.findMany({ where: { title: item.title, description }, select: { id: true }, orderBy: { createdAt: 'asc' } });
+    const existing = filterPublishedSeedTargets(await prisma.template.findMany({ where: { title: item.title, tags: { has: item.slug } }, select: { id: true, tags: true }, orderBy: { createdAt: 'asc' } }));
     const data = {
       title: item.title, description, category: 'WEDDING', tags: [item.family, item.slug],
       snapshot: snapshots[index] as unknown as Prisma.InputJsonObject,
