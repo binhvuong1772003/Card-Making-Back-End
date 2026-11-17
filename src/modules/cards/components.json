@@ -509,7 +509,8 @@
         "min": 10,
         "max": 96,
         "unit": "px",
-        "group": "Chữ"
+        "group": "Chữ",
+        "perDevice": true
       },
       "color": {
         "type": "color",
