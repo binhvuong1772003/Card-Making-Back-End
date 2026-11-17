@@ -2029,6 +2029,7 @@
       "previewSampleCount": 2,
       "listMax": 420,
       "fillGuestName": true,
+      "dialog": false,
       "layerName": ""
     },
     "defaultStyles": {
@@ -2130,6 +2131,12 @@
         "type": "boolean",
         "label": "Bố cục gọn",
         "group": "Giao diện"
+      },
+      "dialog": {
+        "type": "boolean",
+        "label": "Kiểu hộp thoại",
+        "group": "Giao diện",
+        "help": "Tiêu đề và chữ căn trái, phương án dạng thẻ có dấu chọn, nút vuông bo: giống hộp xác nhận tham dự của trang mẫu."
       },
       "fillGuestName": {
         "type": "boolean",
