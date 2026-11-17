@@ -21,6 +21,27 @@ const ASSETS = [
   { id: 'ref-min-red-envelope-open', file: 'minimalism-red-envelope-open.webp', name: 'Phong bì đỏ mở', category: 'Phong bì & quà', tags: ['phong bì', 'minimalism', 'đỏ đậm'] },
   { id: 'ref-min-red-envelope-front', file: 'minimalism-red-envelope-front.webp', name: 'Mặt trước phong bì đỏ', category: 'Phong bì & quà', tags: ['phong bì', 'minimalism', 'đỏ đậm'] },
   { id: 'ref-min-red-envelope-pair', file: 'minimalism-red-envelope-pair.webp', name: 'Cặp bao lì xì hoa đỏ (bản hiện tại)', category: 'Phong bì & quà', tags: ['bao lì xì', 'phong bì', 'hoa đỏ', 'minimalism', 'đỏ đậm'] },
+  { id: 'ref-hoa-moc-green-flowers', file: 'hoa-moc-xanh-flowers.webp', name: 'Cụm hoa Hoa Mộc Xanh', category: 'Hoa lá', tags: ['hoa', 'lá xanh', 'hoa mộc xanh', 'boho'] },
+  { id: 'ref-hoa-moc-green-floral-band', file: 'hoa-moc-xanh-floral-band.webp', name: 'Dải hoa Hoa Mộc Xanh', category: 'Viền & nền', tags: ['hoa', 'dải hoa', 'hoa mộc xanh', 'boho'] },
+  { id: 'ref-hoa-moc-green-gift', file: 'hoa-moc-xanh-gift.webp', name: 'Hộp quà Hoa Mộc Xanh', category: 'Phong bì & quà', tags: ['quà cưới', 'hộp quà', 'hoa mộc xanh'] },
+  { id: 'ref-hoa-moc-green-gift-mini-orbit', file: 'hoa-moc-xanh-gift-mini-orbit.webp', name: 'Cụm hộp quà nhỏ Hoa Mộc Xanh', category: 'Phong bì & quà', tags: ['quà cưới', 'hộp quà nhỏ', 'hoa mộc xanh', 'cụm trang trí'] },
+  { id: 'ref-min-brown-flower', file: 'minimalism-brown-flower2-decoration.webp', name: 'Cụm hoa khô Minimalism Nâu', category: 'Hoa lá', tags: ['hoa', 'hoa khô', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-leaf', file: 'minimalism-brown-leaf-background.webp', name: 'Lá nền Minimalism Nâu', category: 'Viền & nền', tags: ['lá', 'nền', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-house', file: 'minimalism-brown-house-background.webp', name: 'Nền kiến trúc Minimalism Nâu', category: 'Viền & nền', tags: ['kiến trúc', 'nền', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-avatar-frame', file: 'minimalism-brown-frame-avatar.webp', name: 'Khung ảnh hoa Minimalism Nâu', category: 'Khung ảnh', tags: ['khung ảnh', 'hoa', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-paper', file: 'minimalism-brown-paper.webp', name: 'Giấy vân Minimalism Nâu', category: 'Viền & nền', tags: ['giấy', 'texture', 'nền', 'minimalism'] },
+  { id: 'ref-min-brown-paper-note', file: 'minimalism-brown-paper-note.webp', name: 'Giấy ghi chú Minimalism Nâu', category: 'Viền & nền', tags: ['giấy', 'ghi chú', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-gate', file: 'minimalism-brown-gate.webp', name: 'Cổng cưới minh họa', category: 'Biểu tượng', tags: ['cổng', 'lịch trình', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-cake', file: 'minimalism-brown-cake.webp', name: 'Bánh cưới minh họa', category: 'Biểu tượng', tags: ['bánh cưới', 'lịch trình', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-water', file: 'minimalism-brown-water.webp', name: 'Ly cưới minh họa', category: 'Biểu tượng', tags: ['ly cưới', 'lịch trình', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-gift-main', file: 'minimalism-brown-gift-main.webp', name: 'Hộp quà Minimalism Nâu', category: 'Phong bì & quà', tags: ['quà cưới', 'hộp quà', 'minimalism', 'nâu'] },
+  { id: 'ref-min-brown-gift-mini-minimalism-purple', file: 'minimalism-brown-gift-mini-minimalism_purple.webp', name: 'Hộp quà nhỏ tím Minimalism', category: 'Phong bì & quà', tags: ['quà nhỏ', 'hộp quà', 'minimalism'] },
+  { id: 'ref-min-brown-gift-mini-song-hac-red', file: 'minimalism-brown-gift-mini-song_hac_red.webp', name: 'Hộp quà nhỏ Song Hạc đỏ', category: 'Phong bì & quà', tags: ['quà nhỏ', 'song hạc', 'hộp quà'] },
+  { id: 'ref-min-brown-gift-mini-minimalism-darkred', file: 'minimalism-brown-gift-mini-minimalism_darkred.webp', name: 'Hộp quà nhỏ đỏ đậm Minimalism', category: 'Phong bì & quà', tags: ['quà nhỏ', 'hộp quà', 'minimalism'] },
+  { id: 'ref-min-brown-gift-mini-spring-garden-blue', file: 'minimalism-brown-gift-mini-spring_garden_blue.webp', name: 'Hộp quà nhỏ vườn xuân xanh', category: 'Phong bì & quà', tags: ['quà nhỏ', 'hộp quà', 'xanh'] },
+  { id: 'ref-min-brown-gift-mini-porcelain-brown', file: 'minimalism-brown-gift-mini-porcelain_brown.webp', name: 'Hộp quà nhỏ sứ nâu', category: 'Phong bì & quà', tags: ['quà nhỏ', 'hộp quà', 'sứ', 'nâu'] },
+  { id: 'ref-min-brown-gift-mini-porcelain-v2-pink', file: 'minimalism-brown-gift-mini-porcelain_v2_pink.webp', name: 'Hộp quà nhỏ sứ hồng', category: 'Phong bì & quà', tags: ['quà nhỏ', 'hộp quà', 'sứ', 'hồng'] },
+  { id: 'ref-min-brown-gift-mini-double-dragon-red', file: 'minimalism-brown-gift-mini-double_dragon_red.webp', name: 'Hộp quà nhỏ song long đỏ', category: 'Phong bì & quà', tags: ['quà nhỏ', 'hộp quà', 'song long', 'đỏ'] },
 ] as const;
 
 async function upload(file: string, publicId: string) {
@@ -51,10 +72,11 @@ async function upload(file: string, publicId: string) {
 }
 
 async function main() {
-  const onlyId = process.argv[2];
-  if (onlyId && !ASSETS.some((asset) => asset.id === onlyId)) throw new Error(`Unknown decoration asset: ${onlyId}`);
+  const onlyIds = new Set(process.argv.slice(2).flatMap((arg) => arg.split(',')).filter(Boolean));
+  const unknown = [...onlyIds].filter((id) => !ASSETS.some((asset) => asset.id === id));
+  if (unknown.length) throw new Error(`Unknown decoration asset: ${unknown.join(', ')}`);
   for (const [sortOrder, asset] of ASSETS.entries()) {
-    if (onlyId && asset.id !== onlyId) continue;
+    if (onlyIds.size && !onlyIds.has(asset.id)) continue;
     const file = path.resolve('scripts/assets/decorations', asset.file);
     const uploaded = await upload(file, asset.id);
     await prisma.decorativeAsset.upsert({
@@ -69,7 +91,7 @@ async function main() {
       },
     });
   }
-  process.stdout.write(`Seeded ${onlyId ? 1 : ASSETS.length} decoration assets to MongoDB and Cloudinary.\n`);
+  process.stdout.write(`Seeded ${onlyIds.size || ASSETS.length} decoration assets to MongoDB and Cloudinary.\n`);
 }
 
 main().catch((error: unknown) => { console.error(error); process.exitCode = 1; }).finally(() => prisma.$disconnect());
